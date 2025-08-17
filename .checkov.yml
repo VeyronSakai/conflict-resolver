@@ -1,0 +1,3 @@
+# Checkov configuration
+skip-check:
+  - CKV2_GHA_1 # Skip "Ensure top-level permissions are not set to write-all" - false positive for Claude workflows

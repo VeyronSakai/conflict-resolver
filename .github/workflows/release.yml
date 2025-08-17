@@ -1,0 +1,223 @@
+name: Release
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PACKAGE_JSON_PATH: package.json
+  GITHUB_BOT_NAME: github-actions[bot]
+  GITHUB_BOT_EMAIL: github-actions[bot]@users.noreply.github.com
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  paths-filter:
+    name: Paths Filter
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    outputs:
+      package_json: ${{ steps.filter.outputs.package_json }}
+    steps:
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: filter
+        with:
+          filters: |
+            package_json:
+              - ${{ env.PACKAGE_JSON_PATH }}
+
+  check-version:
+    name: Check Version
+    needs: paths-filter
+    if:
+      ${{ github.event_name == 'pull_request' &&
+      needs.paths-filter.outputs.package_json == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check-version.outputs.version_changed }}
+    steps:
+      - name: Check version change
+        id: check-version
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Get version from base branch using GitHub API
+          $basePackageJsonContent = gh api "repos/$env:GITHUB_REPOSITORY/contents/package.json?ref=$env:BASE_SHA" --jq .content | base64 -d
+          $basePackageJson = $basePackageJsonContent | ConvertFrom-Json
+          $baseVersion = $basePackageJson.version
+
+          # Get version from head branch using GitHub API
+          $headPackageJsonContent = gh api "repos/$env:GITHUB_REPOSITORY/contents/package.json?ref=$env:HEAD_SHA" --jq .content | base64 -d
+          $headPackageJson = $headPackageJsonContent | ConvertFrom-Json
+          $headVersion = $headPackageJson.version
+
+          Write-Output "Base version: $baseVersion"
+          Write-Output "Head version: $headVersion"
+
+          if ($baseVersion -ne $headVersion) {
+            Write-Output "Version changed from $baseVersion to $headVersion"
+            "version_changed=true" | Add-Content -Path $env:GITHUB_OUTPUT
+          } else {
+            Write-Output "Version unchanged: $headVersion"
+            "version_changed=false" | Add-Content -Path $env:GITHUB_OUTPUT
+          }
+
+  update-draft:
+    name: Update Draft
+    if:
+      ${{ (github.event_name == 'pull_request' &&
+      github.event.pull_request.base.ref == 'main') || github.event_name ==
+      'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    outputs:
+      tag_name: ${{ steps.release-drafter.outputs.tag_name }}
+    steps:
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5
+        id: release-drafter
+        with:
+          commitish: main
+
+  update-files:
+    name: Update Files
+    needs: update-draft
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    env:
+      VERSION: ${{ needs.update-draft.outputs.tag_name }}
+      SOURCE_BRANCH: github-actions/update-files/${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Update package.json
+        run: |
+          $packageJson = Get-Content -Path $env:PACKAGE_JSON_PATH -Raw | ConvertFrom-Json
+          # Remove 'v' prefix from VERSION if present
+          $version = $env:VERSION
+          if ($version.StartsWith('v')) {
+            $version = $version.Substring(1)
+          }
+          $packageJson.version = $version
+          $packageJson | ConvertTo-Json -Depth 100 | Set-Content -Path $env:PACKAGE_JSON_PATH
+      - name: Commit package.json
+        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5
+        id: commit-package-json
+        with:
+          author_name: ${{ env.GITHUB_BOT_NAME }}
+          author_email: ${{ env.GITHUB_BOT_EMAIL }}
+          message: 'Update package.json'
+          add: ${{ env.PACKAGE_JSON_PATH }}
+          new_branch: ${{ env.SOURCE_BRANCH }}
+      - name: Update README.md
+        run: |
+          Copy-Item -Path ".github/DRAFT_README.md" -Destination "README.md" -Force
+      - name: Commit README.md
+        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5
+        id: commit-readme
+        with:
+          author_name: ${{ env.GITHUB_BOT_NAME }}
+          author_email: ${{ env.GITHUB_BOT_EMAIL }}
+          message: 'Update README.md'
+          add: 'README.md'
+          new_branch: ${{ env.SOURCE_BRANCH }}
+      - uses: actions/create-github-app-token@v2
+        id: create-github-app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: Create pull request and merge
+        if:
+          ${{ steps.commit-package-json.outputs.committed == 'true' ||
+          steps.commit-readme.outputs.committed == 'true'}}
+        env:
+          GH_TOKEN: ${{ steps.create-github-app-token.outputs.token }}
+        run: |
+          gh pr create --title "Update files for release" --body "Update files for release" --base main --head $env:SOURCE_BRANCH
+          gh pr merge $env:SOURCE_BRANCH --auto --merge
+
+  release:
+    name: Release
+    needs: [update-draft, paths-filter, check-version]
+    environment: Release
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: false
+    if:
+      ${{ github.event_name == 'pull_request' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.merged &&
+      needs.paths-filter.outputs.package_json == 'true' &&
+      needs.check-version.outputs.version_changed == 'true' }}
+    env:
+      VERSION: ${{ needs.update-draft.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - name: Validate version in package.json
+        run: |
+          $packageJson = Get-Content -Path $env:PACKAGE_JSON_PATH -Raw | ConvertFrom-Json
+          $packageVersion = $packageJson.version
+          # Remove 'v' prefix from VERSION for comparison
+          $expectedVersion = $env:VERSION
+          if ($expectedVersion.StartsWith('v')) {
+            $expectedVersion = $expectedVersion.Substring(1)
+          }
+          if ($packageVersion -ne $expectedVersion) {
+            Write-Error "version in package.json ($packageVersion) does not match the release draft tag ($expectedVersion from $env:VERSION)"
+            exit 1
+          }
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5
+        id: release-drafter
+        with:
+          publish: true
+          commitish: main
+      - name: Get semver
+        id: get-semver
+        run: |
+          # Handle versions with or without 'v' prefix
+          if ($env:VERSION -match '^v?(\d+)\.(\d+)\.(\d+)') {
+            $major = $matches[1]
+            $minor = $matches[2]
+            $patch = $matches[3]
+            "major=v$major" | Add-Content -Path $env:GITHUB_OUTPUT
+            "minor=v$major.$minor" | Add-Content -Path $env:GITHUB_OUTPUT
+            "patch=v$major.$minor.$patch" | Add-Content -Path $env:GITHUB_OUTPUT
+          } else {
+            Write-Error "Unable to parse version: $env:VERSION"
+            exit 1
+          }
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.VERSION }}
+      - name: Update major tag
+        if: ${{ steps.get-semver.outputs.major != 'v0' }}
+        env:
+          MAJOR_TAG: ${{ steps.get-semver.outputs.major }}
+        run: |
+          $refspec = "refs/tags/${env:VERSION}:refs/tags/${env:MAJOR_TAG}"
+          git push -f origin $refspec
+      - name: Update minor tag
+        if: ${{ steps.get-semver.outputs.minor != 'v0.0' }}
+        env:
+          MINOR_TAG: ${{ steps.get-semver.outputs.minor }}
+        run: |
+          $refspec = "refs/tags/${env:VERSION}:refs/tags/${env:MINOR_TAG}"
+          git push -f origin $refspec
