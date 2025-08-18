@@ -117,15 +117,13 @@ describe('ConflictResolver', () => {
 
       mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(true)
       mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.getConflictedFiles = jest
-        .fn()
-        .mockResolvedValue([
-          {
-            path: 'package.json',
-            statusCode: 'UU',
-            conflictType: 'both-modified'
-          }
-        ])
+      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+        {
+          path: 'package.json',
+          statusCode: 'UU',
+          conflictType: 'both-modified'
+        }
+      ])
       mockGitUtility.resolveConflict = jest
         .fn()
         .mockRejectedValue(new Error('Failed to resolve'))
@@ -203,15 +201,13 @@ describe('ConflictResolver', () => {
 
       mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(false)
       mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.getConflictedFiles = jest
-        .fn()
-        .mockResolvedValue([
-          {
-            path: 'package.json',
-            statusCode: 'UU',
-            conflictType: 'both-modified'
-          }
-        ])
+      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+        {
+          path: 'package.json',
+          statusCode: 'UU',
+          conflictType: 'both-modified'
+        }
+      ])
       mockGitUtility.resolveConflict = jest.fn().mockResolvedValue(undefined)
 
       const result = await resolver.resolve()
