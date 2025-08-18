@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { wait } from './wait.js'
+import { ConflictResolver } from './conflict-resolver.js'
 
 /**
  * The main function for the action.
@@ -8,18 +8,27 @@ import { wait } from './wait.js'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const configPath = core.getInput('config-path')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    core.info('Starting Git Conflict Resolver')
+    core.info(
+      `Config path: ${configPath || '.conflict-resolver.yml (default)'}`
+    )
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const resolver = new ConflictResolver(configPath)
+    const result = await resolver.resolve()
 
     // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    core.setOutput('resolved-files', result.resolvedFiles.join(','))
+    core.setOutput('unresolved-files', result.unresolvedFiles.join(','))
+
+    if (result.unresolvedFiles.length > 0) {
+      core.warning(
+        `${result.unresolvedFiles.length} files still have conflicts and require manual resolution`
+      )
+    } else if (result.resolvedFiles.length > 0) {
+      core.info('All conflicts resolved successfully!')
+    }
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
