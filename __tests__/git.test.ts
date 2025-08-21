@@ -26,7 +26,11 @@ UD src/file7.ts
 ?? src/file9.ts`
 
       ;(exec.exec as jest.Mock).mockImplementation(
-        async (cmd: string, args: string[], options: any) => {
+        async (
+          cmd: string,
+          args: string[],
+          options: { listeners?: { stdout?: (data: Buffer) => void } }
+        ) => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from(mockOutput))
           }
@@ -79,7 +83,11 @@ UD src/file7.ts
 ?? src/file2.ts`
 
       ;(exec.exec as jest.Mock).mockImplementation(
-        async (cmd: string, args: string[], options: any) => {
+        async (
+          cmd: string,
+          args: string[],
+          options: { listeners?: { stdout?: (data: Buffer) => void } }
+        ) => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from(mockOutput))
           }
@@ -94,7 +102,11 @@ UD src/file7.ts
 
     it('should handle empty git status output', async () => {
       ;(exec.exec as jest.Mock).mockImplementation(
-        async (cmd: string, args: string[], options: any) => {
+        async (
+          cmd: string,
+          args: string[],
+          options: { listeners?: { stdout?: (data: Buffer) => void } }
+        ) => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from(''))
           }
@@ -172,7 +184,11 @@ UD src/file7.ts
   describe('checkIfInRebaseState', () => {
     it('should return true when rebase directories exist', async () => {
       ;(exec.exec as jest.Mock).mockImplementation(
-        async (cmd: string, args: string[], options: any) => {
+        async (
+          cmd: string,
+          args: string[],
+          options: { listeners?: { stdout?: (data: Buffer) => void } }
+        ) => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from('.git'))
           }
@@ -190,7 +206,11 @@ UD src/file7.ts
 
     it('should return false when rebase directories do not exist', async () => {
       ;(exec.exec as jest.Mock).mockImplementation(
-        async (cmd: string, args: string[], options: any) => {
+        async (
+          cmd: string,
+          args: string[],
+          options: { listeners?: { stdout?: (data: Buffer) => void } }
+        ) => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from('.git'))
           }

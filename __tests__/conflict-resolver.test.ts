@@ -18,9 +18,12 @@ describe('ConflictResolver', () => {
     resolver = new ConflictResolver('.conflict-resolver.yml')
 
     // Get the mocked instances
-    mockConfigLoader = (resolver as any)
-      .configLoader as jest.Mocked<ConfigLoader>
-    mockGitUtility = (resolver as any).gitUtility as jest.Mocked<GitUtility>
+    mockConfigLoader = (
+      resolver as unknown as { configLoader: jest.Mocked<ConfigLoader> }
+    ).configLoader
+    mockGitUtility = (
+      resolver as unknown as { gitUtility: jest.Mocked<GitUtility> }
+    ).gitUtility
   })
 
   describe('resolve', () => {
