@@ -35,7 +35,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()
@@ -80,7 +80,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()
@@ -109,7 +109,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()
@@ -139,7 +139,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()
@@ -168,7 +168,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()
@@ -190,7 +190,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()
@@ -218,7 +218,7 @@ describe('main', () => {
         () =>
           ({
             resolve: mockResolve
-          }) as unknown as InstanceType<typeof ConflictResolver>
+          }) as unknown as ConflictResolver
       )
 
       await run()

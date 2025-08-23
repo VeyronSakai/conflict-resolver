@@ -25,7 +25,7 @@ UD src/file7.ts
  M src/file8.ts
 ?? src/file9.ts`
 
-      ;(exec.exec as jest.Mock).mockImplementation(
+      ;(exec.exec as jest.Mock<any>).mockImplementation(
         async (
           cmd: string,
           args: string[],
@@ -82,7 +82,7 @@ UD src/file7.ts
       const mockOutput = ` M src/file1.ts
 ?? src/file2.ts`
 
-      ;(exec.exec as jest.Mock).mockImplementation(
+      ;(exec.exec as jest.Mock<any>).mockImplementation(
         async (
           cmd: string,
           args: string[],
@@ -101,7 +101,7 @@ UD src/file7.ts
     })
 
     it('should handle empty git status output', async () => {
-      ;(exec.exec as jest.Mock).mockImplementation(
+      ;(exec.exec as jest.Mock<any>).mockImplementation(
         async (
           cmd: string,
           args: string[],
@@ -122,7 +122,7 @@ UD src/file7.ts
 
   describe('resolveConflict', () => {
     it('should resolve conflict with ours strategy', async () => {
-      ;(exec.exec as jest.Mock).mockResolvedValue(0)
+      ;(exec.exec as jest.Mock<any>).mockResolvedValue(0)
 
       await gitUtility.resolveConflict('src/file.ts', 'ours')
 
@@ -135,7 +135,7 @@ UD src/file7.ts
     })
 
     it('should resolve conflict with theirs strategy', async () => {
-      ;(exec.exec as jest.Mock).mockResolvedValue(0)
+      ;(exec.exec as jest.Mock<any>).mockResolvedValue(0)
 
       await gitUtility.resolveConflict('src/file.ts', 'theirs')
 
@@ -148,7 +148,7 @@ UD src/file7.ts
     })
 
     it('should throw error when git checkout fails', async () => {
-      ;(exec.exec as jest.Mock).mockRejectedValue(
+      ;(exec.exec as jest.Mock<any>).mockRejectedValue(
         new Error('Git checkout failed')
       )
 
@@ -160,7 +160,7 @@ UD src/file7.ts
 
   describe('checkIfInMergeState', () => {
     it('should return true when in merge state', async () => {
-      ;(exec.exec as jest.Mock).mockResolvedValue(0)
+      ;(exec.exec as jest.Mock<any>).mockResolvedValue(0)
 
       const result = await gitUtility.checkIfInMergeState()
 
@@ -173,7 +173,7 @@ UD src/file7.ts
     })
 
     it('should return false when not in merge state', async () => {
-      ;(exec.exec as jest.Mock).mockRejectedValue(new Error('Not in merge'))
+      ;(exec.exec as jest.Mock<any>).mockRejectedValue(new Error('Not in merge'))
 
       const result = await gitUtility.checkIfInMergeState()
 
@@ -183,7 +183,7 @@ UD src/file7.ts
 
   describe('checkIfInRebaseState', () => {
     it('should return true when rebase directories exist', async () => {
-      ;(exec.exec as jest.Mock).mockImplementation(
+      ;(exec.exec as jest.Mock<any>).mockImplementation(
         async (
           cmd: string,
           args: string[],
@@ -205,7 +205,7 @@ UD src/file7.ts
     })
 
     it('should return false when rebase directories do not exist', async () => {
-      ;(exec.exec as jest.Mock).mockImplementation(
+      ;(exec.exec as jest.Mock<any>).mockImplementation(
         async (
           cmd: string,
           args: string[],
@@ -227,7 +227,7 @@ UD src/file7.ts
     })
 
     it('should return false when git rev-parse fails', async () => {
-      ;(exec.exec as jest.Mock).mockRejectedValue(new Error('Not a git repo'))
+      ;(exec.exec as jest.Mock<any>).mockRejectedValue(new Error('Not a git repo'))
 
       const result = await gitUtility.checkIfInRebaseState()
 
