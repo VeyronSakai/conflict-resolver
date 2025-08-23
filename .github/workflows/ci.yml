@@ -57,10 +57,13 @@ jobs:
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          config-path: '.conflict-resolver.yml'
 
       - name: Print Output
         id: output
         env:
-          ACTION_TIME: ${{ steps.test-action.outputs.time }}
-        run: echo "$ACTION_TIME"
+          RESOLVED_FILES: ${{ steps.test-action.outputs.resolved-files }}
+          UNRESOLVED_FILES: ${{ steps.test-action.outputs.unresolved-files }}
+        run: |
+          echo "Resolved files: $RESOLVED_FILES"
+          echo "Unresolved files: $UNRESOLVED_FILES"
