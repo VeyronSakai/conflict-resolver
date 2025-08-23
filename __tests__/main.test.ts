@@ -1,68 +1,64 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals'
-import type { ResolutionResult } from '../src/types.js'
 
-// Create mock functions
-const mockGetInput = jest.fn<(name: string) => string>()
-const mockSetOutput = jest.fn<(name: string, value: string) => void>()
-const mockInfo = jest.fn<(message: string) => void>()
-const mockWarning = jest.fn<(message: string | Error) => void>()
-const mockSetFailed = jest.fn<(message: string | Error) => void>()
-const mockDebug = jest.fn<(message: string) => void>()
-const mockError = jest.fn<(message: string | Error) => void>()
-
-// Mock the modules before importing
-jest.mock('@actions/core', () => ({
-  getInput: mockGetInput,
-  setOutput: mockSetOutput,
-  info: mockInfo,
-  warning: mockWarning,
-  setFailed: mockSetFailed,
-  debug: mockDebug,
-  error: mockError
-}))
-
-const MockConflictResolver = jest.fn()
-jest.mock('../src/conflict-resolver.js', () => ({
-  ConflictResolver: MockConflictResolver
-}))
-
-// Import after mocking
-import { run } from '../src/main.js'
+// Mock the modules before any imports
+jest.mock('@actions/core')
+jest.mock('../src/conflict-resolver.js')
 
 describe('main', () => {
-  beforeEach(() => {
+  let mockGetInput: jest.Mock
+  let mockSetOutput: jest.Mock
+  let mockInfo: jest.Mock
+  let mockWarning: jest.Mock
+  let mockSetFailed: jest.Mock
+  let MockConflictResolver: jest.Mock
+  let mockResolve: jest.Mock
+  let run: () => Promise<void>
+
+  beforeEach(async () => {
     jest.clearAllMocks()
-    mockGetInput.mockReset()
-    mockSetOutput.mockReset()
-    mockInfo.mockReset()
-    mockWarning.mockReset()
-    mockSetFailed.mockReset()
-    mockDebug.mockReset()
-    mockError.mockReset()
+    jest.resetModules()
+
+    // Set up mocks
+    mockGetInput = jest.fn()
+    mockSetOutput = jest.fn()
+    mockInfo = jest.fn()
+    mockWarning = jest.fn()
+    mockSetFailed = jest.fn()
+    mockResolve = jest.fn()
+
+    // Mock @actions/core
+    jest.mocked(await import('@actions/core')).getInput = mockGetInput
+    jest.mocked(await import('@actions/core')).setOutput = mockSetOutput
+    jest.mocked(await import('@actions/core')).info = mockInfo
+    jest.mocked(await import('@actions/core')).warning = mockWarning
+    jest.mocked(await import('@actions/core')).setFailed = mockSetFailed
+
+    // Mock ConflictResolver
+    MockConflictResolver = jest.fn(() => ({
+      resolve: mockResolve
+    }))
+    jest.mocked(await import('../src/conflict-resolver.js')).ConflictResolver =
+      MockConflictResolver as never
+
+    // Import the function to test
+    const mainModule = await import('../src/main.js')
+    run = mainModule.run
   })
 
   describe('run', () => {
     it('should resolve conflicts successfully with resolved files', async () => {
       mockGetInput.mockReturnValue('.conflict-resolver.yml')
-
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockResolvedValue({
-          resolvedFiles: ['package.json', 'src/file.ts'],
-          unresolvedFiles: ['src/other.ts']
-        })
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockResolvedValue({
+        resolvedFiles: ['package.json', 'src/file.ts'],
+        unresolvedFiles: ['src/other.ts']
+      })
 
       await run()
 
       expect(mockGetInput).toHaveBeenCalledWith('config-path')
-      expect(MockConflictResolver).toHaveBeenCalledWith('.conflict-resolver.yml')
+      expect(MockConflictResolver).toHaveBeenCalledWith(
+        '.conflict-resolver.yml'
+      )
       expect(mockResolve).toHaveBeenCalled()
 
       expect(mockInfo).toHaveBeenCalledWith('Starting Git Conflict Resolver')
@@ -86,20 +82,10 @@ describe('main', () => {
 
     it('should handle empty config path and use default', async () => {
       mockGetInput.mockReturnValue('')
-
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockResolvedValue({
-          resolvedFiles: [],
-          unresolvedFiles: []
-        })
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockResolvedValue({
+        resolvedFiles: [],
+        unresolvedFiles: []
+      })
 
       await run()
 
@@ -111,20 +97,10 @@ describe('main', () => {
 
     it('should show success message when all conflicts are resolved', async () => {
       mockGetInput.mockReturnValue('.conflict-resolver.yml')
-
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockResolvedValue({
-          resolvedFiles: ['package.json', 'src/file.ts'],
-          unresolvedFiles: []
-        })
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockResolvedValue({
+        resolvedFiles: ['package.json', 'src/file.ts'],
+        unresolvedFiles: []
+      })
 
       await run()
 
@@ -136,20 +112,10 @@ describe('main', () => {
 
     it('should not show any message when no conflicts exist', async () => {
       mockGetInput.mockReturnValue('.conflict-resolver.yml')
-
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockResolvedValue({
-          resolvedFiles: [],
-          unresolvedFiles: []
-        })
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockResolvedValue({
+        resolvedFiles: [],
+        unresolvedFiles: []
+      })
 
       await run()
 
@@ -158,9 +124,7 @@ describe('main', () => {
 
       // Should not call warning or the success message
       const calls = mockInfo.mock.calls
-      expect(calls).not.toContainEqual([
-        'All conflicts resolved successfully!'
-      ])
+      expect(calls).not.toContainEqual(['All conflicts resolved successfully!'])
       expect(mockWarning).not.toHaveBeenCalled()
     })
 
@@ -168,16 +132,7 @@ describe('main', () => {
       mockGetInput.mockReturnValue('.conflict-resolver.yml')
 
       const errorMessage = 'Failed to load config file'
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockRejectedValue(new Error(errorMessage))
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockRejectedValue(new Error(errorMessage))
 
       await run()
 
@@ -186,17 +141,7 @@ describe('main', () => {
 
     it('should handle non-Error objects thrown', async () => {
       mockGetInput.mockReturnValue('.conflict-resolver.yml')
-
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockRejectedValue('String error')
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockRejectedValue('String error')
 
       await run()
 
@@ -207,20 +152,10 @@ describe('main', () => {
 
     it('should handle multiple resolved and unresolved files', async () => {
       mockGetInput.mockReturnValue('custom-config.yml')
-
-      const mockResolve = jest
-        .fn<() => Promise<ResolutionResult>>()
-        .mockResolvedValue({
-          resolvedFiles: ['file1.ts', 'file2.js', 'file3.md'],
-          unresolvedFiles: ['conflict1.ts', 'conflict2.js']
-        })
-
-      MockConflictResolver.mockImplementation(
-        () =>
-          ({
-            resolve: mockResolve
-          })
-      )
+      mockResolve.mockResolvedValue({
+        resolvedFiles: ['file1.ts', 'file2.js', 'file3.md'],
+        unresolvedFiles: ['conflict1.ts', 'conflict2.js']
+      })
 
       await run()
 

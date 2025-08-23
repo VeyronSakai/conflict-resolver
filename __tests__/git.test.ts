@@ -1,9 +1,21 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals'
 import * as exec from '@actions/exec'
-import { GitUtility } from '../src/git.js'
+import type { ExecOptions } from '@actions/exec'
 
+// Mock the modules
 jest.mock('@actions/exec')
 jest.mock('@actions/core')
+jest.mock('fs')
+
+// Import after mocking
+import { GitUtility } from '../src/git.js'
+import * as fs from 'fs'
+
+// Get mocked functions
+const mockExec = exec.exec as jest.MockedFunction<typeof exec.exec>
+const mockExistsSync = fs.existsSync as jest.MockedFunction<
+  typeof fs.existsSync
+>
 
 describe('GitUtility', () => {
   let gitUtility: GitUtility
@@ -25,12 +37,12 @@ UD src/file7.ts
  M src/file8.ts
 ?? src/file9.ts`
 
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockImplementation(
+      mockExec.mockImplementation(
         async (
           cmd: string,
-          args: string[],
-          options: { listeners?: { stdout?: (data: Buffer) => void } }
-        ) => {
+          args?: string[],
+          options?: ExecOptions
+        ): Promise<number> => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from(mockOutput))
           }
@@ -82,12 +94,12 @@ UD src/file7.ts
       const mockOutput = ` M src/file1.ts
 ?? src/file2.ts`
 
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockImplementation(
+      mockExec.mockImplementation(
         async (
           cmd: string,
-          args: string[],
-          options: { listeners?: { stdout?: (data: Buffer) => void } }
-        ) => {
+          args?: string[],
+          options?: ExecOptions
+        ): Promise<number> => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from(mockOutput))
           }
@@ -101,12 +113,12 @@ UD src/file7.ts
     })
 
     it('should handle empty git status output', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockImplementation(
+      mockExec.mockImplementation(
         async (
           cmd: string,
-          args: string[],
-          options: { listeners?: { stdout?: (data: Buffer) => void } }
-        ) => {
+          args?: string[],
+          options?: ExecOptions
+        ): Promise<number> => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from(''))
           }
@@ -122,35 +134,33 @@ UD src/file7.ts
 
   describe('resolveConflict', () => {
     it('should resolve conflict with ours strategy', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockResolvedValue(0)
+      mockExec.mockResolvedValue(0)
 
       await gitUtility.resolveConflict('src/file.ts', 'ours')
 
-      expect(exec.exec).toHaveBeenCalledWith('git', [
+      expect(mockExec).toHaveBeenCalledWith('git', [
         'checkout',
         '--ours',
         'src/file.ts'
       ])
-      expect(exec.exec).toHaveBeenCalledWith('git', ['add', 'src/file.ts'])
+      expect(mockExec).toHaveBeenCalledWith('git', ['add', 'src/file.ts'])
     })
 
     it('should resolve conflict with theirs strategy', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockResolvedValue(0)
+      mockExec.mockResolvedValue(0)
 
       await gitUtility.resolveConflict('src/file.ts', 'theirs')
 
-      expect(exec.exec).toHaveBeenCalledWith('git', [
+      expect(mockExec).toHaveBeenCalledWith('git', [
         'checkout',
         '--theirs',
         'src/file.ts'
       ])
-      expect(exec.exec).toHaveBeenCalledWith('git', ['add', 'src/file.ts'])
+      expect(mockExec).toHaveBeenCalledWith('git', ['add', 'src/file.ts'])
     })
 
     it('should throw error when git checkout fails', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockRejectedValue(
-        new Error('Git checkout failed')
-      )
+      mockExec.mockRejectedValue(new Error('Git checkout failed'))
 
       await expect(
         gitUtility.resolveConflict('src/file.ts', 'ours')
@@ -160,12 +170,12 @@ UD src/file7.ts
 
   describe('checkIfInMergeState', () => {
     it('should return true when in merge state', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockResolvedValue(0)
+      mockExec.mockResolvedValue(0)
 
       const result = await gitUtility.checkIfInMergeState()
 
       expect(result).toBe(true)
-      expect(exec.exec).toHaveBeenCalledWith(
+      expect(mockExec).toHaveBeenCalledWith(
         'git',
         ['rev-parse', '--verify', 'MERGE_HEAD'],
         { silent: true }
@@ -173,9 +183,7 @@ UD src/file7.ts
     })
 
     it('should return false when not in merge state', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockRejectedValue(
-        new Error('Not in merge')
-      )
+      mockExec.mockRejectedValue(new Error('Not in merge'))
 
       const result = await gitUtility.checkIfInMergeState()
 
@@ -185,12 +193,12 @@ UD src/file7.ts
 
   describe('checkIfInRebaseState', () => {
     it('should return true when rebase directories exist', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockImplementation(
+      mockExec.mockImplementation(
         async (
           cmd: string,
-          args: string[],
-          options: { listeners?: { stdout?: (data: Buffer) => void } }
-        ) => {
+          args?: string[],
+          options?: ExecOptions
+        ): Promise<number> => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from('.git'))
           }
@@ -198,8 +206,7 @@ UD src/file7.ts
         }
       )
 
-      const fs = await import('fs')
-      ;(fs.existsSync as jest.Mock) = jest.fn().mockReturnValue(true)
+      mockExistsSync.mockReturnValue(true)
 
       const result = await gitUtility.checkIfInRebaseState()
 
@@ -207,12 +214,12 @@ UD src/file7.ts
     })
 
     it('should return false when rebase directories do not exist', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockImplementation(
+      mockExec.mockImplementation(
         async (
           cmd: string,
-          args: string[],
-          options: { listeners?: { stdout?: (data: Buffer) => void } }
-        ) => {
+          args?: string[],
+          options?: ExecOptions
+        ): Promise<number> => {
           if (options?.listeners?.stdout) {
             options.listeners.stdout(Buffer.from('.git'))
           }
@@ -220,8 +227,7 @@ UD src/file7.ts
         }
       )
 
-      const fs = await import('fs')
-      ;(fs.existsSync as jest.Mock) = jest.fn().mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
 
       const result = await gitUtility.checkIfInRebaseState()
 
@@ -229,9 +235,7 @@ UD src/file7.ts
     })
 
     it('should return false when git rev-parse fails', async () => {
-      ;(exec.exec as jest.MockedFunction<typeof exec.exec>).mockRejectedValue(
-        new Error('Not a git repo')
-      )
+      mockExec.mockRejectedValue(new Error('Not a git repo'))
 
       const result = await gitUtility.checkIfInRebaseState()
 

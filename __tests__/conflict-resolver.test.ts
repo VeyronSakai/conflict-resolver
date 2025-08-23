@@ -1,34 +1,64 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals'
-import { ConflictResolver } from '../src/conflict-resolver.js'
-import { ConfigLoader } from '../src/config.js'
-import { GitUtility } from '../src/git.js'
 
+// Mock the modules
 jest.mock('../src/config.js')
 jest.mock('../src/git.js')
 jest.mock('@actions/core')
 
+// Import after mocking
+import { ConflictResolver } from '../src/conflict-resolver.js'
+import { ConfigLoader } from '../src/config.js'
+import { GitUtility } from '../src/git.js'
+import type { ConflictResolverConfig, ConflictedFile } from '../src/types.js'
+
+const MockedConfigLoader = ConfigLoader as jest.MockedClass<typeof ConfigLoader>
+const MockedGitUtility = GitUtility as jest.MockedClass<typeof GitUtility>
+
 describe('ConflictResolver', () => {
   let resolver: ConflictResolver
-  let mockConfigLoader: jest.Mocked<ConfigLoader>
-  let mockGitUtility: jest.Mocked<GitUtility>
+  let mockLoadConfig: jest.MockedFunction<() => Promise<ConflictResolverConfig>>
+  let mockCheckIfInMergeState: jest.MockedFunction<() => Promise<boolean>>
+  let mockCheckIfInRebaseState: jest.MockedFunction<() => Promise<boolean>>
+  let mockGetConflictedFiles: jest.MockedFunction<
+    () => Promise<ConflictedFile[]>
+  >
+  let mockResolveConflict: jest.MockedFunction<
+    (filePath: string, strategy: 'ours' | 'theirs') => Promise<void>
+  >
 
   beforeEach(() => {
     jest.clearAllMocks()
 
-    resolver = new ConflictResolver('.conflict-resolver.yml')
+    // Create mock implementations
+    mockLoadConfig = jest.fn()
+    mockCheckIfInMergeState = jest.fn()
+    mockCheckIfInRebaseState = jest.fn()
+    mockGetConflictedFiles = jest.fn()
+    mockResolveConflict = jest.fn()
 
-    // Get the mocked instances
-    mockConfigLoader = (
-      resolver as unknown as { configLoader: jest.Mocked<ConfigLoader> }
-    ).configLoader
-    mockGitUtility = (
-      resolver as unknown as { gitUtility: jest.Mocked<GitUtility> }
-    ).gitUtility
+    MockedConfigLoader.mockImplementation(
+      () =>
+        ({
+          loadConfig: mockLoadConfig
+        }) as unknown as ConfigLoader
+    )
+
+    MockedGitUtility.mockImplementation(
+      () =>
+        ({
+          checkIfInMergeState: mockCheckIfInMergeState,
+          checkIfInRebaseState: mockCheckIfInRebaseState,
+          getConflictedFiles: mockGetConflictedFiles,
+          resolveConflict: mockResolveConflict
+        }) as unknown as GitUtility
+    )
+
+    resolver = new ConflictResolver('.conflict-resolver.yml')
   })
 
   describe('resolve', () => {
     it('should resolve conflicts based on matching rules', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [
           { path: '*.json', strategy: 'theirs' },
           {
@@ -39,9 +69,9 @@ describe('ConflictResolver', () => {
         ]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+      mockCheckIfInMergeState.mockResolvedValue(true)
+      mockCheckIfInRebaseState.mockResolvedValue(false)
+      mockGetConflictedFiles.mockResolvedValue([
         {
           path: 'package.json',
           statusCode: 'UU',
@@ -54,26 +84,20 @@ describe('ConflictResolver', () => {
         },
         { path: 'src/other.ts', statusCode: 'AA', conflictType: 'both-added' }
       ])
-      mockGitUtility.resolveConflict = jest.fn().mockResolvedValue(undefined)
+      mockResolveConflict.mockResolvedValue(undefined)
 
       const result = await resolver.resolve()
 
       expect(result.resolvedFiles).toEqual(['package.json', 'src/file.ts'])
       expect(result.unresolvedFiles).toEqual(['src/other.ts'])
 
-      expect(mockGitUtility.resolveConflict).toHaveBeenCalledWith(
-        'package.json',
-        'theirs'
-      )
-      expect(mockGitUtility.resolveConflict).toHaveBeenCalledWith(
-        'src/file.ts',
-        'ours'
-      )
-      expect(mockGitUtility.resolveConflict).toHaveBeenCalledTimes(2)
+      expect(mockResolveConflict).toHaveBeenCalledWith('package.json', 'theirs')
+      expect(mockResolveConflict).toHaveBeenCalledWith('src/file.ts', 'ours')
+      expect(mockResolveConflict).toHaveBeenCalledTimes(2)
     })
 
     it('should handle no config rules', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: []
       })
 
@@ -84,28 +108,28 @@ describe('ConflictResolver', () => {
     })
 
     it('should handle not being in merge or rebase state', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [{ path: '*.json', strategy: 'theirs' }]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
+      mockCheckIfInMergeState.mockResolvedValue(false)
+      mockCheckIfInRebaseState.mockResolvedValue(false)
 
       const result = await resolver.resolve()
 
       expect(result.resolvedFiles).toEqual([])
       expect(result.unresolvedFiles).toEqual([])
-      expect(mockGitUtility.getConflictedFiles).not.toHaveBeenCalled()
+      expect(mockGetConflictedFiles).not.toHaveBeenCalled()
     })
 
     it('should handle no conflicted files', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [{ path: '*.json', strategy: 'theirs' }]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([])
+      mockCheckIfInMergeState.mockResolvedValue(true)
+      mockCheckIfInRebaseState.mockResolvedValue(false)
+      mockGetConflictedFiles.mockResolvedValue([])
 
       const result = await resolver.resolve()
 
@@ -114,22 +138,20 @@ describe('ConflictResolver', () => {
     })
 
     it('should handle resolution failures', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [{ path: '*.json', strategy: 'theirs' }]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+      mockCheckIfInMergeState.mockResolvedValue(true)
+      mockCheckIfInRebaseState.mockResolvedValue(false)
+      mockGetConflictedFiles.mockResolvedValue([
         {
           path: 'package.json',
           statusCode: 'UU',
           conflictType: 'both-modified'
         }
       ])
-      mockGitUtility.resolveConflict = jest
-        .fn()
-        .mockRejectedValue(new Error('Failed to resolve'))
+      mockResolveConflict.mockRejectedValue(new Error('Failed to resolve'))
 
       const result = await resolver.resolve()
 
@@ -138,13 +160,13 @@ describe('ConflictResolver', () => {
     })
 
     it('should match patterns with minimatch', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [{ path: 'src/**/*.ts', strategy: 'ours' }]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+      mockCheckIfInMergeState.mockResolvedValue(true)
+      mockCheckIfInRebaseState.mockResolvedValue(false)
+      mockGetConflictedFiles.mockResolvedValue([
         {
           path: 'src/deep/nested/file.ts',
           statusCode: 'UU',
@@ -157,7 +179,7 @@ describe('ConflictResolver', () => {
         },
         { path: 'src/file.js', statusCode: 'UU', conflictType: 'both-modified' }
       ])
-      mockGitUtility.resolveConflict = jest.fn().mockResolvedValue(undefined)
+      mockResolveConflict.mockResolvedValue(undefined)
 
       const result = await resolver.resolve()
 
@@ -166,52 +188,46 @@ describe('ConflictResolver', () => {
     })
 
     it('should respect conflictType when specified', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [
           { path: '*.ts', strategy: 'ours', conflictType: 'both-modified' },
           { path: '*.ts', strategy: 'theirs', conflictType: 'both-added' }
         ]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+      mockCheckIfInMergeState.mockResolvedValue(true)
+      mockCheckIfInRebaseState.mockResolvedValue(false)
+      mockGetConflictedFiles.mockResolvedValue([
         { path: 'file1.ts', statusCode: 'UU', conflictType: 'both-modified' },
         { path: 'file2.ts', statusCode: 'AA', conflictType: 'both-added' },
         { path: 'file3.ts', statusCode: 'DU', conflictType: 'deleted-by-us' }
       ])
-      mockGitUtility.resolveConflict = jest.fn().mockResolvedValue(undefined)
+      mockResolveConflict.mockResolvedValue(undefined)
 
       const result = await resolver.resolve()
 
       expect(result.resolvedFiles).toEqual(['file1.ts', 'file2.ts'])
       expect(result.unresolvedFiles).toEqual(['file3.ts'])
 
-      expect(mockGitUtility.resolveConflict).toHaveBeenCalledWith(
-        'file1.ts',
-        'ours'
-      )
-      expect(mockGitUtility.resolveConflict).toHaveBeenCalledWith(
-        'file2.ts',
-        'theirs'
-      )
+      expect(mockResolveConflict).toHaveBeenCalledWith('file1.ts', 'ours')
+      expect(mockResolveConflict).toHaveBeenCalledWith('file2.ts', 'theirs')
     })
 
     it('should work in rebase state', async () => {
-      mockConfigLoader.loadConfig = jest.fn().mockResolvedValue({
+      mockLoadConfig.mockResolvedValue({
         rules: [{ path: '*.json', strategy: 'theirs' }]
       })
 
-      mockGitUtility.checkIfInMergeState = jest.fn().mockResolvedValue(false)
-      mockGitUtility.checkIfInRebaseState = jest.fn().mockResolvedValue(true)
-      mockGitUtility.getConflictedFiles = jest.fn().mockResolvedValue([
+      mockCheckIfInMergeState.mockResolvedValue(false)
+      mockCheckIfInRebaseState.mockResolvedValue(true)
+      mockGetConflictedFiles.mockResolvedValue([
         {
           path: 'package.json',
           statusCode: 'UU',
           conflictType: 'both-modified'
         }
       ])
-      mockGitUtility.resolveConflict = jest.fn().mockResolvedValue(undefined)
+      mockResolveConflict.mockResolvedValue(undefined)
 
       const result = await resolver.resolve()
 

@@ -1,9 +1,20 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals'
 import * as fs from 'fs'
-import { ConfigLoader } from '../src/config.js'
 
+// Mock the modules
 jest.mock('fs')
 jest.mock('@actions/core')
+
+// Import after mocking
+import { ConfigLoader } from '../src/config.js'
+
+// Get mocked functions
+const mockExistsSync = fs.existsSync as jest.MockedFunction<
+  typeof fs.existsSync
+>
+const mockReadFileSync = fs.readFileSync as jest.MockedFunction<
+  typeof fs.readFileSync
+>
 
 describe('ConfigLoader', () => {
   beforeEach(() => {
@@ -20,8 +31,8 @@ rules:
     conflictType: "both-modified"
     strategy: "ours"
 `
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      ;(fs.readFileSync as jest.Mock).mockReturnValue(mockConfig)
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(mockConfig)
 
       const loader = new ConfigLoader('.conflict-resolver.yml')
       const config = await loader.loadConfig()
@@ -39,7 +50,7 @@ rules:
     })
 
     it('should return empty rules if config file does not exist', async () => {
-      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
 
       const loader = new ConfigLoader('.conflict-resolver.yml')
       const config = await loader.loadConfig()
@@ -53,8 +64,8 @@ rules:
   - path: "*.json"
     strategy: "invalid"
 `
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      ;(fs.readFileSync as jest.Mock).mockReturnValue(mockConfig)
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(mockConfig)
 
       const loader = new ConfigLoader('.conflict-resolver.yml')
 
@@ -68,8 +79,8 @@ rules:
 rules:
   - strategy: "ours"
 `
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      ;(fs.readFileSync as jest.Mock).mockReturnValue(mockConfig)
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(mockConfig)
 
       const loader = new ConfigLoader('.conflict-resolver.yml')
 
@@ -83,8 +94,8 @@ rules:
 rules:
   - path: "*.json"
 `
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      ;(fs.readFileSync as jest.Mock).mockReturnValue(mockConfig)
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(mockConfig)
 
       const loader = new ConfigLoader('.conflict-resolver.yml')
 
@@ -100,8 +111,8 @@ rules:
     strategy: "ours"
     conflictType: "invalid-type"
 `
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      ;(fs.readFileSync as jest.Mock).mockReturnValue(mockConfig)
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(mockConfig)
 
       const loader = new ConfigLoader('.conflict-resolver.yml')
 
@@ -126,8 +137,8 @@ rules:
     strategy: "ours"
     conflictType: "${conflictType}"
 `
-        ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-        ;(fs.readFileSync as jest.Mock).mockReturnValue(mockConfig)
+        mockExistsSync.mockReturnValue(true)
+        mockReadFileSync.mockReturnValue(mockConfig)
 
         const loader = new ConfigLoader('.conflict-resolver.yml')
         const config = await loader.loadConfig()
