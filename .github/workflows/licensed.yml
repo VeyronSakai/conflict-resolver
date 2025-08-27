@@ -25,6 +25,8 @@ jobs:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         id: setup-node
@@ -39,7 +41,7 @@ jobs:
 
       - name: Setup Ruby
         id: setup-ruby
-        uses: ruby/setup-ruby@829114fc20da43a41d27359103ec7a63020954d4
+        uses: ruby/setup-ruby@efbf473cab83af4468e8606cc33eca9281bb213f
         with:
           ruby-version: ruby
 
