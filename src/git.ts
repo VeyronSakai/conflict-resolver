@@ -1,5 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as fs from 'fs'
+import * as path from 'path'
 import { ConflictedFile, ConflictType, ResolutionStrategy } from './types.js'
 
 export class GitUtility {
@@ -51,7 +53,16 @@ export class GitUtility {
 
     for (const line of lines) {
       const statusCode = line.substring(0, 2)
-      const filePath = line.substring(3).trim()
+      let filePath = line.substring(3).trim()
+
+      // Handle quoted filenames (git quotes filenames with special characters)
+      if (filePath.startsWith('"') && filePath.endsWith('"')) {
+        // Remove quotes and handle basic escape sequences
+        filePath = filePath
+          .slice(1, -1)
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\')
+      }
 
       // Check if this is a conflict (both sides have changes)
       const conflictStatuses = ['UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD']
@@ -114,10 +125,9 @@ export class GitUtility {
       const gitDir = output.trim()
 
       // Check for rebase directories
-      const fs = await import('fs')
       return (
-        fs.existsSync(`${gitDir}/rebase-merge`) ||
-        fs.existsSync(`${gitDir}/rebase-apply`)
+        fs.existsSync(path.join(gitDir, 'rebase-merge')) ||
+        fs.existsSync(path.join(gitDir, 'rebase-apply'))
       )
     } catch {
       return false
