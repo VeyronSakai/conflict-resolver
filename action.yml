@@ -1,23 +1,26 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Git Conflict Resolver
+description: Automatically resolve Git conflicts based on predefined rules
+author: Conflict Resolver Action
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: git-merge
+  color: blue
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
-    required: true
-    default: '1000'
+  config-path:
+    description: Path to the conflict resolution configuration file
+    required: false
+    default: '.github/conflict-resolver.yml'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  resolved-files:
+    description: Comma-separated list of files that were successfully resolved
+  unresolved-files:
+    description:
+      Comma-separated list of files that could not be resolved automatically
 
 runs:
   using: node20

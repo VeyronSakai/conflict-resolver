@@ -102,4 +102,4 @@ __tests__/runner/*
 *.code-workspace
 
 # Serena configuration
-.serena
+.serena/
