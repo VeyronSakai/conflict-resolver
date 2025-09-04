@@ -61,7 +61,7 @@ jobs:
         id: test-action
         uses: ./
         with:
-          config-path: '.conflict-resolver.yml'
+          config-path: '.github/conflict-resolver.yml'
 
       - name: Print Output
         id: output

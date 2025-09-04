@@ -1,0 +1,15 @@
+# Git Conflict Resolver Configuration for CI Tests
+# This file is used for testing the conflict resolver action
+
+rules:
+  # Test rule for package-lock.json
+  - path: 'package-lock.json'
+    strategy: 'theirs'
+
+  # Test rule for generated files
+  - path: '*.generated.ts'
+    strategy: 'ours'
+
+  # Test rule for dist files
+  - path: 'dist/**/*'
+    strategy: 'ours'

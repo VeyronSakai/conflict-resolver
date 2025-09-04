@@ -40,45 +40,84 @@ jobs:
       - name: Resolve conflicts
         uses: VeyronSakai/conflict-resolver@v1
         with:
-          config-path: '.conflict-resolver.yml'
+          config-path: '.github/conflict-resolver.yml'
 ```
 
 ### Configuration File
 
-Create a `.conflict-resolver.yml` file in your repository root:
+Create a `.github/conflict-resolver.yml` file in your repository:
 
 ```yaml
+# Git Conflict Resolver Configuration Example
+# This file defines rules for automatically resolving Git conflicts
+
 rules:
-  # Always use theirs for package lock files
+  # Always use theirs for package-lock.json
+  # This is useful when you want to accept incoming changes for dependency lock files
   - path: 'package-lock.json'
     strategy: 'theirs'
 
+  # Always use theirs for yarn.lock
   - path: 'yarn.lock'
     strategy: 'theirs'
 
-  # Always use ours for generated files
+  # Always use ours for auto-generated files
   - path: '*.generated.ts'
     strategy: 'ours'
 
+  - path: '*.generated.js'
+    strategy: 'ours'
+
+  # For build output directories, always use ours
   - path: 'dist/**/*'
     strategy: 'ours'
 
-  # Use theirs for test files when both modified
-  - path: '**/*.test.ts'
+  - path: 'build/**/*'
+    strategy: 'ours'
+
+  # Example with conflictType specification
+  # Only apply this rule when both sides modified the file
+  - path: 'src/**/*.test.ts'
     conflictType: 'both-modified'
     strategy: 'theirs'
 
-  # Use theirs for documentation when both added
+  # Another example with conflictType
+  # When a file is added by both sides, prefer theirs
   - path: 'docs/**/*.md'
     conflictType: 'both-added'
     strategy: 'theirs'
+
+  # Configuration files - be careful with these
+  # You might want to manually resolve conflicts in config files
+  # Uncomment if you want automatic resolution:
+  # - path: ".github/workflows/*.yml"
+  #   strategy: "theirs"
+
+  # Database migration files - usually want to keep both
+  # This example shows preferring 'ours' for migrations
+  # - path: "migrations/*.sql"
+  #   conflictType: "both-added"
+  #   strategy: "ours"
+# Notes:
+# - Rules are evaluated in order. The first matching rule wins.
+# - 'path' supports glob patterns (e.g., *.js, src/**/*.ts)
+# - 'strategy' must be either 'ours' or 'theirs'
+# - 'conflictType' is optional. If not specified, the rule applies to all conflict types.
+# - Valid conflictType values:
+#   - 'both-modified' (UU): Both sides modified the file
+#   - 'both-added' (AA): Both sides added the same file
+#   - 'both-deleted' (DD): Both sides deleted the file
+#   - 'added-by-us' (AU): We added, they modified
+#   - 'added-by-them' (UA): They added, we modified
+#   - 'deleted-by-us' (DU): We deleted, they modified
+#   - 'deleted-by-them' (UD): They deleted, we modified
 ```
 
 ## Inputs
 
-| Name          | Description                                        | Required | Default                  |
-| ------------- | -------------------------------------------------- | -------- | ------------------------ |
-| `config-path` | Path to the conflict resolution configuration file | No       | `.conflict-resolver.yml` |
+| Name          | Description                                        | Required | Default                         |
+| ------------- | -------------------------------------------------- | -------- | ------------------------------- |
+| `config-path` | Path to the conflict resolution configuration file | No       | `.github/conflict-resolver.yml` |
 
 ## Outputs
 

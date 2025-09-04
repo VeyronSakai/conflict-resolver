@@ -12,7 +12,7 @@ inputs:
   config-path:
     description: Path to the conflict resolution configuration file
     required: false
-    default: '.conflict-resolver.yml'
+    default: '.github/conflict-resolver.yml'
 
 # Define your outputs here.
 outputs:
