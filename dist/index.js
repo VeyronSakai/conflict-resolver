@@ -1,8 +1,9 @@
 import require$$0 from 'os';
 import require$$0$1 from 'crypto';
-import * as require$$1 from 'fs';
-import require$$1__default from 'fs';
-import require$$1$5 from 'path';
+import * as fs from 'fs';
+import fs__default from 'fs';
+import * as require$$1 from 'path';
+import require$$1__default from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
 import require$$0$4 from 'net';
@@ -223,7 +224,7 @@ function requireFileCommand () {
 	// We use any as a valid input type
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	const crypto = __importStar(require$$0$1);
-	const fs = __importStar(require$$1__default);
+	const fs = __importStar(fs__default);
 	const os = __importStar(require$$0);
 	const utils_1 = requireUtils$1();
 	function issueFileCommand(command, message) {
@@ -25201,7 +25202,7 @@ function requireSummary () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
 		const os_1 = require$$0;
-		const fs_1 = require$$1__default;
+		const fs_1 = fs__default;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
 		exports.SUMMARY_DOCS_URL = 'https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary';
@@ -25507,7 +25508,7 @@ function requirePathUtils () {
 	};
 	Object.defineProperty(pathUtils, "__esModule", { value: true });
 	pathUtils.toPlatformPath = pathUtils.toWin32Path = pathUtils.toPosixPath = void 0;
-	const path = __importStar(require$$1$5);
+	const path = __importStar(require$$1__default);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -25593,8 +25594,8 @@ function requireIoUtil () {
 		var _a;
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
-		const fs = __importStar(require$$1__default);
-		const path = __importStar(require$$1$5);
+		const fs = __importStar(fs__default);
+		const path = __importStar(require$$1__default);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
@@ -25784,7 +25785,7 @@ function requireIo () {
 	Object.defineProperty(io, "__esModule", { value: true });
 	io.findInPath = io.which = io.mkdirP = io.rmRF = io.mv = io.cp = void 0;
 	const assert_1 = require$$0$3;
-	const path = __importStar(require$$1$5);
+	const path = __importStar(require$$1__default);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -26092,7 +26093,7 @@ function requireToolrunner () {
 	const os = __importStar(require$$0);
 	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$2);
-	const path = __importStar(require$$1$5);
+	const path = __importStar(require$$1__default);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
 	const timers_1 = require$$6$1;
@@ -26936,7 +26937,7 @@ function requireCore () {
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$1();
 		const os = __importStar(require$$0);
-		const path = __importStar(require$$1$5);
+		const path = __importStar(require$$1__default);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -32074,11 +32075,11 @@ class ConfigLoader {
     }
     async loadConfig() {
         try {
-            if (!require$$1.existsSync(this.configPath)) {
+            if (!fs.existsSync(this.configPath)) {
                 coreExports.warning(`Config file not found at ${this.configPath}. No automatic conflict resolution will be performed.`);
                 return { rules: [] };
             }
-            const configContent = require$$1.readFileSync(this.configPath, 'utf8');
+            const configContent = fs.readFileSync(this.configPath, 'utf8');
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
@@ -32173,7 +32174,15 @@ class GitUtility {
             .filter((line) => line.length > 0);
         for (const line of lines) {
             const statusCode = line.substring(0, 2);
-            const filePath = line.substring(3).trim();
+            let filePath = line.substring(3).trim();
+            // Handle quoted filenames (git quotes filenames with special characters)
+            if (filePath.startsWith('"') && filePath.endsWith('"')) {
+                // Remove quotes and handle basic escape sequences
+                filePath = filePath
+                    .slice(1, -1)
+                    .replace(/\\"/g, '"')
+                    .replace(/\\\\/g, '\\');
+            }
             // Check if this is a conflict (both sides have changes)
             const conflictStatuses = ['UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'];
             if (conflictStatuses.includes(statusCode)) {
@@ -32225,9 +32234,8 @@ class GitUtility {
             await execExports.exec('git', ['rev-parse', '--git-dir'], options);
             const gitDir = output.trim();
             // Check for rebase directories
-            const fs = await import('fs');
-            return (fs.existsSync(`${gitDir}/rebase-merge`) ||
-                fs.existsSync(`${gitDir}/rebase-apply`));
+            return (fs.existsSync(require$$1.join(gitDir, 'rebase-merge')) ||
+                fs.existsSync(require$$1.join(gitDir, 'rebase-apply')));
         }
         catch {
             return false;
