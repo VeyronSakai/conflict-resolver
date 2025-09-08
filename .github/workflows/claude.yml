@@ -33,7 +33,7 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@a6888c03f22170d00d2a92fa2317584ca7d5e108
+        uses: anthropics/claude-code-action@fd2c17f101639b10696381c1fd85fa735239090a
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # This is an optional setting that allows Claude to read CI results on PRs
