@@ -1,5 +1,8 @@
 import * as core from '@actions/core'
-import { ConflictResolver } from './conflict-resolver.js'
+import { ActionHandler } from './presentations/github-actions/actionHandler.js'
+import { ConflictResolver } from './use-cases/conflictResolver.js'
+import { YamlConfigRepositoryImpl } from './infrastructures/config/yamlConfigRepositoryImpl.js'
+import { GitRepositoryImpl } from './infrastructures/git/gitRepositoryImpl.js'
 
 /**
  * The main function for the action.
@@ -7,30 +10,17 @@ import { ConflictResolver } from './conflict-resolver.js'
  * @returns Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
-  try {
-    const configPath = core.getInput('config-path')
+  // Dependency Injection Container
+  const configPath = core.getInput('config-path') || '.conflict-resolver.yml'
 
-    core.info('Starting Git Conflict Resolver')
-    core.info(
-      `Config path: ${configPath || '.conflict-resolver.yml (default)'}`
-    )
+  // Create infrastructure implementations
+  const configRepository = new YamlConfigRepositoryImpl(configPath)
+  const gitRepository = new GitRepositoryImpl()
 
-    const resolver = new ConflictResolver(configPath)
-    const result = await resolver.resolve()
+  // Create use-case with injected dependencies
+  const conflictResolver = new ConflictResolver(configRepository, gitRepository)
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('resolved-files', result.resolvedFiles.join(','))
-    core.setOutput('unresolved-files', result.unresolvedFiles.join(','))
-
-    if (result.unresolvedFiles.length > 0) {
-      core.warning(
-        `${result.unresolvedFiles.length} files still have conflicts and require manual resolution`
-      )
-    } else if (result.resolvedFiles.length > 0) {
-      core.info('All conflicts resolved successfully!')
-    }
-  } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
-  }
+  // Create and run presentation layer
+  const actionHandler = new ActionHandler(conflictResolver)
+  await actionHandler.run()
 }

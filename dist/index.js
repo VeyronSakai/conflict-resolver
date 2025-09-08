@@ -2,12 +2,11 @@ import require$$0 from 'os';
 import require$$0$1 from 'crypto';
 import * as fs from 'fs';
 import fs__default from 'fs';
-import * as require$$1 from 'path';
-import require$$1__default from 'path';
+import require$$1$4 from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
 import require$$0$4 from 'net';
-import require$$1$1 from 'tls';
+import require$$1 from 'tls';
 import require$$4 from 'events';
 import require$$0$3 from 'assert';
 import require$$0$2 from 'util';
@@ -16,14 +15,14 @@ import require$$7 from 'buffer';
 import require$$8 from 'querystring';
 import require$$14 from 'stream/web';
 import require$$0$7 from 'node:stream';
-import require$$1$2 from 'node:util';
+import require$$1$1 from 'node:util';
 import require$$0$6 from 'node:events';
 import require$$0$8 from 'worker_threads';
 import require$$2$1 from 'perf_hooks';
 import require$$5 from 'util/types';
 import require$$4$1 from 'async_hooks';
-import require$$1$3 from 'console';
-import require$$1$4 from 'url';
+import require$$1$2 from 'console';
+import require$$1$3 from 'url';
 import require$$3$1 from 'zlib';
 import require$$6 from 'string_decoder';
 import require$$0$9 from 'diagnostics_channel';
@@ -374,7 +373,7 @@ var hasRequiredTunnel$1;
 function requireTunnel$1 () {
 	if (hasRequiredTunnel$1) return tunnel$1;
 	hasRequiredTunnel$1 = 1;
-	var tls = require$$1$1;
+	var tls = require$$1;
 	var http = require$$2;
 	var https = require$$3;
 	var events = require$$4;
@@ -1756,7 +1755,7 @@ function requireSbmh () {
 	 * by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
 	 */
 	const EventEmitter = require$$0$6.EventEmitter;
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 
 	function SBMH (needle) {
 	  if (typeof needle === 'string') {
@@ -1965,7 +1964,7 @@ function requirePartStream () {
 	if (hasRequiredPartStream) return PartStream_1;
 	hasRequiredPartStream = 1;
 
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 	const ReadableStream = require$$0$7.Readable;
 
 	function PartStream (opts) {
@@ -2011,7 +2010,7 @@ function requireHeaderParser () {
 	hasRequiredHeaderParser = 1;
 
 	const EventEmitter = require$$0$6.EventEmitter;
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 	const getLimit = requireGetLimit();
 
 	const StreamSearch = requireSbmh();
@@ -2119,7 +2118,7 @@ function requireDicer () {
 	hasRequiredDicer = 1;
 
 	const WritableStream = require$$0$7.Writable;
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 
 	const StreamSearch = requireSbmh();
 
@@ -2696,7 +2695,7 @@ function requireMultipart () {
 	//     -- this will require modifications to utils.parseParams
 
 	const { Readable } = require$$0$7;
-	const { inherits } = require$$1$2;
+	const { inherits } = require$$1$1;
 
 	const Dicer = requireDicer();
 
@@ -3262,7 +3261,7 @@ function requireMain () {
 	hasRequiredMain = 1;
 
 	const WritableStream = require$$0$7.Writable;
-	const { inherits } = require$$1$2;
+	const { inherits } = require$$1$1;
 	const Dicer = requireDicer();
 
 	const MultipartParser = requireMultipart();
@@ -8086,7 +8085,7 @@ function requireConnect () {
 	    let socket;
 	    if (protocol === 'https:') {
 	      if (!tls) {
-	        tls = require$$1$1;
+	        tls = require$$1;
 	      }
 	      servername = servername || options.servername || util.getServerName(host) || null;
 
@@ -14110,7 +14109,7 @@ function requirePendingInterceptorsFormatter () {
 	hasRequiredPendingInterceptorsFormatter = 1;
 
 	const { Transform } = require$$0$5;
-	const { Console } = require$$1$3;
+	const { Console } = require$$1$2;
 
 	/**
 	 * Gets the output of `console.table(…)` as a string.
@@ -14337,7 +14336,7 @@ function requireProxyAgent () {
 	hasRequiredProxyAgent = 1;
 
 	const { kProxy, kClose, kDestroy, kInterceptors } = requireSymbols$4();
-	const { URL } = require$$1$4;
+	const { URL } = require$$1$3;
 	const Agent = requireAgent();
 	const Pool = requirePool();
 	const DispatcherBase = requireDispatcherBase();
@@ -25508,7 +25507,7 @@ function requirePathUtils () {
 	};
 	Object.defineProperty(pathUtils, "__esModule", { value: true });
 	pathUtils.toPlatformPath = pathUtils.toWin32Path = pathUtils.toPosixPath = void 0;
-	const path = __importStar(require$$1__default);
+	const path = __importStar(require$$1$4);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -25595,7 +25594,7 @@ function requireIoUtil () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
 		const fs = __importStar(fs__default);
-		const path = __importStar(require$$1__default);
+		const path = __importStar(require$$1$4);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
@@ -25785,7 +25784,7 @@ function requireIo () {
 	Object.defineProperty(io, "__esModule", { value: true });
 	io.findInPath = io.which = io.mkdirP = io.rmRF = io.mv = io.cp = void 0;
 	const assert_1 = require$$0$3;
-	const path = __importStar(require$$1__default);
+	const path = __importStar(require$$1$4);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -26093,7 +26092,7 @@ function requireToolrunner () {
 	const os = __importStar(require$$0);
 	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$2);
-	const path = __importStar(require$$1__default);
+	const path = __importStar(require$$1$4);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
 	const timers_1 = require$$6$1;
@@ -26937,7 +26936,7 @@ function requireCore () {
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$1();
 		const os = __importStar(require$$0);
-		const path = __importStar(require$$1__default);
+		const path = __importStar(require$$1$4);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -27247,6 +27246,48 @@ function requireCore () {
 }
 
 var coreExports = requireCore();
+
+class ActionHandler {
+    conflictResolver;
+    constructor(conflictResolver) {
+        this.conflictResolver = conflictResolver;
+    }
+    async run() {
+        try {
+            coreExports.info('Starting Git Conflict Resolver');
+            const configPath = coreExports.getInput('config-path');
+            if (configPath) {
+                coreExports.info(`Config path: ${configPath}`);
+            }
+            else {
+                coreExports.info('Config path: .conflict-resolver.yml (default)');
+            }
+            const result = await this.conflictResolver.resolve();
+            this.setOutputs(result.resolvedFiles, result.unresolvedFiles);
+            this.logFinalStatus(result.resolvedFiles, result.unresolvedFiles);
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                coreExports.setFailed(error.message);
+            }
+            else {
+                coreExports.setFailed('An unknown error occurred');
+            }
+        }
+    }
+    setOutputs(resolvedFiles, unresolvedFiles) {
+        coreExports.setOutput('resolved-files', resolvedFiles.join(','));
+        coreExports.setOutput('unresolved-files', unresolvedFiles.join(','));
+    }
+    logFinalStatus(resolvedFiles, unresolvedFiles) {
+        if (unresolvedFiles.length > 0) {
+            coreExports.warning(`${unresolvedFiles.length} files still have conflicts and require manual resolution`);
+        }
+        else if (resolvedFiles.length > 0) {
+            coreExports.info('All conflicts resolved successfully!');
+        }
+    }
+}
 
 const balanced = (a, b, str) => {
     const ma = a instanceof RegExp ? maybeMatch(a, str) : a;
@@ -29266,6 +29307,92 @@ minimatch.AST = AST;
 minimatch.Minimatch = Minimatch;
 minimatch.escape = escape;
 minimatch.unescape = unescape;
+
+var ResolutionStrategy;
+(function (ResolutionStrategy) {
+    ResolutionStrategy["Ours"] = "ours";
+    ResolutionStrategy["Theirs"] = "theirs";
+    ResolutionStrategy["Manual"] = "manual";
+})(ResolutionStrategy || (ResolutionStrategy = {}));
+
+class ConflictAnalyzer {
+    findMatchingRule(file, rules) {
+        for (const rule of rules) {
+            if (minimatch(file.path, rule.filePattern)) {
+                if (rule.matches(file.path, file.conflictType)) {
+                    return rule;
+                }
+            }
+        }
+        return undefined;
+    }
+    determineStrategy(file, rules) {
+        const matchingRule = this.findMatchingRule(file, rules);
+        return matchingRule?.strategy ?? ResolutionStrategy.Manual;
+    }
+}
+
+class ConflictResolver {
+    configRepository;
+    gitRepository;
+    conflictAnalyzer;
+    constructor(configRepository, gitRepository) {
+        this.configRepository = configRepository;
+        this.gitRepository = gitRepository;
+        this.conflictAnalyzer = new ConflictAnalyzer();
+    }
+    async resolve() {
+        const rules = await this.configRepository.loadRules();
+        const conflictedFiles = await this.gitRepository.getConflictedFiles();
+        if (conflictedFiles.length === 0) {
+            coreExports.info('No merge conflicts detected');
+            return { resolvedFiles: [], unresolvedFiles: [] };
+        }
+        coreExports.info(`Found ${conflictedFiles.length} conflicted files`);
+        const resolvedFiles = [];
+        const unresolvedFiles = [];
+        for (const file of conflictedFiles) {
+            const strategy = this.conflictAnalyzer.determineStrategy(file, rules);
+            const matchingRule = this.conflictAnalyzer.findMatchingRule(file, rules);
+            if (matchingRule?.description) {
+                coreExports.info(`Applying rule: ${matchingRule.description}`);
+            }
+            if (strategy === ResolutionStrategy.Manual) {
+                coreExports.warning(`${file.path} requires manual resolution (conflict type: ${file.conflictType})`);
+                unresolvedFiles.push(file.path);
+            }
+            else {
+                try {
+                    await this.gitRepository.resolveConflict(file, strategy);
+                    await this.gitRepository.stageFile(file.path);
+                    resolvedFiles.push(file.path);
+                    coreExports.info(`✓ Resolved ${file.path} using ${strategy} strategy`);
+                }
+                catch (error) {
+                    coreExports.error(`Failed to resolve ${file.path}: ${error}`);
+                    unresolvedFiles.push(file.path);
+                }
+            }
+        }
+        this.logSummary(resolvedFiles, unresolvedFiles);
+        return { resolvedFiles, unresolvedFiles };
+    }
+    logSummary(resolvedFiles, unresolvedFiles) {
+        coreExports.info('=== Conflict Resolution Summary ===');
+        if (resolvedFiles.length > 0) {
+            coreExports.info(`✓ Automatically resolved: ${resolvedFiles.length} files`);
+            for (const file of resolvedFiles) {
+                coreExports.info(`  - ${file}`);
+            }
+        }
+        if (unresolvedFiles.length > 0) {
+            coreExports.warning(`⚠ Manual resolution required: ${unresolvedFiles.length} files`);
+            for (const file of unresolvedFiles) {
+                coreExports.warning(`  - ${file}`);
+            }
+        }
+    }
+}
 
 /*! js-yaml 4.1.0 https://github.com/nodeca/js-yaml @license MIT */
 function isNothing(subject) {
@@ -32068,90 +32195,219 @@ var loader = {
 };
 var load                = loader.load;
 
-class ConfigLoader {
-    configPath;
-    constructor(configPath) {
-        this.configPath = configPath || '.conflict-resolver.yml';
+class ConflictRule {
+    filePattern;
+    conflictType;
+    strategy;
+    description;
+    constructor(filePattern, conflictType, strategy = ResolutionStrategy.Manual, description) {
+        this.filePattern = filePattern;
+        this.conflictType = conflictType;
+        this.strategy = strategy;
+        this.description = description;
     }
-    async loadConfig() {
+    matches(filePath, conflictType) {
+        if (this.conflictType && this.conflictType !== conflictType) {
+            return false;
+        }
+        return true;
+    }
+}
+
+class YamlConfigRepositoryImpl {
+    configPath;
+    constructor(configPath = '.conflict-resolver.yml') {
+        this.configPath = configPath;
+    }
+    async loadRules() {
         try {
             if (!fs.existsSync(this.configPath)) {
                 coreExports.warning(`Config file not found at ${this.configPath}. No automatic conflict resolution will be performed.`);
-                return { rules: [] };
+                return [];
             }
             const configContent = fs.readFileSync(this.configPath, 'utf8');
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
-            return config;
+            return config.rules.map((rule) => new ConflictRule(rule.file_pattern, rule.conflict_type, this.parseStrategy(rule.strategy), rule.description));
         }
         catch (error) {
-            if (error instanceof Error) {
-                coreExports.error(`Failed to load config: ${error.message}`);
-            }
-            throw error;
+            coreExports.error(`Failed to load config: ${error}`);
+            throw new Error(`Configuration loading failed: ${error}`);
         }
     }
     validateConfig(config) {
         if (!config.rules || !Array.isArray(config.rules)) {
             throw new Error('Config must contain a "rules" array');
         }
-        config.rules.forEach((rule, index) => {
-            this.validateRule(rule, index);
-        });
-    }
-    validateRule(rule, index) {
-        if (!rule.path) {
-            throw new Error(`Rule at index ${index} must have a "path" field`);
-        }
-        if (!rule.strategy) {
-            throw new Error(`Rule at index ${index} must have a "strategy" field`);
-        }
-        if (rule.strategy !== 'ours' && rule.strategy !== 'theirs') {
-            throw new Error(`Rule at index ${index}: strategy must be either "ours" or "theirs"`);
-        }
-        if (rule.conflictType) {
-            const validTypes = [
-                'both-modified',
-                'both-added',
-                'both-deleted',
-                'added-by-us',
-                'added-by-them',
-                'deleted-by-us',
-                'deleted-by-them'
-            ];
-            if (!validTypes.includes(rule.conflictType)) {
-                throw new Error(`Rule at index ${index}: invalid conflictType "${rule.conflictType}"`);
+        for (const rule of config.rules) {
+            if (!rule.file_pattern) {
+                throw new Error('Each rule must have a "file_pattern" field');
             }
+            if (!rule.strategy) {
+                throw new Error('Each rule must have a "strategy" field');
+            }
+            if (!['ours', 'theirs', 'manual'].includes(rule.strategy)) {
+                throw new Error(`Invalid strategy "${rule.strategy}". Must be "ours", "theirs", or "manual"`);
+            }
+        }
+    }
+    parseStrategy(strategy) {
+        switch (strategy) {
+            case 'ours':
+                return ResolutionStrategy.Ours;
+            case 'theirs':
+                return ResolutionStrategy.Theirs;
+            case 'manual':
+                return ResolutionStrategy.Manual;
+            default:
+                throw new Error(`Invalid strategy: ${strategy}`);
         }
     }
 }
 
 var execExports = requireExec();
 
-class GitUtility {
-    statusToConflictType(statusCode) {
-        switch (statusCode) {
-            case 'UU':
-                return 'both-modified';
-            case 'AA':
-                return 'both-added';
-            case 'DD':
-                return 'both-deleted';
-            case 'AU':
-                return 'added-by-us';
-            case 'UA':
-                return 'added-by-them';
-            case 'DU':
-                return 'deleted-by-us';
-            case 'UD':
-                return 'deleted-by-them';
-            default:
-                return undefined;
+var ConflictType;
+(function (ConflictType) {
+    ConflictType["ModifiedModified"] = "modified-modified";
+    ConflictType["DeletedModified"] = "deleted-modified";
+    ConflictType["ModifiedDeleted"] = "modified-deleted";
+    ConflictType["AddedAdded"] = "added-added";
+    ConflictType["AddedModified"] = "added-modified";
+    ConflictType["ModifiedAdded"] = "modified-added";
+})(ConflictType || (ConflictType = {}));
+
+class ConflictedFile {
+    path;
+    conflictType;
+    constructor(path, conflictType) {
+        this.path = path;
+        this.conflictType = conflictType;
+    }
+    isModified() {
+        return (this.conflictType === ConflictType.ModifiedModified ||
+            this.conflictType === ConflictType.AddedModified ||
+            this.conflictType === ConflictType.ModifiedAdded);
+    }
+    isDeleted() {
+        return (this.conflictType === ConflictType.DeletedModified ||
+            this.conflictType === ConflictType.ModifiedDeleted);
+    }
+    isAdded() {
+        return this.conflictType === ConflictType.AddedAdded;
+    }
+}
+
+class GitRepositoryImpl {
+    async getConflictedFiles() {
+        const output = await this.execGitCommand([
+            'diff',
+            '--name-only',
+            '--diff-filter=U'
+        ]);
+        if (!output.trim()) {
+            return [];
+        }
+        const filePaths = output.trim().split('\n');
+        const conflictedFiles = [];
+        for (const filePath of filePaths) {
+            const conflictType = await this.detectConflictType(filePath);
+            conflictedFiles.push(new ConflictedFile(filePath, conflictType));
+        }
+        return conflictedFiles;
+    }
+    async resolveConflict(file, strategy) {
+        if (strategy === ResolutionStrategy.Manual) {
+            coreExports.info(`Skipping ${file.path} - requires manual resolution`);
+            return;
+        }
+        if (file.isDeleted()) {
+            await this.handleDeletedConflict(file, strategy);
+        }
+        else if (file.isAdded()) {
+            await this.handleAddedConflict(file, strategy);
+        }
+        else {
+            await this.handleModifiedConflict(file, strategy);
         }
     }
-    async getConflictedFiles() {
-        const conflictedFiles = [];
+    async stageFile(filePath) {
+        await this.execGitCommand(['add', filePath]);
+    }
+    async commitChanges(message) {
+        await this.execGitCommand(['commit', '-m', message]);
+    }
+    async detectConflictType(filePath) {
+        const diffOutput = await this.execGitCommand(['diff', '--cc', filePath]);
+        const hasOurs = diffOutput.includes('++<<<<<<< HEAD');
+        const hasTheirs = diffOutput.includes('++=======');
+        const statusOutput = await this.execGitCommand([
+            'status',
+            '--porcelain',
+            filePath
+        ]);
+        if (statusOutput.includes('DD')) {
+            return ConflictType.DeletedModified;
+        }
+        else if (statusOutput.includes('AU')) {
+            return ConflictType.AddedModified;
+        }
+        else if (statusOutput.includes('UA')) {
+            return ConflictType.ModifiedAdded;
+        }
+        else if (statusOutput.includes('AA')) {
+            return ConflictType.AddedAdded;
+        }
+        else if (hasOurs && !hasTheirs) {
+            return ConflictType.ModifiedDeleted;
+        }
+        else {
+            return ConflictType.ModifiedModified;
+        }
+    }
+    async handleDeletedConflict(file, strategy) {
+        if (file.conflictType === ConflictType.DeletedModified) {
+            if (strategy === ResolutionStrategy.Ours) {
+                await this.execGitCommand(['rm', file.path]);
+                coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
+            }
+            else {
+                await this.execGitCommand(['add', file.path]);
+                coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
+            }
+        }
+        else if (file.conflictType === ConflictType.ModifiedDeleted) {
+            if (strategy === ResolutionStrategy.Ours) {
+                await this.execGitCommand(['add', file.path]);
+                coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
+            }
+            else {
+                await this.execGitCommand(['rm', file.path]);
+                coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
+            }
+        }
+    }
+    async handleAddedConflict(file, strategy) {
+        const content = await this.getFileContent(file.path, strategy);
+        fs.writeFileSync(file.path, content);
+        await this.execGitCommand(['add', file.path]);
+        coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
+    }
+    async handleModifiedConflict(file, strategy) {
+        await this.execGitCommand(['checkout', `--${strategy}`, file.path]);
+        await this.execGitCommand(['add', file.path]);
+        coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
+    }
+    async getFileContent(filePath, strategy) {
+        if (strategy === ResolutionStrategy.Ours) {
+            return await this.execGitCommand(['show', `:2:${filePath}`]);
+        }
+        else {
+            return await this.execGitCommand(['show', `:3:${filePath}`]);
+        }
+    }
+    async execGitCommand(args) {
         let output = '';
         const options = {
             listeners: {
@@ -32161,175 +32417,11 @@ class GitUtility {
             },
             silent: true
         };
-        try {
-            await execExports.exec('git', ['status', '--porcelain'], options);
+        const exitCode = await execExports.exec('git', args, options);
+        if (exitCode !== 0) {
+            throw new Error(`Git command failed: git ${args.join(' ')}`);
         }
-        catch (error) {
-            coreExports.error('Failed to get git status');
-            throw error;
-        }
-        const lines = output
-            .trim()
-            .split('\n')
-            .filter((line) => line.length > 0);
-        for (const line of lines) {
-            const statusCode = line.substring(0, 2);
-            let filePath = line.substring(3).trim();
-            // Handle quoted filenames (git quotes filenames with special characters)
-            if (filePath.startsWith('"') && filePath.endsWith('"')) {
-                // Remove quotes and handle basic escape sequences
-                filePath = filePath
-                    .slice(1, -1)
-                    .replace(/\\"/g, '"')
-                    .replace(/\\\\/g, '\\');
-            }
-            // Check if this is a conflict (both sides have changes)
-            const conflictStatuses = ['UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'];
-            if (conflictStatuses.includes(statusCode)) {
-                conflictedFiles.push({
-                    path: filePath,
-                    statusCode,
-                    conflictType: this.statusToConflictType(statusCode)
-                });
-            }
-        }
-        return conflictedFiles;
-    }
-    async resolveConflict(filePath, strategy) {
-        coreExports.info(`Resolving conflict in ${filePath} using ${strategy} strategy`);
-        try {
-            // Use git checkout with --ours or --theirs flag
-            await execExports.exec('git', ['checkout', `--${strategy}`, filePath]);
-            // Stage the resolved file
-            await execExports.exec('git', ['add', filePath]);
-            coreExports.info(`Successfully resolved ${filePath}`);
-        }
-        catch (error) {
-            coreExports.error(`Failed to resolve conflict in ${filePath}`);
-            throw error;
-        }
-    }
-    async checkIfInMergeState() {
-        try {
-            await execExports.exec('git', ['rev-parse', '--verify', 'MERGE_HEAD'], {
-                silent: true
-            });
-            return true;
-        }
-        catch {
-            return false;
-        }
-    }
-    async checkIfInRebaseState() {
-        try {
-            let output = '';
-            const options = {
-                listeners: {
-                    stdout: (data) => {
-                        output += data.toString();
-                    }
-                },
-                silent: true
-            };
-            await execExports.exec('git', ['rev-parse', '--git-dir'], options);
-            const gitDir = output.trim();
-            // Check for rebase directories
-            return (fs.existsSync(require$$1.join(gitDir, 'rebase-merge')) ||
-                fs.existsSync(require$$1.join(gitDir, 'rebase-apply')));
-        }
-        catch {
-            return false;
-        }
-    }
-}
-
-class ConflictResolver {
-    configLoader;
-    gitUtility;
-    constructor(configPath) {
-        this.configLoader = new ConfigLoader(configPath);
-        this.gitUtility = new GitUtility();
-    }
-    async resolve() {
-        const config = await this.configLoader.loadConfig();
-        if (config.rules.length === 0) {
-            coreExports.warning('No conflict resolution rules configured');
-            return { resolvedFiles: [], unresolvedFiles: [] };
-        }
-        // Check if we're in a merge or rebase state
-        const inMerge = await this.gitUtility.checkIfInMergeState();
-        const inRebase = await this.gitUtility.checkIfInRebaseState();
-        if (!inMerge && !inRebase) {
-            coreExports.info('Not in a merge or rebase state. No conflicts to resolve.');
-            return { resolvedFiles: [], unresolvedFiles: [] };
-        }
-        // Get conflicted files
-        const conflictedFiles = await this.gitUtility.getConflictedFiles();
-        if (conflictedFiles.length === 0) {
-            coreExports.info('No conflicted files found');
-            return { resolvedFiles: [], unresolvedFiles: [] };
-        }
-        coreExports.info(`Found ${conflictedFiles.length} conflicted files`);
-        const resolvedFiles = [];
-        const unresolvedFiles = [];
-        // Process each conflicted file
-        for (const file of conflictedFiles) {
-            const matchingRule = this.findMatchingRule(file, config.rules);
-            if (matchingRule) {
-                try {
-                    await this.gitUtility.resolveConflict(file.path, matchingRule.strategy);
-                    resolvedFiles.push(file.path);
-                    coreExports.info(`✓ Resolved: ${file.path} (${file.conflictType}) using ${matchingRule.strategy}`);
-                }
-                catch (error) {
-                    unresolvedFiles.push(file.path);
-                    coreExports.warning(`✗ Failed to resolve: ${file.path}`);
-                    if (error instanceof Error) {
-                        coreExports.debug(error.message);
-                    }
-                }
-            }
-            else {
-                unresolvedFiles.push(file.path);
-                coreExports.info(`⊘ No matching rule for: ${file.path} (${file.conflictType})`);
-            }
-        }
-        // Summary
-        coreExports.info('');
-        coreExports.info('=== Conflict Resolution Summary ===');
-        coreExports.info(`Resolved: ${resolvedFiles.length} files`);
-        coreExports.info(`Unresolved: ${unresolvedFiles.length} files`);
-        if (resolvedFiles.length > 0) {
-            coreExports.info('');
-            coreExports.info('Resolved files:');
-            resolvedFiles.forEach((file) => coreExports.info(`  - ${file}`));
-        }
-        if (unresolvedFiles.length > 0) {
-            coreExports.info('');
-            coreExports.info('Unresolved files (require manual resolution):');
-            unresolvedFiles.forEach((file) => coreExports.info(`  - ${file}`));
-        }
-        return { resolvedFiles, unresolvedFiles };
-    }
-    findMatchingRule(file, rules) {
-        for (const rule of rules) {
-            // Check if the file path matches the rule pattern
-            const pathMatches = minimatch(file.path, rule.path);
-            if (!pathMatches) {
-                continue;
-            }
-            // If conflictType is specified in the rule, check if it matches
-            if (rule.conflictType) {
-                if (file.conflictType === rule.conflictType) {
-                    return rule;
-                }
-            }
-            else {
-                // If no conflictType specified, the rule applies to all conflict types
-                return rule;
-            }
-        }
-        return undefined;
+        return output;
     }
 }
 
@@ -32339,27 +32431,16 @@ class ConflictResolver {
  * @returns Resolves when the action is complete.
  */
 async function run() {
-    try {
-        const configPath = coreExports.getInput('config-path');
-        coreExports.info('Starting Git Conflict Resolver');
-        coreExports.info(`Config path: ${configPath || '.conflict-resolver.yml (default)'}`);
-        const resolver = new ConflictResolver(configPath);
-        const result = await resolver.resolve();
-        // Set outputs for other workflow steps to use
-        coreExports.setOutput('resolved-files', result.resolvedFiles.join(','));
-        coreExports.setOutput('unresolved-files', result.unresolvedFiles.join(','));
-        if (result.unresolvedFiles.length > 0) {
-            coreExports.warning(`${result.unresolvedFiles.length} files still have conflicts and require manual resolution`);
-        }
-        else if (result.resolvedFiles.length > 0) {
-            coreExports.info('All conflicts resolved successfully!');
-        }
-    }
-    catch (error) {
-        // Fail the workflow run if an error occurs
-        if (error instanceof Error)
-            coreExports.setFailed(error.message);
-    }
+    // Dependency Injection Container
+    const configPath = coreExports.getInput('config-path') || '.conflict-resolver.yml';
+    // Create infrastructure implementations
+    const configRepository = new YamlConfigRepositoryImpl(configPath);
+    const gitRepository = new GitRepositoryImpl();
+    // Create use-case with injected dependencies
+    const conflictResolver = new ConflictResolver(configRepository, gitRepository);
+    // Create and run presentation layer
+    const actionHandler = new ActionHandler(conflictResolver);
+    await actionHandler.run();
 }
 
 /**

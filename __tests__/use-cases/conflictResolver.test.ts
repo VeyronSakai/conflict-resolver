@@ -1,0 +1,202 @@
+import * as core from '@actions/core'
+import { jest } from '@jest/globals'
+import { ConflictResolver } from '../../src/use-cases/conflictResolver.js'
+import { ConfigRepositoryStub } from '../test-doubles/configRepositoryStub.js'
+import { GitRepositoryStub } from '../test-doubles/gitRepositoryStub.js'
+import { ConflictedFile } from '../../src/domains/entities/conflictedFile.js'
+import { ConflictType } from '../../src/domains/value-objects/conflictType.js'
+import { ConflictRule } from '../../src/domains/value-objects/conflictRule.js'
+import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
+
+jest.mock('@actions/core')
+
+describe('ConflictResolver', () => {
+  let configRepositoryStub: ConfigRepositoryStub
+  let gitRepositoryStub: GitRepositoryStub
+  let conflictResolver: ConflictResolver
+
+  beforeEach(() => {
+    configRepositoryStub = new ConfigRepositoryStub()
+    gitRepositoryStub = new GitRepositoryStub()
+    conflictResolver = new ConflictResolver(
+      configRepositoryStub,
+      gitRepositoryStub
+    )
+
+    jest.clearAllMocks()
+  })
+
+  describe('resolve', () => {
+    it('should return empty result when no conflicts exist', async () => {
+      gitRepositoryStub.setConflictedFiles([])
+
+      const result = await conflictResolver.resolve()
+
+      expect(result.resolvedFiles).toEqual([])
+      expect(result.unresolvedFiles).toEqual([])
+      expect(core.info).toHaveBeenCalledWith('No merge conflicts detected')
+    })
+
+    it('should resolve conflicts based on rules', async () => {
+      const conflicts = [
+        new ConflictedFile('package-lock.json', ConflictType.BothModified),
+        new ConflictedFile('src/index.ts', ConflictType.BothModified)
+      ]
+      gitRepositoryStub.setConflictedFiles(conflicts)
+
+      const rules = [
+        new ConflictRule(
+          'package-lock.json',
+          undefined,
+          ResolutionStrategy.Theirs
+        ),
+        new ConflictRule('*.ts', undefined, ResolutionStrategy.Manual)
+      ]
+      configRepositoryStub.setRules(rules)
+
+      const result = await conflictResolver.resolve()
+
+      expect(result.resolvedFiles).toEqual(['package-lock.json'])
+      expect(result.unresolvedFiles).toEqual(['src/index.ts'])
+
+      const resolvedFiles = gitRepositoryStub.getResolvedFiles()
+      expect(resolvedFiles.get('package-lock.json')).toBe(
+        ResolutionStrategy.Theirs
+      )
+      expect(resolvedFiles.has('src/index.ts')).toBe(false)
+
+      const stagedFiles = gitRepositoryStub.getStagedFiles()
+      expect(stagedFiles.has('package-lock.json')).toBe(true)
+      expect(stagedFiles.has('src/index.ts')).toBe(false)
+    })
+
+    it('should handle files without matching rules as manual', async () => {
+      const conflicts = [
+        new ConflictedFile('unknown.xml', ConflictType.BothModified)
+      ]
+      gitRepositoryStub.setConflictedFiles(conflicts)
+      configRepositoryStub.setRules([])
+
+      const result = await conflictResolver.resolve()
+
+      expect(result.resolvedFiles).toEqual([])
+      expect(result.unresolvedFiles).toEqual(['unknown.xml'])
+      expect(core.warning).toHaveBeenCalledWith(
+        'unknown.xml requires manual resolution (conflict type: both-modified)'
+      )
+    })
+
+    it('should resolve multiple files with same rule', async () => {
+      const conflicts = [
+        new ConflictedFile('file1.generated.ts', ConflictType.BothModified),
+        new ConflictedFile('file2.generated.ts', ConflictType.BothModified),
+        new ConflictedFile('file3.generated.ts', ConflictType.BothModified)
+      ]
+      gitRepositoryStub.setConflictedFiles(conflicts)
+
+      const rules = [
+        new ConflictRule('*.generated.ts', undefined, ResolutionStrategy.Theirs)
+      ]
+      configRepositoryStub.setRules(rules)
+
+      const result = await conflictResolver.resolve()
+
+      expect(result.resolvedFiles).toEqual([
+        'file1.generated.ts',
+        'file2.generated.ts',
+        'file3.generated.ts'
+      ])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = gitRepositoryStub.getResolvedFiles()
+      expect(resolvedFiles.size).toBe(3)
+      expect(resolvedFiles.get('file1.generated.ts')).toBe(
+        ResolutionStrategy.Theirs
+      )
+      expect(resolvedFiles.get('file2.generated.ts')).toBe(
+        ResolutionStrategy.Theirs
+      )
+      expect(resolvedFiles.get('file3.generated.ts')).toBe(
+        ResolutionStrategy.Theirs
+      )
+    })
+
+    it('should log rule descriptions when available', async () => {
+      const conflicts = [
+        new ConflictedFile('package-lock.json', ConflictType.BothModified)
+      ]
+      gitRepositoryStub.setConflictedFiles(conflicts)
+
+      const rules = [
+        new ConflictRule(
+          'package-lock.json',
+          undefined,
+          ResolutionStrategy.Theirs,
+          'Accept incoming package-lock.json'
+        )
+      ]
+      configRepositoryStub.setRules(rules)
+
+      await conflictResolver.resolve()
+
+      expect(core.info).toHaveBeenCalledWith(
+        'Applying rule: Accept incoming package-lock.json'
+      )
+    })
+
+    it('should handle resolution errors gracefully', async () => {
+      const conflicts = [
+        new ConflictedFile('error-file.ts', ConflictType.BothModified)
+      ]
+      gitRepositoryStub.setConflictedFiles(conflicts)
+
+      const rules = [
+        new ConflictRule('error-file.ts', undefined, ResolutionStrategy.Ours)
+      ]
+      configRepositoryStub.setRules(rules)
+
+      // Mock the resolveConflict to throw an error
+      gitRepositoryStub.resolveConflict = jest
+        .fn<typeof gitRepositoryStub.resolveConflict>()
+        .mockRejectedValue(new Error('Git error'))
+
+      const result = await conflictResolver.resolve()
+
+      expect(result.resolvedFiles).toEqual([])
+      expect(result.unresolvedFiles).toEqual(['error-file.ts'])
+      expect(core.error).toHaveBeenCalledWith(
+        'Failed to resolve error-file.ts: Error: Git error'
+      )
+    })
+
+    it('should log summary with resolved and unresolved files', async () => {
+      const conflicts = [
+        new ConflictedFile('resolved1.json', ConflictType.BothModified),
+        new ConflictedFile('resolved2.json', ConflictType.BothModified),
+        new ConflictedFile('manual.ts', ConflictType.BothModified)
+      ]
+      gitRepositoryStub.setConflictedFiles(conflicts)
+
+      const rules = [
+        new ConflictRule('*.json', undefined, ResolutionStrategy.Theirs),
+        new ConflictRule('*.ts', undefined, ResolutionStrategy.Manual)
+      ]
+      configRepositoryStub.setRules(rules)
+
+      await conflictResolver.resolve()
+
+      expect(core.info).toHaveBeenCalledWith(
+        '=== Conflict Resolution Summary ==='
+      )
+      expect(core.info).toHaveBeenCalledWith(
+        '✓ Automatically resolved: 2 files'
+      )
+      expect(core.info).toHaveBeenCalledWith('  - resolved1.json')
+      expect(core.info).toHaveBeenCalledWith('  - resolved2.json')
+      expect(core.warning).toHaveBeenCalledWith(
+        '⚠ Manual resolution required: 1 files'
+      )
+      expect(core.warning).toHaveBeenCalledWith('  - manual.ts')
+    })
+  })
+})
