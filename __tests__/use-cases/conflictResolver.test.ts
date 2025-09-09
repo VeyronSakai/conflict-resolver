@@ -4,7 +4,7 @@ import { ConfigRepositoryStub } from '../test-doubles/configRepositoryStub.js'
 import { GitRepositoryStub } from '../test-doubles/gitRepositoryStub.js'
 import { ConflictedFile } from '../../src/domains/entities/conflictedFile.js'
 import { ConflictType } from '../../src/domains/value-objects/conflictType.js'
-import { ConflictResolveRule } from '../../src/domains/value-objects/conflictResolveRule.js'
+import type { ConflictResolveRule } from '../../src/domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
 
 // Note: @actions/core mocking is disabled due to ESM module constraints
@@ -43,13 +43,12 @@ describe('ConflictResolver', () => {
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
-      const rules = [
-        new ConflictResolveRule(
-          'package-lock.json',
-          undefined,
-          ResolutionStrategy.Theirs
-        ),
-        new ConflictResolveRule('*.ts', undefined, ResolutionStrategy.Manual)
+      const rules: ConflictResolveRule[] = [
+        {
+          filePattern: 'package-lock.json',
+          strategy: ResolutionStrategy.Theirs
+        },
+        { filePattern: '*.ts', strategy: ResolutionStrategy.Manual }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -90,12 +89,11 @@ describe('ConflictResolver', () => {
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
-      const rules = [
-        new ConflictResolveRule(
-          '*.generated.ts',
-          undefined,
-          ResolutionStrategy.Theirs
-        )
+      const rules: ConflictResolveRule[] = [
+        {
+          filePattern: '*.generated.ts',
+          strategy: ResolutionStrategy.Theirs
+        }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -127,13 +125,12 @@ describe('ConflictResolver', () => {
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
-      const rules = [
-        new ConflictResolveRule(
-          'package-lock.json',
-          undefined,
-          ResolutionStrategy.Theirs,
-          'Accept incoming package-lock.json'
-        )
+      const rules: ConflictResolveRule[] = [
+        {
+          filePattern: 'package-lock.json',
+          strategy: ResolutionStrategy.Theirs,
+          description: 'Accept incoming package-lock.json'
+        }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -150,12 +147,11 @@ describe('ConflictResolver', () => {
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
-      const rules = [
-        new ConflictResolveRule(
-          'error-file.ts',
-          undefined,
-          ResolutionStrategy.Ours
-        )
+      const rules: ConflictResolveRule[] = [
+        {
+          filePattern: 'error-file.ts',
+          strategy: ResolutionStrategy.Ours
+        }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -178,9 +174,9 @@ describe('ConflictResolver', () => {
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
-      const rules = [
-        new ConflictResolveRule('*.json', undefined, ResolutionStrategy.Theirs),
-        new ConflictResolveRule('*.ts', undefined, ResolutionStrategy.Manual)
+      const rules: ConflictResolveRule[] = [
+        { filePattern: '*.json', strategy: ResolutionStrategy.Theirs },
+        { filePattern: '*.ts', strategy: ResolutionStrategy.Manual }
       ]
       configRepositoryStub.setRules(rules)
 

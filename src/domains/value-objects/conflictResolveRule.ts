@@ -1,10 +1,8 @@
 import { ResolutionStrategy } from './resolutionStrategy.js'
 
-export class ConflictResolveRule {
-  constructor(
-    public readonly filePattern: string,
-    public readonly conflictType?: string,
-    public readonly strategy: ResolutionStrategy = ResolutionStrategy.Manual,
-    public readonly description?: string
-  ) {}
+export type ConflictResolveRule = {
+  readonly filePattern: string
+  readonly conflictType?: string
+  readonly strategy: ResolutionStrategy
+  readonly description?: string
 }

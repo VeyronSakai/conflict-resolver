@@ -39,12 +39,12 @@ export class YamlConfigRepositoryImpl implements ConfigRepository {
 
       return config.rules.map(
         (rule) =>
-          new ConflictResolveRule(
-            rule.file_pattern,
-            rule.conflict_type,
-            this.parseStrategy(rule.strategy),
-            rule.description
-          )
+          ({
+            filePattern: rule.file_pattern,
+            conflictType: rule.conflict_type,
+            strategy: this.parseStrategy(rule.strategy),
+            description: rule.description
+          } as ConflictResolveRule)
       )
     } catch (error) {
       core.error(`Failed to load config: ${error}`)
