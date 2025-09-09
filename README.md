@@ -75,16 +75,16 @@ rules:
   - paths: 'build/**/*'
     strategy: 'ours'
 
-  # Example with conflictType specification
+  # Example with conflict_type specification
   # Only apply this rule when both sides modified the file
   - paths: 'src/**/*.test.ts'
-    conflictType: 'both-modified'
+    conflict_type: 'both-modified'
     strategy: 'theirs'
 
-  # Another example with conflictType
+  # Another example with conflict_type
   # When a file is added by both sides, prefer theirs
   - paths: 'docs/**/*.md'
-    conflictType: 'both-added'
+    conflict_type: 'both-added'
     strategy: 'theirs'
 
   # Configuration files - be careful with these
@@ -96,14 +96,14 @@ rules:
   # Database migration files - usually want to keep both
   # This example shows preferring 'ours' for migrations
   # - paths: "migrations/*.sql"
-  #   conflictType: "both-added"
+  #   conflict_type: "both-added"
   #   strategy: "ours"
 # Notes:
 # - Rules are evaluated in order. The first matching rule wins.
 # - 'paths' supports glob patterns (e.g., *.js, src/**/*.ts)
 # - 'strategy' must be either 'ours' or 'theirs'
-# - 'conflictType' is optional. If not specified, the rule applies to all conflict types.
-# - Valid conflictType values:
+# - 'conflict_type' is optional. If not specified, the rule applies to all conflict types.
+# - Valid conflict_type values:
 #   - 'both-modified' (UU): Both sides modified the file
 #   - 'both-added' (AA): Both sides added the same file
 #   - 'both-deleted' (DD): Both sides deleted the file
@@ -149,7 +149,7 @@ The action recognizes the following Git conflict states:
 - **`strategy`** (required): Resolution strategy
   - `ours`: Keep our version
   - `theirs`: Keep their version
-- **`conflictType`** (optional): Apply rule only to specific conflict types
+- **`conflict_type`** (optional): Apply rule only to specific conflict types
   - If not specified, the rule applies to all conflict types
 
 ### Rule Evaluation
@@ -189,10 +189,10 @@ rules:
 ```yaml
 rules:
   - paths: '**/*.test.ts'
-    conflictType: 'both-modified'
+    conflict_type: 'both-modified'
     strategy: 'theirs'
   - paths: '**/*.spec.js'
-    conflictType: 'both-modified'
+    conflict_type: 'both-modified'
     strategy: 'theirs'
 ```
 
@@ -202,33 +202,6 @@ rules:
 - Always review the resolution results before merging
 - The action only runs when Git is in a merge or rebase state
 - Unmatched files remain in conflict state for manual resolution
-
-## Development
-
-### Setup
-
-```bash
-npm install
-```
-
-### Test
-
-```bash
-npm test
-```
-
-### Build
-
-```bash
-npm run bundle
-```
-
-### Format and Lint
-
-```bash
-npm run format:write
-npm run lint
-```
 
 ## License
 
