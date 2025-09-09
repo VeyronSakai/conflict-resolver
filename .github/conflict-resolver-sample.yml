@@ -32,3 +32,42 @@ rules:
   - paths: '**/*.config.js'
     conflict_type: 'both-modified'
     strategy: 'manual'
+
+  # === Test conflict files rules ===
+  
+  # JSON files - use incoming changes
+  - paths: 'test-conflict-files/*.json'
+    strategy: 'theirs'
+    conflict_type: 'both-modified'
+  
+  # Markdown files - keep our version
+  - paths: 'test-conflict-files/*.md'
+    strategy: 'ours'
+    conflict_type: 'both-modified'
+  
+  # TypeScript files - use incoming changes for both-modified
+  - paths: 'test-conflict-files/test.ts'
+    strategy: 'theirs'
+    conflict_type: 'both-modified'
+  
+  # Critical TypeScript file - require manual review
+  - paths: 'test-conflict-files/critical.ts'
+    strategy: 'manual'
+    conflict_type: 'both-modified'
+  
+  # Config YAML files - require manual review
+  - paths: 'test-conflict-files/*.config.yml'
+    strategy: 'manual'
+  
+  # Binary files resolution strategies
+  - paths: 'test-conflict-files/*.png'
+    strategy: 'theirs'
+  
+  - paths: 'test-conflict-files/*.pdf'
+    strategy: 'ours'
+  
+  - paths: 'test-conflict-files/*.zip'
+    strategy: 'theirs'
+  
+  # Note: Files without rules (undefined-rule.txt, special-case.xml) 
+  # will remain unresolved with conflict markers

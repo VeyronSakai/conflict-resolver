@@ -49,13 +49,343 @@ jobs:
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v5
         with:
-          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Create test branches and conflicts
+        id: create-conflicts
+        run: |
+          # Save current branch
+          ORIGINAL_BRANCH=$(git branch --show-current)
+          
+          # Create base branch with test files
+          git checkout -b test-base-${{ github.run_id }}
+          
+          # The test files are already in the repository
+          git add test-conflict-files/
+          git commit -m "Add base test files" || echo "Files already committed"
+          
+          # Create branch 1 with changes
+          git checkout -b test-branch-1-${{ github.run_id }}
+          
+          # Modify text files in branch 1
+          cat > test-conflict-files/test.json << 'EOF'
+          {
+            "version": "1.1.0",
+            "name": "branch-1-test",
+            "description": "Branch 1 JSON content with changes",
+            "config": {
+              "enabled": false,
+              "mode": "production",
+              "newField": "branch1-specific"
+            }
+          }
+          EOF
+          
+          cat > test-conflict-files/test.md << 'EOF'
+          # Branch 1 Documentation
+          
+          This is the branch 1 version of the documentation.
+          
+          ## Section 1
+          Branch 1 has completely different content here.
+          
+          ## Section 2
+          Branch 1 removed the original section 2.
+          
+          ## Section 3
+          New section added only in branch 1.
+          EOF
+          
+          cat > test-conflict-files/test.ts << 'EOF'
+          export function branch1Function(): string {
+            console.log('Branch 1 version');
+            return 'branch1';
+          }
+          
+          export class Branch1Class {
+            private value: string;
+          
+            constructor() {
+              this.value = 'branch1';
+            }
+          
+            getValue(): string {
+              return this.value;
+            }
+            
+            branch1Method(): void {
+              console.log('Branch 1 specific method');
+            }
+          }
+          EOF
+          
+          cat > test-conflict-files/test.config.yml << 'EOF'
+          # Configuration file - Branch 1 version
+          application:
+            name: branch1-app
+            version: 1.1.0
+            
+          settings:
+            debug: true
+            timeout: 60
+            branch1_setting: enabled
+            
+          database:
+            host: branch1.db.com
+            port: 3306
+          EOF
+          
+          cat > test-conflict-files/critical.ts << 'EOF'
+          // Critical file - Branch 1 version
+          export class CriticalService {
+            private apiKey: string;
+            private endpoint: string;
+          
+            constructor() {
+              this.apiKey = 'branch1-key-xyz';
+              this.endpoint = 'https://api.branch1.com';
+            }
+          
+            async performCriticalOperation(): Promise<void> {
+              // Branch 1 implementation
+              console.log('Branch 1 critical operation');
+              await this.validateBranch1();
+            }
+            
+            private async validateBranch1(): Promise<void> {
+              // Branch 1 specific validation
+            }
+          }
+          EOF
+          
+          cat > test-conflict-files/undefined-rule.txt << 'EOF'
+          This is branch 1 version of the text file.
+          No resolution rule is defined for this file.
+          
+          Branch 1 content:
+          - Feature A
+          - Feature B
+          - Feature C
+          
+          Branch 1 end.
+          EOF
+          
+          cat > test-conflict-files/special-case.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <configuration>
+            <settings>
+              <property name="version">1.1.0</property>
+              <property name="mode">branch1</property>
+              <property name="branch1">true</property>
+            </settings>
+            <data>
+              <item id="1">Branch 1 Item 1</item>
+              <item id="2">Branch 1 Item 2</item>
+              <item id="3">Branch 1 New Item</item>
+            </data>
+          </configuration>
+          EOF
+          
+          # Create different binary files for branch 1
+          echo -n -e '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02\x08\x02\x00\x00\x00\xfd\xd4\x9as\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x00\x00\x00\x00IEND\xaeB`\x82' > test-conflict-files/test.png
+          
+          echo -n -e '%PDF-1.4\n%Branch1\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%EOF' > test-conflict-files/test.pdf
+          
+          echo "Branch 1 content for ZIP" > test-conflict-files/temp.txt
+          cd test-conflict-files && zip -q test.zip temp.txt && rm temp.txt && cd ..
+          
+          git add test-conflict-files/
+          git commit -m "Branch 1 changes"
+          
+          # Create branch 2 with different changes
+          git checkout test-base-${{ github.run_id }}
+          git checkout -b test-branch-2-${{ github.run_id }}
+          
+          # Modify files differently in branch 2
+          cat > test-conflict-files/test.json << 'EOF'
+          {
+            "version": "1.2.0",
+            "name": "branch-2-test",
+            "description": "Branch 2 JSON with different changes",
+            "config": {
+              "enabled": true,
+              "mode": "development",
+              "differentField": "branch2-specific"
+            }
+          }
+          EOF
+          
+          cat > test-conflict-files/test.md << 'EOF'
+          # Branch 2 Documentation
+          
+          This is the branch 2 version of the documentation.
+          
+          ## Section 1
+          Branch 2 has its own content for section 1.
+          
+          ## Section 2
+          Branch 2 kept section 2 but changed it.
+          
+          ### Subsection 2.1
+          Branch 2 modified subsection.
+          
+          ## Section 4
+          Branch 2 added section 4 instead of 3.
+          EOF
+          
+          cat > test-conflict-files/test.ts << 'EOF'
+          export function branch2Function(): string {
+            console.log('Branch 2 version');
+            return 'branch2';
+          }
+          
+          export class Branch2Class {
+            private value: string;
+          
+            constructor() {
+              this.value = 'branch2';
+            }
+          
+            getValue(): string {
+              return this.value;
+            }
+            
+            branch2Method(): void {
+              console.log('Branch 2 specific method');
+            }
+          }
+          EOF
+          
+          cat > test-conflict-files/test.config.yml << 'EOF'
+          # Configuration file - Branch 2 version
+          application:
+            name: branch2-app
+            version: 1.2.0
+            
+          settings:
+            debug: false
+            timeout: 90
+            branch2_setting: active
+            
+          database:
+            host: branch2.db.com
+            port: 5432
+            replica: true
+          EOF
+          
+          cat > test-conflict-files/critical.ts << 'EOF'
+          // Critical file - Branch 2 version
+          export class CriticalService {
+            private apiKey: string;
+            private endpoint: string;
+            private region: string;
+          
+            constructor() {
+              this.apiKey = 'branch2-key-abc';
+              this.endpoint = 'https://api.branch2.com';
+              this.region = 'us-west';
+            }
+          
+            async performCriticalOperation(): Promise<void> {
+              // Branch 2 implementation
+              console.log('Branch 2 critical operation');
+              await this.validateBranch2();
+            }
+            
+            private async validateBranch2(): Promise<void> {
+              // Branch 2 specific validation
+            }
+          }
+          EOF
+          
+          cat > test-conflict-files/undefined-rule.txt << 'EOF'
+          This is branch 2 version of the text file.
+          No resolution rule is defined for this file.
+          
+          Branch 2 content:
+          - Feature X
+          - Feature Y
+          - Feature Z
+          
+          Branch 2 end.
+          EOF
+          
+          cat > test-conflict-files/special-case.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <configuration>
+            <settings>
+              <property name="version">1.2.0</property>
+              <property name="mode">branch2</property>
+              <property name="branch2">true</property>
+            </settings>
+            <data>
+              <item id="1">Branch 2 Item 1</item>
+              <item id="2">Branch 2 Item 2</item>
+              <item id="4">Branch 2 Different Item</item>
+            </data>
+          </configuration>
+          EOF
+          
+          # Create different binary files for branch 2
+          echo -n -e '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03\x08\x02\x00\x00\x00\xd9J"\xe8\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x00\x00\x00\x00IEND\xaeB`\x82' > test-conflict-files/test.png
+          
+          echo -n -e '%PDF-1.4\n%Branch2\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%EOF' > test-conflict-files/test.pdf
+          
+          echo "Branch 2 content for ZIP" > test-conflict-files/temp.txt
+          cd test-conflict-files && zip -q test.zip temp.txt && rm temp.txt && cd ..
+          
+          git add test-conflict-files/
+          git commit -m "Branch 2 changes"
+          
+          # Attempt to merge branch 1 into branch 2 to create conflicts
+          echo "::notice::Attempting to merge branch-1 into branch-2 to create conflicts..."
+          git merge test-branch-1-${{ github.run_id }} --no-ff --no-commit || true
+          
+          # Check conflict status
+          echo "::group::Git status after merge attempt"
+          git status
+          echo "::endgroup::"
+          
+          echo "::group::Conflicted files"
+          git status --porcelain | grep "^UU" || echo "No conflicts found"
+          echo "::endgroup::"
+          
+          # Save conflict state
+          if git status --porcelain | grep -q "^UU"; then
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+            echo "::notice::Conflicts detected. Ready to test conflict resolver."
+          else
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+            echo "::warning::No conflicts detected."
+          fi
+
+      - name: Show conflict details
+        if: steps.create-conflicts.outputs.has_conflicts == 'true'
+        run: |
+          echo "::group::List of conflicted files"
+          git diff --name-only --diff-filter=U
+          echo "::endgroup::"
+          
+          for file in test-conflict-files/*.{json,md,ts,yml,txt,xml}; do
+            if [ -f "$file" ] && git diff --check "$file" 2>/dev/null | grep -q "conflict"; then
+              echo "::group::Conflict in $file"
+              cat "$file" | head -50
+              echo "::endgroup::"
+            fi
+          done
 
       - name: Test Local Action
         id: test-action
@@ -69,5 +399,99 @@ jobs:
           RESOLVED_FILES: ${{ steps.test-action.outputs.resolved-files }}
           UNRESOLVED_FILES: ${{ steps.test-action.outputs.unresolved-files }}
         run: |
-          echo "Resolved files: $RESOLVED_FILES"
-          echo "Unresolved files: $UNRESOLVED_FILES"
+          echo "::notice::Resolved files: $RESOLVED_FILES"
+          echo "::notice::Unresolved files: $UNRESOLVED_FILES"
+          
+          # Verify expected outcomes
+          echo "::group::Verification Results"
+          
+          # Check resolved files
+          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.json"; then
+            echo "✅ test.json resolved (theirs strategy)"
+          else
+            echo "❌ test.json should have been resolved"
+          fi
+          
+          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.md"; then
+            echo "✅ test.md resolved (ours strategy)"
+          else
+            echo "❌ test.md should have been resolved"
+          fi
+          
+          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.ts"; then
+            echo "✅ test.ts resolved (theirs strategy)"
+          else
+            echo "❌ test.ts should have been resolved"
+          fi
+          
+          # Check binary files
+          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.png"; then
+            echo "✅ test.png resolved (theirs strategy)"
+          else
+            echo "❌ test.png should have been resolved"
+          fi
+          
+          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.pdf"; then
+            echo "✅ test.pdf resolved (ours strategy)"
+          else
+            echo "❌ test.pdf should have been resolved"
+          fi
+          
+          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.zip"; then
+            echo "✅ test.zip resolved (theirs strategy)"
+          else
+            echo "❌ test.zip should have been resolved"
+          fi
+          
+          # Check unresolved files (manual strategy)
+          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/test.config.yml"; then
+            echo "✅ test.config.yml unresolved (manual strategy)"
+          else
+            echo "❌ test.config.yml should remain unresolved"
+          fi
+          
+          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/critical.ts"; then
+            echo "✅ critical.ts unresolved (manual strategy)"
+          else
+            echo "❌ critical.ts should remain unresolved"
+          fi
+          
+          # Check files without rules
+          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/undefined-rule.txt"; then
+            echo "✅ undefined-rule.txt unresolved (no rule defined)"
+          else
+            echo "❌ undefined-rule.txt should remain unresolved"
+          fi
+          
+          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/special-case.xml"; then
+            echo "✅ special-case.xml unresolved (no rule defined)"
+          else
+            echo "❌ special-case.xml should remain unresolved"
+          fi
+          
+          echo "::endgroup::"
+
+      - name: Show final file contents
+        run: |
+          echo "::group::Final resolved file contents (samples)"
+          
+          echo "--- test.json (should have branch-1 content - theirs) ---"
+          cat test-conflict-files/test.json | head -10
+          
+          echo ""
+          echo "--- test.md (should have branch-2 content - ours) ---"
+          cat test-conflict-files/test.md | head -10
+          
+          echo "::endgroup::"
+          
+          echo "::group::Unresolved files with conflict markers"
+          
+          for file in test-conflict-files/test.config.yml test-conflict-files/critical.ts test-conflict-files/undefined-rule.txt test-conflict-files/special-case.xml; do
+            if [ -f "$file" ]; then
+              echo "--- $file ---"
+              grep -E "^(<<<<<<<|=======|>>>>>>>)" "$file" || echo "No conflict markers found (might be an error)"
+              echo ""
+            fi
+          done
+          
+          echo "::endgroup::"

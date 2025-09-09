@@ -1,0 +1,9 @@
+This is a text file without any conflict resolution rule defined.
+It should remain unresolved with conflict markers.
+
+Base content:
+- Line 1
+- Line 2
+- Line 3
+
+End of file.

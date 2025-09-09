@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "name": "base-test",
+  "description": "Base JSON content for conflict testing",
+  "config": {
+    "enabled": true,
+    "mode": "test"
+  }
+}
