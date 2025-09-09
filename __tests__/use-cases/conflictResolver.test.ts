@@ -91,7 +91,11 @@ describe('ConflictResolver', () => {
       gitRepositoryStub.setConflictedFiles(conflicts)
 
       const rules = [
-        new ConflictResolveRule('*.generated.ts', undefined, ResolutionStrategy.Theirs)
+        new ConflictResolveRule(
+          '*.generated.ts',
+          undefined,
+          ResolutionStrategy.Theirs
+        )
       ]
       configRepositoryStub.setRules(rules)
 
@@ -147,7 +151,11 @@ describe('ConflictResolver', () => {
       gitRepositoryStub.setConflictedFiles(conflicts)
 
       const rules = [
-        new ConflictResolveRule('error-file.ts', undefined, ResolutionStrategy.Ours)
+        new ConflictResolveRule(
+          'error-file.ts',
+          undefined,
+          ResolutionStrategy.Ours
+        )
       ]
       configRepositoryStub.setRules(rules)
 

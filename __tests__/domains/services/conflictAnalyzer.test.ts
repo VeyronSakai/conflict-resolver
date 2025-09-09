@@ -36,7 +36,11 @@ describe('ConflictAnalyzer', () => {
     it('should find a matching rule with wildcard pattern', () => {
       const file = new ConflictedFile('src/index.ts', ConflictType.BothModified)
       const rules = [
-        new ConflictResolveRule('src/**/*.ts', undefined, ResolutionStrategy.Manual),
+        new ConflictResolveRule(
+          'src/**/*.ts',
+          undefined,
+          ResolutionStrategy.Manual
+        ),
         new ConflictResolveRule('*.json', undefined, ResolutionStrategy.Theirs)
       ]
 
@@ -61,8 +65,16 @@ describe('ConflictAnalyzer', () => {
     it('should match rule with specific conflict type', () => {
       const file = new ConflictedFile('test.ts', ConflictType.DeletedByUs)
       const rules = [
-        new ConflictResolveRule('*.ts', 'both-modified', ResolutionStrategy.Manual),
-        new ConflictResolveRule('*.ts', 'deleted-by-us', ResolutionStrategy.Ours)
+        new ConflictResolveRule(
+          '*.ts',
+          'both-modified',
+          ResolutionStrategy.Manual
+        ),
+        new ConflictResolveRule(
+          '*.ts',
+          'deleted-by-us',
+          ResolutionStrategy.Ours
+        )
       ]
 
       const matchingRule = analyzer.findMatchingRule(file, rules)
