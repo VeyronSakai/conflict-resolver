@@ -32205,17 +32205,16 @@ class ConfigRepositoryImpl {
         this.configPath = configPath;
     }
     async loadRules() {
+        if (!fs.existsSync(this.configPath)) {
+            throw new Error(`Config file not found at ${this.configPath}`);
+        }
         try {
-            if (!fs.existsSync(this.configPath)) {
-                coreExports.warning(`Config file not found at ${this.configPath}. No automatic conflict resolution will be performed.`);
-                return [];
-            }
             const configContent = fs.readFileSync(this.configPath, 'utf8');
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
             return config.rules.map((rule) => ({
-                filePattern: rule.file_pattern,
+                filePattern: rule.paths,
                 conflictType: rule.conflict_type,
                 strategy: this.parseStrategy(rule.strategy),
                 description: rule.description
@@ -32231,8 +32230,8 @@ class ConfigRepositoryImpl {
             throw new Error('Config must contain a "rules" array');
         }
         for (const rule of config.rules) {
-            if (!rule.file_pattern) {
-                throw new Error('Each rule must have a "file_pattern" field');
+            if (!rule.paths) {
+                throw new Error('Each rule must have a "paths" field');
             }
             if (!rule.strategy) {
                 throw new Error('Each rule must have a "strategy" field');
