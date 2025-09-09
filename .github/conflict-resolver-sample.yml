@@ -28,3 +28,14 @@ rules:
     conflict_type: 'both-added'
     strategy: 'theirs'
     description: 'Prefer incoming documentation when both sides added the same file'
+
+  # Example with manual strategy: require human review
+  - paths: '.github/workflows/*.yml'
+    strategy: 'manual'
+    description: 'GitHub Actions workflows require manual review for security'
+
+  # Example with manual strategy and conflict_type
+  - paths: '**/*.config.js'
+    conflict_type: 'both-modified'
+    strategy: 'manual'
+    description: 'Configuration files need careful manual review when both sides modified'
