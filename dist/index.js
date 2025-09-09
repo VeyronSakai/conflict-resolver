@@ -29325,7 +29325,7 @@ class ConflictAnalyzer {
         return undefined;
     }
     matches(rule, filePath, conflictType) {
-        if (!minimatch(filePath, rule.filePattern)) {
+        if (!minimatch(filePath, rule.targetPathPattern)) {
             return false;
         }
         return !(rule.conflictType && rule.conflictType !== conflictType);
@@ -29357,10 +29357,6 @@ class ConflictResolver {
         const unresolvedFiles = [];
         for (const file of conflictedFiles) {
             const strategy = this.conflictAnalyzer.determineStrategy(file, rules);
-            const matchingRule = this.conflictAnalyzer.findMatchingRule(file, rules);
-            if (matchingRule?.description) {
-                coreExports.info(`Applying rule: ${matchingRule.description}`);
-            }
             if (strategy === ResolutionStrategy.Manual) {
                 coreExports.warning(`${file.path} requires manual resolution (conflict type: ${file.conflictType})`);
                 unresolvedFiles.push(file.path);
@@ -32214,10 +32210,9 @@ class ConfigRepositoryImpl {
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
             return config.rules.map((rule) => ({
-                filePattern: rule.paths,
+                targetPathPattern: rule.paths,
                 conflictType: rule.conflict_type,
-                strategy: this.parseStrategy(rule.strategy),
-                description: rule.description
+                strategy: this.parseStrategy(rule.strategy)
             }));
         }
         catch (error) {

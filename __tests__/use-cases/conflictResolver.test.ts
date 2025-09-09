@@ -119,7 +119,6 @@ describe('ConflictResolver', () => {
       )
     })
 
-
     it('should handle resolution errors gracefully', async () => {
       const conflicts = [
         new ConflictedFile('error-file.ts', ConflictType.BothModified)
