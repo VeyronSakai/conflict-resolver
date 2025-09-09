@@ -32231,22 +32231,14 @@ class ConfigRepositoryImpl {
             if (!rule.strategy) {
                 throw new Error('Each rule must have a "strategy" field');
             }
-            if (!['ours', 'theirs', 'manual'].includes(rule.strategy)) {
-                throw new Error(`Invalid strategy "${rule.strategy}". Must be "ours", "theirs", or "manual"`);
-            }
         }
     }
     parseStrategy(strategy) {
-        switch (strategy) {
-            case 'ours':
-                return ResolutionStrategy.Ours;
-            case 'theirs':
-                return ResolutionStrategy.Theirs;
-            case 'manual':
-                return ResolutionStrategy.Manual;
-            default:
-                throw new Error(`Invalid strategy: ${strategy}`);
+        const validStrategies = Object.values(ResolutionStrategy);
+        if (validStrategies.includes(strategy)) {
+            return strategy;
         }
+        throw new Error(`Invalid strategy: ${strategy}`);
     }
 }
 
