@@ -3,16 +3,16 @@
 
 rules:
   # Test rule for package-lock.json
-  - file_pattern: 'package-lock.json'
+  - paths: 'package-lock.json'
     strategy: 'theirs'
     description: 'Accept incoming package-lock.json changes'
 
   # Test rule for generated files
-  - file_pattern: '*.generated.ts'
+  - paths: '*.generated.ts'
     strategy: 'ours'
     description: 'Keep our generated TypeScript files'
 
   # Test rule for dist files
-  - file_pattern: 'dist/**/*'
+  - paths: 'dist/**/*'
     strategy: 'ours'
     description: 'Keep our distribution files'

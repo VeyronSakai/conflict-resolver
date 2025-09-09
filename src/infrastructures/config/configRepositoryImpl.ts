@@ -5,14 +5,14 @@ import { ConfigRepository } from '../../domains/repositories/configRepository.js
 import { ConflictResolveRule } from '../../domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '../../domains/value-objects/resolutionStrategy.js'
 
-interface YamlRule {
-  file_pattern: string
+type YamlRule = {
+  paths: string
   conflict_type?: string
   strategy: string
   description?: string
 }
 
-interface YamlConfig {
+type YamlConfig = {
   rules: YamlRule[]
 }
 
@@ -37,7 +37,7 @@ export class ConfigRepositoryImpl implements ConfigRepository {
       return config.rules.map(
         (rule) =>
           ({
-            filePattern: rule.file_pattern,
+            filePattern: rule.paths,
             conflictType: rule.conflict_type,
             strategy: this.parseStrategy(rule.strategy),
             description: rule.description
@@ -55,8 +55,8 @@ export class ConfigRepositoryImpl implements ConfigRepository {
     }
 
     for (const rule of config.rules) {
-      if (!rule.file_pattern) {
-        throw new Error('Each rule must have a "file_pattern" field')
+      if (!rule.paths) {
+        throw new Error('Each rule must have a "paths" field')
       }
       if (!rule.strategy) {
         throw new Error('Each rule must have a "strategy" field')
