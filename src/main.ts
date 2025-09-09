@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import { ActionHandler } from './presentations/github-actions/actionHandler.js'
 import { ConflictResolver } from './use-cases/conflictResolver.js'
-import { YamlConfigRepositoryImpl } from './infrastructures/config/yamlConfigRepositoryImpl.js'
+import { ConfigRepositoryImpl } from './infrastructures/config/configRepositoryImpl.js'
 import { GitRepositoryImpl } from './infrastructures/git/gitRepositoryImpl.js'
 
 /**
@@ -11,10 +11,11 @@ import { GitRepositoryImpl } from './infrastructures/git/gitRepositoryImpl.js'
  */
 export async function run(): Promise<void> {
   // Dependency Injection Container
-  const configPath = core.getInput('config-path') || '.conflict-resolver.yml'
+  const configPath =
+    core.getInput('config-path') || '.github/conflict-resolver.yml'
 
   // Create infrastructure implementations
-  const configRepository = new YamlConfigRepositoryImpl(configPath)
+  const configRepository = new ConfigRepositoryImpl(configPath)
   const gitRepository = new GitRepositoryImpl()
 
   // Create use-case with injected dependencies

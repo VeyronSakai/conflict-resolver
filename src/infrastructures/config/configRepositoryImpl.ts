@@ -16,18 +16,15 @@ interface YamlConfig {
   rules: YamlRule[]
 }
 
-export class YamlConfigRepositoryImpl implements ConfigRepository {
-  constructor(private configPath: string = '.conflict-resolver.yml') {}
+export class ConfigRepositoryImpl implements ConfigRepository {
+  constructor(private configPath: string = '.github/conflict-resolver.yml') {}
 
   async loadRules(): Promise<ConflictResolveRule[]> {
-    try {
-      if (!fs.existsSync(this.configPath)) {
-        core.warning(
-          `Config file not found at ${this.configPath}. No automatic conflict resolution will be performed.`
-        )
-        return []
-      }
+    if (!fs.existsSync(this.configPath)) {
+      throw new Error(`Config file not found at ${this.configPath}`)
+    }
 
+    try {
       const configContent = fs.readFileSync(this.configPath, 'utf8')
       const config = yaml.load(configContent) as YamlConfig
 
@@ -44,7 +41,7 @@ export class YamlConfigRepositoryImpl implements ConfigRepository {
             conflictType: rule.conflict_type,
             strategy: this.parseStrategy(rule.strategy),
             description: rule.description
-          } as ConflictResolveRule)
+          }) as ConflictResolveRule
       )
     } catch (error) {
       core.error(`Failed to load config: ${error}`)

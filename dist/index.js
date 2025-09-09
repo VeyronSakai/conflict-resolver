@@ -32199,22 +32199,9 @@ var loader = {
 };
 var load                = loader.load;
 
-class ConflictResolveRule {
-    filePattern;
-    conflictType;
-    strategy;
-    description;
-    constructor(filePattern, conflictType, strategy = ResolutionStrategy.Manual, description) {
-        this.filePattern = filePattern;
-        this.conflictType = conflictType;
-        this.strategy = strategy;
-        this.description = description;
-    }
-}
-
-class YamlConfigRepositoryImpl {
+class ConfigRepositoryImpl {
     configPath;
-    constructor(configPath = '.conflict-resolver.yml') {
+    constructor(configPath = '.github/conflict-resolver.yml') {
         this.configPath = configPath;
     }
     async loadRules() {
@@ -32227,7 +32214,12 @@ class YamlConfigRepositoryImpl {
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
-            return config.rules.map((rule) => new ConflictResolveRule(rule.file_pattern, rule.conflict_type, this.parseStrategy(rule.strategy), rule.description));
+            return config.rules.map((rule) => ({
+                filePattern: rule.file_pattern,
+                conflictType: rule.conflict_type,
+                strategy: this.parseStrategy(rule.strategy),
+                description: rule.description
+            }));
         }
         catch (error) {
             coreExports.error(`Failed to load config: ${error}`);
@@ -32430,9 +32422,9 @@ class GitRepositoryImpl {
  */
 async function run() {
     // Dependency Injection Container
-    const configPath = coreExports.getInput('config-path') || '.conflict-resolver.yml';
+    const configPath = coreExports.getInput('config-path') || '.github/conflict-resolver.yml';
     // Create infrastructure implementations
-    const configRepository = new YamlConfigRepositoryImpl(configPath);
+    const configRepository = new ConfigRepositoryImpl(configPath);
     const gitRepository = new GitRepositoryImpl();
     // Create use-case with injected dependencies
     const conflictResolver = new ConflictResolver(configRepository, gitRepository);
