@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as yaml from 'js-yaml'
 import * as core from '@actions/core'
 import { ConfigRepository } from '../../domains/repositories/configRepository.js'
-import { ConflictRule } from '../../domains/value-objects/conflictRule.js'
+import { ConflictResolveRule } from '../../domains/value-objects/conflictRule.js'
 import { ResolutionStrategy } from '../../domains/value-objects/resolutionStrategy.js'
 
 interface YamlRule {
@@ -19,7 +19,7 @@ interface YamlConfig {
 export class YamlConfigRepositoryImpl implements ConfigRepository {
   constructor(private configPath: string = '.conflict-resolver.yml') {}
 
-  async loadRules(): Promise<ConflictRule[]> {
+  async loadRules(): Promise<ConflictResolveRule[]> {
     try {
       if (!fs.existsSync(this.configPath)) {
         core.warning(
@@ -39,7 +39,7 @@ export class YamlConfigRepositoryImpl implements ConfigRepository {
 
       return config.rules.map(
         (rule) =>
-          new ConflictRule(
+          new ConflictResolveRule(
             rule.file_pattern,
             rule.conflict_type,
             this.parseStrategy(rule.strategy),

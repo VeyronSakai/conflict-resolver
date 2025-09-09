@@ -1,37 +1,37 @@
 import { ConfigRepository } from '../../src/domains/repositories/configRepository.js'
-import { ConflictRule } from '../../src/domains/value-objects/conflictRule.js'
+import { ConflictResolveRule } from '../../src/domains/value-objects/conflictRule.js'
 import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
 
 export class ConfigRepositoryStub implements ConfigRepository {
-  private rules: ConflictRule[]
+  private rules: ConflictResolveRule[]
 
-  constructor(rules: ConflictRule[] = []) {
+  constructor(rules: ConflictResolveRule[] = []) {
     this.rules = rules
   }
 
-  async loadRules(): Promise<ConflictRule[]> {
+  async loadRules(): Promise<ConflictResolveRule[]> {
     return this.rules
   }
 
-  setRules(rules: ConflictRule[]): void {
+  setRules(rules: ConflictResolveRule[]): void {
     this.rules = rules
   }
 
   static createWithDefaultRules(): ConfigRepositoryStub {
     const defaultRules = [
-      new ConflictRule(
+      new ConflictResolveRule(
         'package-lock.json',
         undefined,
         ResolutionStrategy.Theirs,
         'Accept incoming package-lock.json'
       ),
-      new ConflictRule(
+      new ConflictResolveRule(
         '*.generated.ts',
         undefined,
         ResolutionStrategy.Theirs,
         'Accept incoming generated files'
       ),
-      new ConflictRule(
+      new ConflictResolveRule(
         'src/**/*.ts',
         'both-modified',
         ResolutionStrategy.Manual,

@@ -1,6 +1,6 @@
 import { ResolutionStrategy } from './resolutionStrategy.js'
 
-export class ConflictRule {
+export class ConflictResolveRule {
   constructor(
     public readonly filePattern: string,
     public readonly conflictType?: string,
