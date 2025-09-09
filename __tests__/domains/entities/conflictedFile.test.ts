@@ -1,5 +1,5 @@
-import { ConflictedFile } from '../../../src/domains/entities/conflictedFile.js'
-import { ConflictType } from '../../../src/domains/value-objects/conflictType.js'
+import { ConflictedFile } from '@domains/entities/conflictedFile.js'
+import { ConflictType } from '@domains/value-objects/conflictType.js'
 
 describe('ConflictedFile', () => {
   describe('isModified', () => {

@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { ConflictResolver } from '../../use-cases/conflictResolver.js'
+import { ConflictResolver } from '@use-cases/conflictResolver.js'
 
 export class ActionHandler {
   constructor(private conflictResolver: ConflictResolver) {}

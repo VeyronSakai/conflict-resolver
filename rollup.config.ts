@@ -12,6 +12,7 @@ const config = {
     format: 'es',
     sourcemap: true
   },
+  // @ts-expect-error - Rollup plugins have type definition issues with TypeScript
   plugins: [typescript(), nodeResolve({ preferBuiltins: true }), commonjs()]
 }
 

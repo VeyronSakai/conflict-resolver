@@ -54,56 +54,56 @@ Create a `.github/conflict-resolver.yml` file in your repository:
 rules:
   # Always use theirs for package-lock.json
   # This is useful when you want to accept incoming changes for dependency lock files
-  - path: 'package-lock.json'
+  - paths: 'package-lock.json'
     strategy: 'theirs'
 
   # Always use theirs for yarn.lock
-  - path: 'yarn.lock'
+  - paths: 'yarn.lock'
     strategy: 'theirs'
 
   # Always use ours for auto-generated files
-  - path: '*.generated.ts'
+  - paths: '*.generated.ts'
     strategy: 'ours'
 
-  - path: '*.generated.js'
+  - paths: '*.generated.js'
     strategy: 'ours'
 
   # For build output directories, always use ours
-  - path: 'dist/**/*'
+  - paths: 'dist/**/*'
     strategy: 'ours'
 
-  - path: 'build/**/*'
+  - paths: 'build/**/*'
     strategy: 'ours'
 
-  # Example with conflictType specification
+  # Example with conflict_type specification
   # Only apply this rule when both sides modified the file
-  - path: 'src/**/*.test.ts'
-    conflictType: 'both-modified'
+  - paths: 'src/**/*.test.ts'
+    conflict_type: 'both-modified'
     strategy: 'theirs'
 
-  # Another example with conflictType
+  # Another example with conflict_type
   # When a file is added by both sides, prefer theirs
-  - path: 'docs/**/*.md'
-    conflictType: 'both-added'
+  - paths: 'docs/**/*.md'
+    conflict_type: 'both-added'
     strategy: 'theirs'
 
   # Configuration files - be careful with these
   # You might want to manually resolve conflicts in config files
   # Uncomment if you want automatic resolution:
-  # - path: ".github/workflows/*.yml"
+  # - paths: ".github/workflows/*.yml"
   #   strategy: "theirs"
 
   # Database migration files - usually want to keep both
   # This example shows preferring 'ours' for migrations
-  # - path: "migrations/*.sql"
-  #   conflictType: "both-added"
+  # - paths: "migrations/*.sql"
+  #   conflict_type: "both-added"
   #   strategy: "ours"
 # Notes:
 # - Rules are evaluated in order. The first matching rule wins.
-# - 'path' supports glob patterns (e.g., *.js, src/**/*.ts)
+# - 'paths' supports glob patterns (e.g., *.js, src/**/*.ts)
 # - 'strategy' must be either 'ours' or 'theirs'
-# - 'conflictType' is optional. If not specified, the rule applies to all conflict types.
-# - Valid conflictType values:
+# - 'conflict_type' is optional. If not specified, the rule applies to all conflict types.
+# - Valid conflict_type values:
 #   - 'both-modified' (UU): Both sides modified the file
 #   - 'both-added' (AA): Both sides added the same file
 #   - 'both-deleted' (DD): Both sides deleted the file
@@ -144,12 +144,12 @@ The action recognizes the following Git conflict states:
 
 ### Rule Properties
 
-- **`path`** (required): File path pattern (supports glob patterns)
+- **`paths`** (required): File path pattern (supports glob patterns)
   - Examples: `*.json`, `src/**/*.ts`, `docs/*.md`
 - **`strategy`** (required): Resolution strategy
   - `ours`: Keep our version
   - `theirs`: Keep their version
-- **`conflictType`** (optional): Apply rule only to specific conflict types
+- **`conflict_type`** (optional): Apply rule only to specific conflict types
   - If not specified, the rule applies to all conflict types
 
 ### Rule Evaluation
@@ -164,11 +164,11 @@ The action recognizes the following Git conflict states:
 
 ```yaml
 rules:
-  - path: 'package-lock.json'
+  - paths: 'package-lock.json'
     strategy: 'theirs'
-  - path: 'yarn.lock'
+  - paths: 'yarn.lock'
     strategy: 'theirs'
-  - path: 'pnpm-lock.yaml'
+  - paths: 'pnpm-lock.yaml'
     strategy: 'theirs'
 ```
 
@@ -176,11 +176,11 @@ rules:
 
 ```yaml
 rules:
-  - path: '**/*.generated.*'
+  - paths: '**/*.generated.*'
     strategy: 'ours'
-  - path: 'dist/**/*'
+  - paths: 'dist/**/*'
     strategy: 'ours'
-  - path: 'build/**/*'
+  - paths: 'build/**/*'
     strategy: 'ours'
 ```
 
@@ -188,11 +188,11 @@ rules:
 
 ```yaml
 rules:
-  - path: '**/*.test.ts'
-    conflictType: 'both-modified'
+  - paths: '**/*.test.ts'
+    conflict_type: 'both-modified'
     strategy: 'theirs'
-  - path: '**/*.spec.js'
-    conflictType: 'both-modified'
+  - paths: '**/*.spec.js'
+    conflict_type: 'both-modified'
     strategy: 'theirs'
 ```
 
@@ -202,33 +202,6 @@ rules:
 - Always review the resolution results before merging
 - The action only runs when Git is in a merge or rebase state
 - Unmatched files remain in conflict state for manual resolution
-
-## Development
-
-### Setup
-
-```bash
-npm install
-```
-
-### Test
-
-```bash
-npm test
-```
-
-### Build
-
-```bash
-npm run bundle
-```
-
-### Format and Lint
-
-```bash
-npm run format:write
-npm run lint
-```
 
 ## License
 

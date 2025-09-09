@@ -1,4 +1,4 @@
-import { ConflictType } from '../value-objects/conflictType.js'
+import { ConflictType } from '@domains/value-objects/conflictType.js'
 
 export class ConflictedFile {
   constructor(

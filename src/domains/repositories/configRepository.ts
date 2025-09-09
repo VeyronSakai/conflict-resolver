@@ -1,5 +1,5 @@
-import { ConflictRule } from '../value-objects/conflictRule.js'
+import { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 
 export interface ConfigRepository {
-  loadRules(): Promise<ConflictRule[]>
+  loadRules(): Promise<ConflictResolveRule[]>
 }

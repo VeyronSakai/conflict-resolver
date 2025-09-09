@@ -29318,13 +29318,17 @@ var ResolutionStrategy;
 class ConflictAnalyzer {
     findMatchingRule(file, rules) {
         for (const rule of rules) {
-            if (minimatch(file.path, rule.filePattern)) {
-                if (rule.matches(file.path, file.conflictType)) {
-                    return rule;
-                }
+            if (this.matches(rule, file.path, file.conflictType)) {
+                return rule;
             }
         }
         return undefined;
+    }
+    matches(rule, filePath, conflictType) {
+        if (!minimatch(filePath, rule.targetPathPattern)) {
+            return false;
+        }
+        return !(rule.conflictType && rule.conflictType !== conflictType);
     }
     determineStrategy(file, rules) {
         const matchingRule = this.findMatchingRule(file, rules);
@@ -29353,10 +29357,6 @@ class ConflictResolver {
         const unresolvedFiles = [];
         for (const file of conflictedFiles) {
             const strategy = this.conflictAnalyzer.determineStrategy(file, rules);
-            const matchingRule = this.conflictAnalyzer.findMatchingRule(file, rules);
-            if (matchingRule?.description) {
-                coreExports.info(`Applying rule: ${matchingRule.description}`);
-            }
             if (strategy === ResolutionStrategy.Manual) {
                 coreExports.warning(`${file.path} requires manual resolution (conflict type: ${file.conflictType})`);
                 unresolvedFiles.push(file.path);
@@ -32195,41 +32195,25 @@ var loader = {
 };
 var load                = loader.load;
 
-class ConflictRule {
-    filePattern;
-    conflictType;
-    strategy;
-    description;
-    constructor(filePattern, conflictType, strategy = ResolutionStrategy.Manual, description) {
-        this.filePattern = filePattern;
-        this.conflictType = conflictType;
-        this.strategy = strategy;
-        this.description = description;
-    }
-    matches(filePath, conflictType) {
-        if (this.conflictType && this.conflictType !== conflictType) {
-            return false;
-        }
-        return true;
-    }
-}
-
-class YamlConfigRepositoryImpl {
+class ConfigRepositoryImpl {
     configPath;
-    constructor(configPath = '.conflict-resolver.yml') {
+    constructor(configPath = '.github/conflict-resolver.yml') {
         this.configPath = configPath;
     }
     async loadRules() {
+        if (!fs.existsSync(this.configPath)) {
+            throw new Error(`Config file not found at ${this.configPath}`);
+        }
         try {
-            if (!fs.existsSync(this.configPath)) {
-                coreExports.warning(`Config file not found at ${this.configPath}. No automatic conflict resolution will be performed.`);
-                return [];
-            }
             const configContent = fs.readFileSync(this.configPath, 'utf8');
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
-            return config.rules.map((rule) => new ConflictRule(rule.file_pattern, rule.conflict_type, this.parseStrategy(rule.strategy), rule.description));
+            return config.rules.map((rule) => ({
+                targetPathPattern: rule.paths,
+                conflictType: rule.conflict_type,
+                strategy: this.parseStrategy(rule.strategy)
+            }));
         }
         catch (error) {
             coreExports.error(`Failed to load config: ${error}`);
@@ -32241,28 +32225,20 @@ class YamlConfigRepositoryImpl {
             throw new Error('Config must contain a "rules" array');
         }
         for (const rule of config.rules) {
-            if (!rule.file_pattern) {
-                throw new Error('Each rule must have a "file_pattern" field');
+            if (!rule.paths) {
+                throw new Error('Each rule must have a "paths" field');
             }
             if (!rule.strategy) {
                 throw new Error('Each rule must have a "strategy" field');
             }
-            if (!['ours', 'theirs', 'manual'].includes(rule.strategy)) {
-                throw new Error(`Invalid strategy "${rule.strategy}". Must be "ours", "theirs", or "manual"`);
-            }
         }
     }
     parseStrategy(strategy) {
-        switch (strategy) {
-            case 'ours':
-                return ResolutionStrategy.Ours;
-            case 'theirs':
-                return ResolutionStrategy.Theirs;
-            case 'manual':
-                return ResolutionStrategy.Manual;
-            default:
-                throw new Error(`Invalid strategy: ${strategy}`);
+        const validStrategies = Object.values(ResolutionStrategy);
+        if (validStrategies.includes(strategy)) {
+            return strategy;
         }
+        throw new Error(`Invalid strategy: ${strategy}`);
     }
 }
 
@@ -32432,9 +32408,9 @@ class GitRepositoryImpl {
  */
 async function run() {
     // Dependency Injection Container
-    const configPath = coreExports.getInput('config-path') || '.conflict-resolver.yml';
+    const configPath = coreExports.getInput('config-path') || '.github/conflict-resolver.yml';
     // Create infrastructure implementations
-    const configRepository = new YamlConfigRepositoryImpl(configPath);
+    const configRepository = new ConfigRepositoryImpl(configPath);
     const gitRepository = new GitRepositoryImpl();
     // Create use-case with injected dependencies
     const conflictResolver = new ConflictResolver(configRepository, gitRepository);
