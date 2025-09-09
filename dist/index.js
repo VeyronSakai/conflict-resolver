@@ -32270,12 +32270,12 @@ var execExports = requireExec();
 
 var ConflictType;
 (function (ConflictType) {
-    ConflictType["ModifiedModified"] = "modified-modified";
-    ConflictType["DeletedModified"] = "deleted-modified";
-    ConflictType["ModifiedDeleted"] = "modified-deleted";
-    ConflictType["AddedAdded"] = "added-added";
-    ConflictType["AddedModified"] = "added-modified";
-    ConflictType["ModifiedAdded"] = "modified-added";
+    ConflictType["BothModified"] = "both-modified";
+    ConflictType["DeletedByUs"] = "deleted-by-us";
+    ConflictType["DeletedByThem"] = "deleted-by-them";
+    ConflictType["BothAdded"] = "both-added";
+    ConflictType["AddedByUs"] = "added-by-us";
+    ConflictType["AddedByThem"] = "added-by-them";
 })(ConflictType || (ConflictType = {}));
 
 class ConflictedFile {
@@ -32286,16 +32286,16 @@ class ConflictedFile {
         this.conflictType = conflictType;
     }
     isModified() {
-        return (this.conflictType === ConflictType.ModifiedModified ||
-            this.conflictType === ConflictType.AddedModified ||
-            this.conflictType === ConflictType.ModifiedAdded);
+        return (this.conflictType === ConflictType.BothModified ||
+            this.conflictType === ConflictType.AddedByUs ||
+            this.conflictType === ConflictType.AddedByThem);
     }
     isDeleted() {
-        return (this.conflictType === ConflictType.DeletedModified ||
-            this.conflictType === ConflictType.ModifiedDeleted);
+        return (this.conflictType === ConflictType.DeletedByUs ||
+            this.conflictType === ConflictType.DeletedByThem);
     }
     isAdded() {
-        return this.conflictType === ConflictType.AddedAdded;
+        return this.conflictType === ConflictType.BothAdded;
     }
 }
 
@@ -32339,35 +32339,35 @@ class GitRepositoryImpl {
         await this.execGitCommand(['commit', '-m', message]);
     }
     async detectConflictType(filePath) {
-        const diffOutput = await this.execGitCommand(['diff', '--cc', filePath]);
-        const hasOurs = diffOutput.includes('++<<<<<<< HEAD');
-        const hasTheirs = diffOutput.includes('++=======');
         const statusOutput = await this.execGitCommand([
             'status',
             '--porcelain',
             filePath
         ]);
         if (statusOutput.includes('DD')) {
-            return ConflictType.DeletedModified;
+            return ConflictType.BothModified; // Both sides deleted
         }
         else if (statusOutput.includes('AU')) {
-            return ConflictType.AddedModified;
+            return ConflictType.AddedByUs;
         }
         else if (statusOutput.includes('UA')) {
-            return ConflictType.ModifiedAdded;
+            return ConflictType.AddedByThem;
         }
         else if (statusOutput.includes('AA')) {
-            return ConflictType.AddedAdded;
+            return ConflictType.BothAdded;
         }
-        else if (hasOurs && !hasTheirs) {
-            return ConflictType.ModifiedDeleted;
+        else if (statusOutput.includes('DU')) {
+            return ConflictType.DeletedByUs;
+        }
+        else if (statusOutput.includes('UD')) {
+            return ConflictType.DeletedByThem;
         }
         else {
-            return ConflictType.ModifiedModified;
+            return ConflictType.BothModified;
         }
     }
     async handleDeletedConflict(file, strategy) {
-        if (file.conflictType === ConflictType.DeletedModified) {
+        if (file.conflictType === ConflictType.DeletedByUs) {
             if (strategy === ResolutionStrategy.Ours) {
                 await this.execGitCommand(['rm', file.path]);
                 coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
@@ -32377,7 +32377,7 @@ class GitRepositoryImpl {
                 coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
             }
         }
-        else if (file.conflictType === ConflictType.ModifiedDeleted) {
+        else if (file.conflictType === ConflictType.DeletedByThem) {
             if (strategy === ResolutionStrategy.Ours) {
                 await this.execGitCommand(['add', file.path]);
                 coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
