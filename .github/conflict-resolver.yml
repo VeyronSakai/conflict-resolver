@@ -16,3 +16,15 @@ rules:
   - paths: 'dist/**/*'
     strategy: 'ours'
     description: 'Keep our distribution files'
+
+  # Example with conflict_type: only apply when both sides modified
+  - paths: 'src/**/*.test.ts'
+    conflict_type: 'both-modified'
+    strategy: 'theirs'
+    description: 'Accept incoming test changes when both sides modified'
+
+  # Example with conflict_type: handle files added by both sides
+  - paths: 'docs/**/*.md'
+    conflict_type: 'both-added'
+    strategy: 'theirs'
+    description: 'Prefer incoming documentation when both sides added the same file'
