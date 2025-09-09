@@ -29318,13 +29318,17 @@ var ResolutionStrategy;
 class ConflictAnalyzer {
     findMatchingRule(file, rules) {
         for (const rule of rules) {
-            if (minimatch(file.path, rule.filePattern)) {
-                if (rule.matches(file.path, file.conflictType)) {
-                    return rule;
-                }
+            if (this.matches(rule, file.path, file.conflictType)) {
+                return rule;
             }
         }
         return undefined;
+    }
+    matches(rule, filePath, conflictType) {
+        if (!minimatch(filePath, rule.filePattern)) {
+            return false;
+        }
+        return !(rule.conflictType && rule.conflictType !== conflictType);
     }
     determineStrategy(file, rules) {
         const matchingRule = this.findMatchingRule(file, rules);
@@ -32195,7 +32199,7 @@ var loader = {
 };
 var load                = loader.load;
 
-class ConflictRule {
+class ConflictResolveRule {
     filePattern;
     conflictType;
     strategy;
@@ -32205,12 +32209,6 @@ class ConflictRule {
         this.conflictType = conflictType;
         this.strategy = strategy;
         this.description = description;
-    }
-    matches(filePath, conflictType) {
-        if (this.conflictType && this.conflictType !== conflictType) {
-            return false;
-        }
-        return true;
     }
 }
 
@@ -32229,7 +32227,7 @@ class YamlConfigRepositoryImpl {
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
-            return config.rules.map((rule) => new ConflictRule(rule.file_pattern, rule.conflict_type, this.parseStrategy(rule.strategy), rule.description));
+            return config.rules.map((rule) => new ConflictResolveRule(rule.file_pattern, rule.conflict_type, this.parseStrategy(rule.strategy), rule.description));
         }
         catch (error) {
             coreExports.error(`Failed to load config: ${error}`);
