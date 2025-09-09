@@ -45,10 +45,10 @@ describe('ConflictResolver', () => {
 
       const rules: ConflictResolveRule[] = [
         {
-          filePattern: 'package-lock.json',
+          targetPathPattern: 'package-lock.json',
           strategy: ResolutionStrategy.Theirs
         },
-        { filePattern: '*.ts', strategy: ResolutionStrategy.Manual }
+        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -91,7 +91,7 @@ describe('ConflictResolver', () => {
 
       const rules: ConflictResolveRule[] = [
         {
-          filePattern: '*.generated.ts',
+          targetPathPattern: '*.generated.ts',
           strategy: ResolutionStrategy.Theirs
         }
       ]
@@ -119,27 +119,6 @@ describe('ConflictResolver', () => {
       )
     })
 
-    it('should log rule descriptions when available', async () => {
-      const conflicts = [
-        new ConflictedFile('package-lock.json', ConflictType.BothModified)
-      ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
-
-      const rules: ConflictResolveRule[] = [
-        {
-          filePattern: 'package-lock.json',
-          strategy: ResolutionStrategy.Theirs,
-          description: 'Accept incoming package-lock.json'
-        }
-      ]
-      configRepositoryStub.setRules(rules)
-
-      const result = await conflictResolver.resolve()
-
-      // Verify resolution happened correctly
-      expect(result.resolvedFiles).toEqual(['package-lock.json'])
-      expect(result.unresolvedFiles).toEqual([])
-    })
 
     it('should handle resolution errors gracefully', async () => {
       const conflicts = [
@@ -149,7 +128,7 @@ describe('ConflictResolver', () => {
 
       const rules: ConflictResolveRule[] = [
         {
-          filePattern: 'error-file.ts',
+          targetPathPattern: 'error-file.ts',
           strategy: ResolutionStrategy.Ours
         }
       ]
@@ -175,8 +154,8 @@ describe('ConflictResolver', () => {
       gitRepositoryStub.setConflictedFiles(conflicts)
 
       const rules: ConflictResolveRule[] = [
-        { filePattern: '*.json', strategy: ResolutionStrategy.Theirs },
-        { filePattern: '*.ts', strategy: ResolutionStrategy.Manual }
+        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs },
+        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual }
       ]
       configRepositoryStub.setRules(rules)
 

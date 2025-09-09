@@ -5,39 +5,30 @@ rules:
   # Test rule for package-lock.json
   - paths: 'package-lock.json'
     strategy: 'theirs'
-    description: 'Accept incoming package-lock.json changes'
 
   # Test rule for generated files
   - paths: '*.generated.ts'
     strategy: 'ours'
-    description: 'Keep our generated TypeScript files'
 
   # Test rule for dist files
   - paths: 'dist/**/*'
     strategy: 'ours'
-    description: 'Keep our distribution files'
 
   # Example with conflict_type: only apply when both sides modified
   - paths: 'src/**/*.test.ts'
     conflict_type: 'both-modified'
     strategy: 'theirs'
-    description: 'Accept incoming test changes when both sides modified'
 
   # Example with conflict_type: handle files added by both sides
   - paths: 'docs/**/*.md'
     conflict_type: 'both-added'
     strategy: 'theirs'
-    description:
-      'Prefer incoming documentation when both sides added the same file'
 
   # Example with manual strategy: require human review
   - paths: '.github/workflows/*.yml'
     strategy: 'manual'
-    description: 'GitHub Actions workflows require manual review for security'
 
   # Example with manual strategy and conflict_type
   - paths: '**/*.config.js'
     conflict_type: 'both-modified'
     strategy: 'manual'
-    description:
-      'Configuration files need careful manual review when both sides modified'

@@ -35,11 +35,6 @@ export class ConflictResolver {
 
     for (const file of conflictedFiles) {
       const strategy = this.conflictAnalyzer.determineStrategy(file, rules)
-      const matchingRule = this.conflictAnalyzer.findMatchingRule(file, rules)
-
-      if (matchingRule?.description) {
-        core.info(`Applying rule: ${matchingRule.description}`)
-      }
 
       if (strategy === ResolutionStrategy.Manual) {
         core.warning(

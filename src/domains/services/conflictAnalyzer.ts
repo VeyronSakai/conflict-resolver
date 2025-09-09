@@ -21,7 +21,7 @@ export class ConflictAnalyzer {
     filePath: string,
     conflictType: string
   ): boolean {
-    if (!minimatch(filePath, rule.filePattern)) {
+    if (!minimatch(filePath, rule.targetPathPattern)) {
       return false
     }
     return !(rule.conflictType && rule.conflictType !== conflictType)

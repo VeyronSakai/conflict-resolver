@@ -20,20 +20,17 @@ export class ConfigRepositoryStub implements ConfigRepository {
   static createWithDefaultRules(): ConfigRepositoryStub {
     const defaultRules: ConflictResolveRule[] = [
       {
-        filePattern: 'package-lock.json',
-        strategy: ResolutionStrategy.Theirs,
-        description: 'Accept incoming package-lock.json'
+        targetPathPattern: 'package-lock.json',
+        strategy: ResolutionStrategy.Theirs
       },
       {
-        filePattern: '*.generated.ts',
-        strategy: ResolutionStrategy.Theirs,
-        description: 'Accept incoming generated files'
+        targetPathPattern: '*.generated.ts',
+        strategy: ResolutionStrategy.Theirs
       },
       {
-        filePattern: 'src/**/*.ts',
+        targetPathPattern: 'src/**/*.ts',
         conflictType: 'both-modified',
-        strategy: ResolutionStrategy.Manual,
-        description: 'Manual resolution for source files'
+        strategy: ResolutionStrategy.Manual
       }
     ]
     return new ConfigRepositoryStub(defaultRules)

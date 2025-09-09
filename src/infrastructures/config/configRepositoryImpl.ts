@@ -9,7 +9,6 @@ type YamlRule = {
   paths: string
   conflict_type?: string
   strategy: string
-  description?: string
 }
 
 type YamlConfig = {
@@ -37,10 +36,9 @@ export class ConfigRepositoryImpl implements ConfigRepository {
       return config.rules.map(
         (rule) =>
           ({
-            filePattern: rule.paths,
+            targetPathPattern: rule.paths,
             conflictType: rule.conflict_type,
-            strategy: this.parseStrategy(rule.strategy),
-            description: rule.description
+            strategy: this.parseStrategy(rule.strategy)
           }) as ConflictResolveRule
       )
     } catch (error) {
