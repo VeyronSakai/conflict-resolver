@@ -1,4 +1,4 @@
-import { ResolutionStrategy } from './resolutionStrategy.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export type ConflictResolveRule = {
   readonly targetPathPattern: string

@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
-import { ConfigRepository } from '../domains/repositories/configRepository.js'
-import { GitRepository } from '../domains/repositories/gitRepository.js'
-import { ConflictAnalyzer } from '../domains/services/conflictAnalyzer.js'
-import { ResolutionStrategy } from '../domains/value-objects/resolutionStrategy.js'
+import { ConfigRepository } from '@domains/repositories/configRepository.js'
+import { GitRepository } from '@domains/repositories/gitRepository.js'
+import { ConflictAnalyzer } from '@domains/services/conflictAnalyzer.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export interface ResolutionResult {
   resolvedFiles: string[]

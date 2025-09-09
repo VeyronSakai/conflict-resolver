@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as yaml from 'js-yaml'
 import * as core from '@actions/core'
-import { ConfigRepository } from '../../domains/repositories/configRepository.js'
-import { ConflictResolveRule } from '../../domains/value-objects/conflictResolveRule.js'
-import { ResolutionStrategy } from '../../domains/value-objects/resolutionStrategy.js'
+import { ConfigRepository } from '@domains/repositories/configRepository.js'
+import { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 type YamlRule = {
   paths: string

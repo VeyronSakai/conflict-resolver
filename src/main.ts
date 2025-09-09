@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
-import { ActionHandler } from './presentations/github-actions/actionHandler.js'
-import { ConflictResolver } from './use-cases/conflictResolver.js'
-import { ConfigRepositoryImpl } from './infrastructures/config/configRepositoryImpl.js'
-import { GitRepositoryImpl } from './infrastructures/git/gitRepositoryImpl.js'
+import { ActionHandler } from '@presentations/github-actions/actionHandler.js'
+import { ConflictResolver } from '@use-cases/conflictResolver.js'
+import { ConfigRepositoryImpl } from '@infrastructures/config/configRepositoryImpl.js'
+import { GitRepositoryImpl } from '@infrastructures/git/gitRepositoryImpl.js'
 
 /**
  * The main function for the action.

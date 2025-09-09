@@ -1,11 +1,11 @@
 import { jest, describe, expect, it, beforeEach } from '@jest/globals'
-import { ConflictResolver } from '../../src/use-cases/conflictResolver.js'
+import { ConflictResolver } from '@use-cases/conflictResolver.js'
 import { ConfigRepositoryStub } from '../test-doubles/configRepositoryStub.js'
 import { GitRepositoryStub } from '../test-doubles/gitRepositoryStub.js'
-import { ConflictedFile } from '../../src/domains/entities/conflictedFile.js'
-import { ConflictType } from '../../src/domains/value-objects/conflictType.js'
-import type { ConflictResolveRule } from '../../src/domains/value-objects/conflictResolveRule.js'
-import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
+import { ConflictedFile } from '@domains/entities/conflictedFile.js'
+import { ConflictType } from '@domains/value-objects/conflictType.js'
+import type { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 // Note: @actions/core mocking is disabled due to ESM module constraints
 // The tests focus on business logic validation rather than logging verification

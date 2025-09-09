@@ -1,6 +1,6 @@
-import { ConfigRepository } from '../../src/domains/repositories/configRepository.js'
-import type { ConflictResolveRule } from '../../src/domains/value-objects/conflictResolveRule.js'
-import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
+import { ConfigRepository } from '@domains/repositories/configRepository.js'
+import type { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export class ConfigRepositoryStub implements ConfigRepository {
   private rules: ConflictResolveRule[]

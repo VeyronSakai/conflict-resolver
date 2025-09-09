@@ -1,7 +1,7 @@
-import { GitRepository } from '../../src/domains/repositories/gitRepository.js'
-import { ConflictedFile } from '../../src/domains/entities/conflictedFile.js'
-import { ConflictType } from '../../src/domains/value-objects/conflictType.js'
-import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
+import { GitRepository } from '@domains/repositories/gitRepository.js'
+import { ConflictedFile } from '@domains/entities/conflictedFile.js'
+import { ConflictType } from '@domains/value-objects/conflictType.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export class GitRepositoryStub implements GitRepository {
   private conflictedFiles: ConflictedFile[] = []
