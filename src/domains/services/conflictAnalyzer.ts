@@ -1,6 +1,6 @@
 import { minimatch } from 'minimatch'
 import { ConflictedFile } from '../entities/conflictedFile.js'
-import { ConflictResolveRule } from '../value-objects/conflictRule.js'
+import { ConflictResolveRule } from '../value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '../value-objects/resolutionStrategy.js'
 
 export class ConflictAnalyzer {

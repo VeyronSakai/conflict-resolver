@@ -1,5 +1,5 @@
 import { ConfigRepository } from '../../src/domains/repositories/configRepository.js'
-import { ConflictResolveRule } from '../../src/domains/value-objects/conflictRule.js'
+import { ConflictResolveRule } from '../../src/domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
 
 export class ConfigRepositoryStub implements ConfigRepository {

@@ -4,7 +4,7 @@ import { ConfigRepositoryStub } from '../test-doubles/configRepositoryStub.js'
 import { GitRepositoryStub } from '../test-doubles/gitRepositoryStub.js'
 import { ConflictedFile } from '../../src/domains/entities/conflictedFile.js'
 import { ConflictType } from '../../src/domains/value-objects/conflictType.js'
-import { ConflictResolveRule } from '../../src/domains/value-objects/conflictRule.js'
+import { ConflictResolveRule } from '../../src/domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '../../src/domains/value-objects/resolutionStrategy.js'
 
 // Note: @actions/core mocking is disabled due to ESM module constraints

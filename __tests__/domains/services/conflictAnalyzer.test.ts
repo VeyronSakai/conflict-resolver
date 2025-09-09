@@ -1,6 +1,6 @@
 import { ConflictAnalyzer } from '../../../src/domains/services/conflictAnalyzer.js'
 import { ConflictedFile } from '../../../src/domains/entities/conflictedFile.js'
-import { ConflictResolveRule } from '../../../src/domains/value-objects/conflictRule.js'
+import { ConflictResolveRule } from '../../../src/domains/value-objects/conflictResolveRule.js'
 import { ConflictType } from '../../../src/domains/value-objects/conflictType.js'
 import { ResolutionStrategy } from '../../../src/domains/value-objects/resolutionStrategy.js'
 
