@@ -9,13 +9,22 @@ export class ConflictAnalyzer {
     rules: ConflictRule[]
   ): ConflictRule | undefined {
     for (const rule of rules) {
-      if (minimatch(file.path, rule.filePattern)) {
-        if (rule.matches(file.path, file.conflictType)) {
-          return rule
-        }
+      if (this.matches(rule, file.path, file.conflictType)) {
+        return rule
       }
     }
     return undefined
+  }
+
+  private matches(
+    rule: ConflictRule,
+    filePath: string,
+    conflictType: string
+  ): boolean {
+    if (!minimatch(filePath, rule.filePattern)) {
+      return false
+    }
+    return !(rule.conflictType && rule.conflictType !== conflictType)
   }
 
   determineStrategy(

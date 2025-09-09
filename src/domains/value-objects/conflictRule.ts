@@ -7,11 +7,4 @@ export class ConflictRule {
     public readonly strategy: ResolutionStrategy = ResolutionStrategy.Manual,
     public readonly description?: string
   ) {}
-
-  matches(filePath: string, conflictType: string): boolean {
-    if (this.conflictType && this.conflictType !== conflictType) {
-      return false
-    }
-    return true
-  }
 }
