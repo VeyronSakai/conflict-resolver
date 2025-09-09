@@ -1,5 +1,8 @@
 import * as core from '@actions/core'
-import { wait } from './wait.js'
+import { ActionHandler } from './presentations/github-actions/actionHandler.js'
+import { ConflictResolver } from './use-cases/conflictResolver.js'
+import { YamlConfigRepositoryImpl } from './infrastructures/config/yamlConfigRepositoryImpl.js'
+import { GitRepositoryImpl } from './infrastructures/git/gitRepositoryImpl.js'
 
 /**
  * The main function for the action.
@@ -7,21 +10,17 @@ import { wait } from './wait.js'
  * @returns Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
-  try {
-    const ms: string = core.getInput('milliseconds')
+  // Dependency Injection Container
+  const configPath = core.getInput('config-path') || '.conflict-resolver.yml'
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+  // Create infrastructure implementations
+  const configRepository = new YamlConfigRepositoryImpl(configPath)
+  const gitRepository = new GitRepositoryImpl()
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+  // Create use-case with injected dependencies
+  const conflictResolver = new ConflictResolver(configRepository, gitRepository)
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
-  } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
-  }
+  // Create and run presentation layer
+  const actionHandler = new ActionHandler(conflictResolver)
+  await actionHandler.run()
 }

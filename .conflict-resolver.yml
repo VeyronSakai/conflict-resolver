@@ -1,0 +1,24 @@
+# Test Configuration for Conflict Resolver
+# This is a dummy configuration file for testing purposes
+
+rules:
+  # Example rule for package-lock.json
+  - file_pattern: 'package-lock.json'
+    strategy: 'theirs'
+    description: 'Always accept incoming package-lock.json'
+
+  # Example rule for generated files
+  - file_pattern: '**/*.generated.*'
+    strategy: 'theirs'
+    description: 'Accept incoming generated files'
+
+  # Example rule for specific source files
+  - file_pattern: 'src/**/*.ts'
+    conflict_type: 'both-modified'
+    strategy: 'manual'
+    description: 'Manual resolution for TypeScript source files'
+
+  # Example rule for configuration files
+  - file_pattern: '*.config.js'
+    strategy: 'ours'
+    description: 'Keep our configuration files'
