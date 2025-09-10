@@ -4,6 +4,6 @@ dist/
 node_modules/
 coverage/
 .claude/
-test-conflict-files/
+__tests__/test-conflict-files/
 # Ignore ci.yml due to PowerShell here-strings that prettier can't parse
 .github/workflows/ci.yml

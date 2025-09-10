@@ -73,7 +73,7 @@ jobs:
           # ORIGINAL_BRANCH=$(git branch --show-current)
 
           # Define test file paths
-          TEST_DIR="test-conflict-files"
+          TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
           TEST_TS="$TEST_DIR/test.ts"
@@ -456,7 +456,7 @@ jobs:
           echo "::notice::Unresolved files: $UNRESOLVED_FILES"
 
           # Define test file paths for verification
-          TEST_DIR="test-conflict-files"
+          TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
           TEST_TS="$TEST_DIR/test.ts"
@@ -541,7 +541,7 @@ jobs:
         run: |
           set -x  # Enable debug output
           # Define test file paths
-          TEST_DIR="test-conflict-files"
+          TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
           TEST_TS="$TEST_DIR/test.ts"
@@ -645,7 +645,7 @@ jobs:
         run: |
           set -x  # Enable debug output
           # Define test file paths
-          TEST_DIR="test-conflict-files"
+          TEST_DIR="__tests__/test-conflict-files"
           TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
           TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
@@ -692,7 +692,7 @@ jobs:
       - name: Show final file contents
         run: |
           # Define test file paths
-          TEST_DIR="test-conflict-files"
+          TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
 
