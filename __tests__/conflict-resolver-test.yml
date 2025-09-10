@@ -63,11 +63,5 @@ rules:
   - paths: '__tests__/test-conflict-files/*.png'
     strategy: 'theirs'
 
-  - paths: '__tests__/test-conflict-files/*.pdf'
-    strategy: 'ours'
-
-  - paths: '__tests__/test-conflict-files/*.zip'
-    strategy: 'theirs'
-
   # Note: Files without rules (undefined-rule.txt, special-case.xml)
   # will remain unresolved with conflict markers

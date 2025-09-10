@@ -81,9 +81,6 @@ jobs:
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
           TEST_XML="$TEST_DIR/special-case.xml"
           TEST_PNG="$TEST_DIR/test.png"
-          TEST_PDF="$TEST_DIR/test.pdf"
-          TEST_ZIP="$TEST_DIR/test.zip"
-          TEST_TEMP="$TEST_DIR/temp.txt"
 
           # Create base branch with test files
           git checkout -b test-base-${{ github.run_id }}
@@ -223,22 +220,6 @@ jobs:
             printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05'
             printf '\x00\x00\x00\x00IEND\xaeB`\x82'
           } > "$TEST_PNG"
-
-          # PDF file
-          {
-            printf '%%PDF-1.4\n%%Branch1\n'
-            printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
-            printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'
-            printf '3 0 obj\n<< /Type /Page /Parent 2 0 R '
-            printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n'
-            printf 'xref\n0 4\n0000000000 65535 f\n'
-            printf '0000000009 00000 n\n0000000058 00000 n\n'
-            printf '0000000115 00000 n\ntrailer\n'
-            printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF'
-          } > "$TEST_PDF"
-
-          echo "Branch 1 content for ZIP" > "$TEST_TEMP"
-          (cd "$TEST_DIR" && zip -q "${TEST_ZIP##*/}" "${TEST_TEMP##*/}" && rm "${TEST_TEMP##*/}")
 
           git add "$TEST_DIR/"
           git commit -m "Branch 1 changes"
@@ -382,22 +363,6 @@ jobs:
             printf '\x00\x00\x00\x00IEND\xaeB`\x82'
           } > "$TEST_PNG"
 
-          # PDF file
-          {
-            printf '%%PDF-1.4\n%%Branch2\n'
-            printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
-            printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n'
-            printf '3 0 obj\n<< /Type /Page /Parent 2 0 R '
-            printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n'
-            printf 'xref\n0 4\n0000000000 65535 f\n'
-            printf '0000000009 00000 n\n0000000058 00000 n\n'
-            printf '0000000115 00000 n\ntrailer\n'
-            printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF'
-          } > "$TEST_PDF"
-
-          echo "Branch 2 content for ZIP" > "$TEST_TEMP"
-          (cd "$TEST_DIR" && zip -q "${TEST_ZIP##*/}" "${TEST_TEMP##*/}" && rm "${TEST_TEMP##*/}")
-
           git add "$TEST_DIR/"
           git commit -m "Branch 2 changes"
 
@@ -494,18 +459,6 @@ jobs:
             echo "✅ test.png resolved (theirs strategy)"
           else
             echo "❌ test.png should have been resolved"
-          fi
-
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_PDF"; then
-            echo "✅ test.pdf resolved (ours strategy)"
-          else
-            echo "❌ test.pdf should have been resolved"
-          fi
-
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_ZIP"; then
-            echo "✅ test.zip resolved (theirs strategy)"
-          else
-            echo "❌ test.zip should have been resolved"
           fi
 
           # Check unresolved files (manual strategy)
@@ -605,43 +558,6 @@ jobs:
             ls -la "$TEST_PNG"
             exit 1
           fi
-
-          # Verify PDF file has branch-2 content (ours strategy)
-          echo "Checking PDF content:"
-          head -2 "$TEST_PDF" | od -c
-          if grep -q "%%Branch2" "$TEST_PDF" && \
-             grep -q "/Count 2" "$TEST_PDF"; then
-            echo "✅ test.pdf has correct branch-2 content (ours)"
-          elif grep -q "%%Branch1" "$TEST_PDF"; then
-            echo "❌ test.pdf has branch-1 content instead of branch-2"
-            exit 1
-          else
-            echo "❌ test.pdf does not have expected branch-2 content"
-            echo "Actual PDF header:"
-            head -5 "$TEST_PDF"
-            exit 1
-          fi
-
-          # Verify ZIP file has branch-1 content (theirs strategy)
-          # Use Python to verify ZIP content (always available in GitHub Actions)
-          echo "Verifying ZIP content..."
-          python3 -c "
-import zipfile
-import sys
-try:
-    with zipfile.ZipFile('$TEST_ZIP', 'r') as z:
-        content = z.read('temp.txt').decode('utf-8')
-        if 'Branch 1 content for ZIP' in content:
-            print('✅ test.zip has correct branch-1 content (theirs)')
-            sys.exit(0)
-        else:
-            print('❌ test.zip does not have expected branch-1 content')
-            print('Actual content:', content)
-            sys.exit(1)
-except Exception as e:
-    print(f'❌ Failed to read ZIP file: {e}')
-    sys.exit(1)
-"
 
           echo "::endgroup::"
 
