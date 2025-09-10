@@ -444,7 +444,7 @@ jobs:
         id: test-action
         uses: ./
         with:
-          config-path: '.github/conflict-resolver-sample.yml'
+          config-path: '__tests__/conflict-resolver-test.yml'
 
       - name: Print Output
         id: output
