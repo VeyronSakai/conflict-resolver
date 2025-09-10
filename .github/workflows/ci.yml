@@ -69,7 +69,6 @@ jobs:
       - name: Create test branches and conflicts
         id: create-conflicts
         run: |
-          # shellcheck disable=SC1039,SC1072,SC1073
           # Save current branch (not used, kept for reference)
           # ORIGINAL_BRANCH=$(git branch --show-current)
 
@@ -218,22 +217,26 @@ jobs:
 
           # Create different binary files for branch 1
           # PNG file (2x2 pixels)
-          printf '\x89PNG\r\n\x1a\n' > "$TEST_PNG"
-          printf '\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02' >> "$TEST_PNG"
-          printf '\x08\x02\x00\x00\x00\xfd\xd4\x9as' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x00IEND\xaeB`\x82' >> "$TEST_PNG"
+          {
+            printf '\x89PNG\r\n\x1a\n'
+            printf '\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02'
+            printf '\x08\x02\x00\x00\x00\xfd\xd4\x9as'
+            printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05'
+            printf '\x00\x00\x00\x00IEND\xaeB`\x82'
+          } > "$TEST_PNG"
 
           # PDF file
-          printf '%%PDF-1.4\n%%Branch1\n' > "$TEST_PDF"
-          printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' >> "$TEST_PDF"
-          printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n' >> "$TEST_PDF"
-          printf '3 0 obj\n<< /Type /Page /Parent 2 0 R ' >> "$TEST_PDF"
-          printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n' >> "$TEST_PDF"
-          printf 'xref\n0 4\n0000000000 65535 f\n' >> "$TEST_PDF"
-          printf '0000000009 00000 n\n0000000058 00000 n\n' >> "$TEST_PDF"
-          printf '0000000115 00000 n\ntrailer\n' >> "$TEST_PDF"
-          printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF' >> "$TEST_PDF"
+          {
+            printf '%%PDF-1.4\n%%Branch1\n'
+            printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
+            printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'
+            printf '3 0 obj\n<< /Type /Page /Parent 2 0 R '
+            printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n'
+            printf 'xref\n0 4\n0000000000 65535 f\n'
+            printf '0000000009 00000 n\n0000000058 00000 n\n'
+            printf '0000000115 00000 n\ntrailer\n'
+            printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF'
+          } > "$TEST_PDF"
 
           echo "Branch 1 content for ZIP" > "$TEST_TEMP"
           (cd "$TEST_DIR" && zip -q "${TEST_ZIP##*/}" "${TEST_TEMP##*/}" && rm "${TEST_TEMP##*/}")
@@ -372,22 +375,26 @@ jobs:
 
           # Create different binary files for branch 2
           # PNG file (3x3 pixels)
-          printf '\x89PNG\r\n\x1a\n' > "$TEST_PNG"
-          printf '\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03' >> "$TEST_PNG"
-          printf '\x08\x02\x00\x00\x00\xd9J"\xe8' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x00IEND\xaeB`\x82' >> "$TEST_PNG"
+          {
+            printf '\x89PNG\r\n\x1a\n'
+            printf '\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03'
+            printf '\x08\x02\x00\x00\x00\xd9J"\xe8'
+            printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05'
+            printf '\x00\x00\x00\x00IEND\xaeB`\x82'
+          } > "$TEST_PNG"
 
           # PDF file
-          printf '%%PDF-1.4\n%%Branch2\n' > "$TEST_PDF"
-          printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' >> "$TEST_PDF"
-          printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n' >> "$TEST_PDF"
-          printf '3 0 obj\n<< /Type /Page /Parent 2 0 R ' >> "$TEST_PDF"
-          printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n' >> "$TEST_PDF"
-          printf 'xref\n0 4\n0000000000 65535 f\n' >> "$TEST_PDF"
-          printf '0000000009 00000 n\n0000000058 00000 n\n' >> "$TEST_PDF"
-          printf '0000000115 00000 n\ntrailer\n' >> "$TEST_PDF"
-          printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF' >> "$TEST_PDF"
+          {
+            printf '%%PDF-1.4\n%%Branch2\n'
+            printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
+            printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n'
+            printf '3 0 obj\n<< /Type /Page /Parent 2 0 R '
+            printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n'
+            printf 'xref\n0 4\n0000000000 65535 f\n'
+            printf '0000000009 00000 n\n0000000058 00000 n\n'
+            printf '0000000115 00000 n\ntrailer\n'
+            printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF'
+          } > "$TEST_PDF"
 
           echo "Branch 2 content for ZIP" > "$TEST_TEMP"
           (cd "$TEST_DIR" && zip -q "${TEST_ZIP##*/}" "${TEST_TEMP##*/}" && rm "${TEST_TEMP##*/}")
