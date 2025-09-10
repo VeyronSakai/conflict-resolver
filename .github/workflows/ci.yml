@@ -69,6 +69,7 @@ jobs:
       - name: Create test branches and conflicts
         id: create-conflicts
         run: |
+          # shellcheck disable=SC1039,SC1072,SC1073
           # Save current branch (not used, kept for reference)
           # ORIGINAL_BRANCH=$(git branch --show-current)
 
