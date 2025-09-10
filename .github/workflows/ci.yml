@@ -70,19 +70,33 @@ jobs:
         run: |
           # Save current branch (not used, kept for reference)
           # ORIGINAL_BRANCH=$(git branch --show-current)
+          
+          # Define test file paths
+          TEST_DIR="test-conflict-files"
+          TEST_JSON="$TEST_DIR/test.json"
+          TEST_MD="$TEST_DIR/test.md"
+          TEST_TS="$TEST_DIR/test.ts"
+          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
+          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
+          TEST_TXT="$TEST_DIR/undefined-rule.txt"
+          TEST_XML="$TEST_DIR/special-case.xml"
+          TEST_PNG="$TEST_DIR/test.png"
+          TEST_PDF="$TEST_DIR/test.pdf"
+          TEST_ZIP="$TEST_DIR/test.zip"
+          TEST_TEMP="$TEST_DIR/temp.txt"
 
           # Create base branch with test files
           git checkout -b test-base-${{ github.run_id }}
 
           # The test files are already in the repository
-          git add test-conflict-files/
+          git add "$TEST_DIR/"
           git commit -m "Add base test files" || echo "Files already committed"
 
           # Create branch 1 with changes
           git checkout -b test-branch-1-${{ github.run_id }}
 
           # Modify text files in branch 1
-          cat > test-conflict-files/test.json << 'EOF'
+          cat > "$TEST_JSON" << 'EOF'
           {
             "version": "1.1.0",
             "name": "branch-1-test",
@@ -95,7 +109,7 @@ jobs:
           }
           EOF
 
-          cat > test-conflict-files/test.md << 'EOF'
+          cat > "$TEST_MD" << 'EOF'
           # Branch 1 Documentation
 
           This is the branch 1 version of the documentation.
@@ -110,7 +124,7 @@ jobs:
           New section added only in branch 1.
           EOF
 
-          cat > test-conflict-files/test.ts << 'EOF'
+          cat > "$TEST_TS" << 'EOF'
           export function branch1Function(): string {
             console.log('Branch 1 version');
             return 'branch1';
@@ -133,7 +147,7 @@ jobs:
           }
           EOF
 
-          cat > test-conflict-files/test.config.yml << 'EOF'
+          cat > "$TEST_CONFIG_YML" << 'EOF'
           # Configuration file - Branch 1 version
           application:
             name: branch1-app
@@ -149,7 +163,7 @@ jobs:
             port: 3306
           EOF
 
-          cat > test-conflict-files/critical.ts << 'EOF'
+          cat > "$TEST_CRITICAL_TS" << 'EOF'
           // Critical file - Branch 1 version
           export class CriticalService {
             private apiKey: string;
@@ -172,7 +186,7 @@ jobs:
           }
           EOF
 
-          cat > test-conflict-files/undefined-rule.txt << 'EOF'
+          cat > "$TEST_TXT" << 'EOF'
           This is branch 1 version of the text file.
           No resolution rule is defined for this file.
 
@@ -184,7 +198,7 @@ jobs:
           Branch 1 end.
           EOF
 
-          cat > test-conflict-files/special-case.xml << 'EOF'
+          cat > "$TEST_XML" << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <configuration>
             <settings>
@@ -201,14 +215,28 @@ jobs:
           EOF
 
           # Create different binary files for branch 1
-          echo -n -e '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02\x08\x02\x00\x00\x00\xfd\xd4\x9as\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x00\x00\x00\x00IEND\xaeB`\x82' > test-conflict-files/test.png
+          # PNG file (2x2 pixels)
+          printf '\x89PNG\r\n\x1a\n' > "$TEST_PNG"
+          printf '\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02' >> "$TEST_PNG"
+          printf '\x08\x02\x00\x00\x00\xfd\xd4\x9as' >> "$TEST_PNG"
+          printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05' >> "$TEST_PNG"
+          printf '\x00\x00\x00\x00IEND\xaeB`\x82' >> "$TEST_PNG"
 
-          echo -n -e '%PDF-1.4\n%Branch1\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%EOF' > test-conflict-files/test.pdf
+          # PDF file
+          printf '%%PDF-1.4\n%%Branch1\n' > "$TEST_PDF"
+          printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' >> "$TEST_PDF"
+          printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n' >> "$TEST_PDF"
+          printf '3 0 obj\n<< /Type /Page /Parent 2 0 R ' >> "$TEST_PDF"
+          printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n' >> "$TEST_PDF"
+          printf 'xref\n0 4\n0000000000 65535 f\n' >> "$TEST_PDF"
+          printf '0000000009 00000 n\n0000000058 00000 n\n' >> "$TEST_PDF"
+          printf '0000000115 00000 n\ntrailer\n' >> "$TEST_PDF"
+          printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF' >> "$TEST_PDF"
 
-          echo "Branch 1 content for ZIP" > test-conflict-files/temp.txt
-          (cd test-conflict-files && zip -q test.zip temp.txt && rm temp.txt)
+          echo "Branch 1 content for ZIP" > "$TEST_TEMP"
+          (cd "$TEST_DIR" && zip -q test.zip temp.txt && rm temp.txt)
 
-          git add test-conflict-files/
+          git add "$TEST_DIR/"
           git commit -m "Branch 1 changes"
 
           # Create branch 2 with different changes
@@ -216,7 +244,7 @@ jobs:
           git checkout -b test-branch-2-${{ github.run_id }}
 
           # Modify files differently in branch 2
-          cat > test-conflict-files/test.json << 'EOF'
+          cat > "$TEST_JSON" << 'EOF'
           {
             "version": "1.2.0",
             "name": "branch-2-test",
@@ -229,7 +257,7 @@ jobs:
           }
           EOF
 
-          cat > test-conflict-files/test.md << 'EOF'
+          cat > "$TEST_MD" << 'EOF'
           # Branch 2 Documentation
 
           This is the branch 2 version of the documentation.
@@ -247,7 +275,7 @@ jobs:
           Branch 2 added section 4 instead of 3.
           EOF
 
-          cat > test-conflict-files/test.ts << 'EOF'
+          cat > "$TEST_TS" << 'EOF'
           export function branch2Function(): string {
             console.log('Branch 2 version');
             return 'branch2';
@@ -270,7 +298,7 @@ jobs:
           }
           EOF
 
-          cat > test-conflict-files/test.config.yml << 'EOF'
+          cat > "$TEST_CONFIG_YML" << 'EOF'
           # Configuration file - Branch 2 version
           application:
             name: branch2-app
@@ -287,7 +315,7 @@ jobs:
             replica: true
           EOF
 
-          cat > test-conflict-files/critical.ts << 'EOF'
+          cat > "$TEST_CRITICAL_TS" << 'EOF'
           // Critical file - Branch 2 version
           export class CriticalService {
             private apiKey: string;
@@ -312,7 +340,7 @@ jobs:
           }
           EOF
 
-          cat > test-conflict-files/undefined-rule.txt << 'EOF'
+          cat > "$TEST_TXT" << 'EOF'
           This is branch 2 version of the text file.
           No resolution rule is defined for this file.
 
@@ -324,7 +352,7 @@ jobs:
           Branch 2 end.
           EOF
 
-          cat > test-conflict-files/special-case.xml << 'EOF'
+          cat > "$TEST_XML" << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <configuration>
             <settings>
@@ -341,18 +369,32 @@ jobs:
           EOF
 
           # Create different binary files for branch 2
-          echo -n -e '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03\x08\x02\x00\x00\x00\xd9J"\xe8\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x00\x00\x00\x00IEND\xaeB`\x82' > test-conflict-files/test.png
+          # PNG file (3x3 pixels)
+          printf '\x89PNG\r\n\x1a\n' > "$TEST_PNG"
+          printf '\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03' >> "$TEST_PNG"
+          printf '\x08\x02\x00\x00\x00\xd9J"\xe8' >> "$TEST_PNG"
+          printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05' >> "$TEST_PNG"
+          printf '\x00\x00\x00\x00IEND\xaeB`\x82' >> "$TEST_PNG"
 
-          echo -n -e '%PDF-1.4\n%Branch2\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%EOF' > test-conflict-files/test.pdf
+          # PDF file
+          printf '%%PDF-1.4\n%%Branch2\n' > "$TEST_PDF"
+          printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' >> "$TEST_PDF"
+          printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n' >> "$TEST_PDF"
+          printf '3 0 obj\n<< /Type /Page /Parent 2 0 R ' >> "$TEST_PDF"
+          printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n' >> "$TEST_PDF"
+          printf 'xref\n0 4\n0000000000 65535 f\n' >> "$TEST_PDF"
+          printf '0000000009 00000 n\n0000000058 00000 n\n' >> "$TEST_PDF"
+          printf '0000000115 00000 n\ntrailer\n' >> "$TEST_PDF"
+          printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF' >> "$TEST_PDF"
 
-          echo "Branch 2 content for ZIP" > test-conflict-files/temp.txt
-          (cd test-conflict-files && zip -q test.zip temp.txt && rm temp.txt)
+          echo "Branch 2 content for ZIP" > "$TEST_TEMP"
+          (cd "$TEST_DIR" && zip -q test.zip temp.txt && rm temp.txt)
 
-          git add test-conflict-files/
+          git add "$TEST_DIR/"
           git commit -m "Branch 2 changes"
 
           # Attempt to merge branch 1 into branch 2 to create conflicts
-          echo "::notice::Attempting to merge branch-1 into branch-2 to create conflicts..."
+          echo "::notice::Attempting to merge branch-1 into branch-2..."
           git merge test-branch-1-${{ github.run_id }} --no-ff --no-commit || true
 
           # Check conflict status
@@ -380,8 +422,9 @@ jobs:
           git diff --name-only --diff-filter=U
           echo "::endgroup::"
 
-          for file in test-conflict-files/*.{json,md,ts,yml,txt,xml}; do
-            if [ -f "$file" ] && git diff --check "$file" 2>/dev/null | grep -q "conflict"; then
+          for file in "$TEST_DIR"/*.{json,md,ts,yml,txt,xml}; do
+            if [ -f "$file" ] && \
+               git diff --check "$file" 2>/dev/null | grep -q "conflict"; then
               echo "::group::Conflict in $file"
               cat "$file" | head -50
               echo "::endgroup::"
@@ -402,6 +445,19 @@ jobs:
         run: |
           echo "::notice::Resolved files: $RESOLVED_FILES"
           echo "::notice::Unresolved files: $UNRESOLVED_FILES"
+          
+          # Define test file paths for verification
+          TEST_DIR="test-conflict-files"
+          TEST_JSON="$TEST_DIR/test.json"
+          TEST_MD="$TEST_DIR/test.md"
+          TEST_TS="$TEST_DIR/test.ts"
+          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
+          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
+          TEST_TXT="$TEST_DIR/undefined-rule.txt"
+          TEST_XML="$TEST_DIR/special-case.xml"
+          TEST_PNG="$TEST_DIR/test.png"
+          TEST_PDF="$TEST_DIR/test.pdf"
+          TEST_ZIP="$TEST_DIR/test.zip"
 
           # Verify expected outcomes
           echo "::group::Verification Results"
@@ -474,23 +530,32 @@ jobs:
 
       - name: Show final file contents
         run: |
+          # Define test file paths
+          TEST_DIR="test-conflict-files"
+          TEST_JSON="$TEST_DIR/test.json"
+          TEST_MD="$TEST_DIR/test.md"
+          
           echo "::group::Final resolved file contents (samples)"
 
           echo "--- test.json (should have branch-1 content - theirs) ---"
-          cat test-conflict-files/test.json | head -10
+          cat "$TEST_JSON" | head -10
 
           echo ""
           echo "--- test.md (should have branch-2 content - ours) ---"
-          cat test-conflict-files/test.md | head -10
+          cat "$TEST_MD" | head -10
 
           echo "::endgroup::"
 
           echo "::group::Unresolved files with conflict markers"
 
-          for file in test-conflict-files/test.config.yml test-conflict-files/critical.ts test-conflict-files/undefined-rule.txt test-conflict-files/special-case.xml; do
+          for file in "$TEST_CONFIG_YML" \
+                      "$TEST_CRITICAL_TS" \
+                      "$TEST_TXT" \
+                      "$TEST_XML"; do
             if [ -f "$file" ]; then
               echo "--- $file ---"
-              grep -E "^(<<<<<<<|=======|>>>>>>>)" "$file" || echo "No conflict markers found (might be an error)"
+              grep -E "^(<<<<<<<|=======|>>>>>>>)" "$file" || \
+                echo "No conflict markers found (might be an error)"
               echo ""
             fi
           done
