@@ -70,7 +70,7 @@ jobs:
         run: |
           # Save current branch (not used, kept for reference)
           # ORIGINAL_BRANCH=$(git branch --show-current)
-          
+
           # Define test file paths
           TEST_DIR="test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
@@ -445,7 +445,7 @@ jobs:
         run: |
           echo "::notice::Resolved files: $RESOLVED_FILES"
           echo "::notice::Unresolved files: $UNRESOLVED_FILES"
-          
+
           # Define test file paths for verification
           TEST_DIR="test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
@@ -534,7 +534,7 @@ jobs:
           TEST_DIR="test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
-          
+
           echo "::group::Final resolved file contents (samples)"
 
           echo "--- test.json (should have branch-1 content - theirs) ---"
