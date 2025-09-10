@@ -463,64 +463,64 @@ jobs:
           echo "::group::Verification Results"
 
           # Check resolved files
-          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.json"; then
+          if echo "$RESOLVED_FILES" | grep -q "$TEST_JSON"; then
             echo "✅ test.json resolved (theirs strategy)"
           else
             echo "❌ test.json should have been resolved"
           fi
 
-          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.md"; then
+          if echo "$RESOLVED_FILES" | grep -q "$TEST_MD"; then
             echo "✅ test.md resolved (ours strategy)"
           else
             echo "❌ test.md should have been resolved"
           fi
 
-          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.ts"; then
+          if echo "$RESOLVED_FILES" | grep -q "$TEST_TS"; then
             echo "✅ test.ts resolved (theirs strategy)"
           else
             echo "❌ test.ts should have been resolved"
           fi
 
           # Check binary files
-          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.png"; then
+          if echo "$RESOLVED_FILES" | grep -q "$TEST_PNG"; then
             echo "✅ test.png resolved (theirs strategy)"
           else
             echo "❌ test.png should have been resolved"
           fi
 
-          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.pdf"; then
+          if echo "$RESOLVED_FILES" | grep -q "$TEST_PDF"; then
             echo "✅ test.pdf resolved (ours strategy)"
           else
             echo "❌ test.pdf should have been resolved"
           fi
 
-          if echo "$RESOLVED_FILES" | grep -q "test-conflict-files/test.zip"; then
+          if echo "$RESOLVED_FILES" | grep -q "$TEST_ZIP"; then
             echo "✅ test.zip resolved (theirs strategy)"
           else
             echo "❌ test.zip should have been resolved"
           fi
 
           # Check unresolved files (manual strategy)
-          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/test.config.yml"; then
+          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_CONFIG_YML"; then
             echo "✅ test.config.yml unresolved (manual strategy)"
           else
             echo "❌ test.config.yml should remain unresolved"
           fi
 
-          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/critical.ts"; then
+          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_CRITICAL_TS"; then
             echo "✅ critical.ts unresolved (manual strategy)"
           else
             echo "❌ critical.ts should remain unresolved"
           fi
 
           # Check files without rules
-          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/undefined-rule.txt"; then
+          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_TXT"; then
             echo "✅ undefined-rule.txt unresolved (no rule defined)"
           else
             echo "❌ undefined-rule.txt should remain unresolved"
           fi
 
-          if echo "$UNRESOLVED_FILES" | grep -q "test-conflict-files/special-case.xml"; then
+          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_XML"; then
             echo "✅ special-case.xml unresolved (no rule defined)"
           else
             echo "❌ special-case.xml should remain unresolved"
