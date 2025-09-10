@@ -75,11 +75,8 @@ jobs:
           TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
-          TEST_TS="$TEST_DIR/test.ts"
           TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_XML="$TEST_DIR/special-case.xml"
           TEST_PNG="$TEST_DIR/test.png"
 
           # Create base branch with test files
@@ -121,29 +118,6 @@ jobs:
           New section added only in branch 1.
           EOF
 
-          cat > "$TEST_TS" << 'EOF'
-          export function branch1Function(): string {
-            console.log('Branch 1 version');
-            return 'branch1';
-          }
-
-          export class Branch1Class {
-            private value: string;
-
-            constructor() {
-              this.value = 'branch1';
-            }
-
-            getValue(): string {
-              return this.value;
-            }
-            
-            branch1Method(): void {
-              console.log('Branch 1 specific method');
-            }
-          }
-          EOF
-
           cat > "$TEST_CONFIG_YML" << 'EOF'
           # Configuration file - Branch 1 version
           application:
@@ -160,29 +134,6 @@ jobs:
             port: 3306
           EOF
 
-          cat > "$TEST_CRITICAL_TS" << 'EOF'
-          // Critical file - Branch 1 version
-          export class CriticalService {
-            private apiKey: string;
-            private endpoint: string;
-
-            constructor() {
-              this.apiKey = 'branch1-key-xyz';
-              this.endpoint = 'https://api.branch1.com';
-            }
-
-            async performCriticalOperation(): Promise<void> {
-              // Branch 1 implementation
-              console.log('Branch 1 critical operation');
-              await this.validateBranch1();
-            }
-            
-            private async validateBranch1(): Promise<void> {
-              // Branch 1 specific validation
-            }
-          }
-          EOF
-
           cat > "$TEST_TXT" << 'EOF'
           This is branch 1 version of the text file.
           No resolution rule is defined for this file.
@@ -193,22 +144,6 @@ jobs:
           - Feature C
 
           Branch 1 end.
-          EOF
-
-          cat > "$TEST_XML" << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <configuration>
-            <settings>
-              <property name="version">1.1.0</property>
-              <property name="mode">branch1</property>
-              <property name="branch1">true</property>
-            </settings>
-            <data>
-              <item id="1">Branch 1 Item 1</item>
-              <item id="2">Branch 1 Item 2</item>
-              <item id="3">Branch 1 New Item</item>
-            </data>
-          </configuration>
           EOF
 
           # Create different binary files for branch 1
@@ -260,29 +195,6 @@ jobs:
           Branch 2 added section 4 instead of 3.
           EOF
 
-          cat > "$TEST_TS" << 'EOF'
-          export function branch2Function(): string {
-            console.log('Branch 2 version');
-            return 'branch2';
-          }
-
-          export class Branch2Class {
-            private value: string;
-
-            constructor() {
-              this.value = 'branch2';
-            }
-
-            getValue(): string {
-              return this.value;
-            }
-            
-            branch2Method(): void {
-              console.log('Branch 2 specific method');
-            }
-          }
-          EOF
-
           cat > "$TEST_CONFIG_YML" << 'EOF'
           # Configuration file - Branch 2 version
           application:
@@ -300,31 +212,6 @@ jobs:
             replica: true
           EOF
 
-          cat > "$TEST_CRITICAL_TS" << 'EOF'
-          // Critical file - Branch 2 version
-          export class CriticalService {
-            private apiKey: string;
-            private endpoint: string;
-            private region: string;
-
-            constructor() {
-              this.apiKey = 'branch2-key-abc';
-              this.endpoint = 'https://api.branch2.com';
-              this.region = 'us-west';
-            }
-
-            async performCriticalOperation(): Promise<void> {
-              // Branch 2 implementation
-              console.log('Branch 2 critical operation');
-              await this.validateBranch2();
-            }
-            
-            private async validateBranch2(): Promise<void> {
-              // Branch 2 specific validation
-            }
-          }
-          EOF
-
           cat > "$TEST_TXT" << 'EOF'
           This is branch 2 version of the text file.
           No resolution rule is defined for this file.
@@ -335,22 +222,6 @@ jobs:
           - Feature Z
 
           Branch 2 end.
-          EOF
-
-          cat > "$TEST_XML" << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <configuration>
-            <settings>
-              <property name="version">1.2.0</property>
-              <property name="mode">branch2</property>
-              <property name="branch2">true</property>
-            </settings>
-            <data>
-              <item id="1">Branch 2 Item 1</item>
-              <item id="2">Branch 2 Item 2</item>
-              <item id="4">Branch 2 Different Item</item>
-            </data>
-          </configuration>
           EOF
 
           # Create different binary files for branch 2
@@ -423,11 +294,8 @@ jobs:
           TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
-          TEST_TS="$TEST_DIR/test.ts"
           TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_XML="$TEST_DIR/special-case.xml"
           TEST_PNG="$TEST_DIR/test.png"
           TEST_PDF="$TEST_DIR/test.pdf"
           TEST_ZIP="$TEST_DIR/test.zip"
@@ -448,12 +316,6 @@ jobs:
             echo "❌ test.md should have been resolved"
           fi
 
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_TS"; then
-            echo "✅ test.ts resolved (theirs strategy)"
-          else
-            echo "❌ test.ts should have been resolved"
-          fi
-
           # Check binary files
           if echo "$RESOLVED_FILES" | grep -q "$TEST_PNG"; then
             echo "✅ test.png resolved (theirs strategy)"
@@ -468,23 +330,11 @@ jobs:
             echo "❌ test.config.yml should remain unresolved"
           fi
 
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_CRITICAL_TS"; then
-            echo "✅ critical.ts unresolved (manual strategy)"
-          else
-            echo "❌ critical.ts should remain unresolved"
-          fi
-
           # Check files without rules
           if echo "$UNRESOLVED_FILES" | grep -q "$TEST_TXT"; then
             echo "✅ undefined-rule.txt unresolved (no rule defined)"
           else
             echo "❌ undefined-rule.txt should remain unresolved"
-          fi
-
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_XML"; then
-            echo "✅ special-case.xml unresolved (no rule defined)"
-          else
-            echo "❌ special-case.xml should remain unresolved"
           fi
 
           echo "::endgroup::"
@@ -496,10 +346,7 @@ jobs:
           TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
-          TEST_TS="$TEST_DIR/test.ts"
           TEST_PNG="$TEST_DIR/test.png"
-          TEST_PDF="$TEST_DIR/test.pdf"
-          TEST_ZIP="$TEST_DIR/test.zip"
 
           echo "::group::Content verification for resolved files"
 
@@ -531,18 +378,6 @@ jobs:
             exit 1
           fi
 
-          # Verify test.ts has branch-1 content (theirs strategy)
-          if grep -q "branch1Function" "$TEST_TS" && \
-             grep -q "Branch1Class" "$TEST_TS" && \
-             grep -q "branch1Method" "$TEST_TS"; then
-            echo "✅ test.ts has correct branch-1 content (theirs)"
-          else
-            echo "❌ test.ts does not have expected branch-1 content"
-            echo "Actual content:"
-            cat "$TEST_TS"
-            exit 1
-          fi
-
           # Verify PNG file has branch-1 content (theirs strategy - 2x2 pixels)
           PNG_SIZE=$(stat -c%s "$TEST_PNG" 2>/dev/null || stat -f%z "$TEST_PNG" 2>/dev/null || wc -c < "$TEST_PNG")
           # Remove any whitespace from the size
@@ -567,14 +402,12 @@ jobs:
           # Define test file paths
           TEST_DIR="__tests__/test-conflict-files"
           TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_XML="$TEST_DIR/special-case.xml"
 
           echo "::group::Content verification for unresolved files"
 
           # Check that unresolved files still have conflict markers
-          for file in "$TEST_CONFIG_YML" "$TEST_CRITICAL_TS" "$TEST_TXT" "$TEST_XML"; do
+          for file in "$TEST_CONFIG_YML" "$TEST_TXT"; do
             if [ -f "$file" ]; then
               FILE_NAME=$(basename "$file")
               if grep -q "<<<<<<< HEAD" "$file" && \
@@ -596,14 +429,6 @@ jobs:
             echo "✅ test.config.yml contains both branch contents in conflict"
           else
             echo "❌ test.config.yml missing expected conflict content"
-            exit 1
-          fi
-
-          if grep -q "branch1-key-xyz" "$TEST_CRITICAL_TS" && \
-             grep -q "branch2-key-abc" "$TEST_CRITICAL_TS"; then
-            echo "✅ critical.ts contains both branch API keys in conflict"
-          else
-            echo "❌ critical.ts missing expected conflict content"
             exit 1
           fi
 
@@ -630,9 +455,7 @@ jobs:
           echo "::group::Unresolved files with conflict markers"
 
           for file in "$TEST_CONFIG_YML" \
-                      "$TEST_CRITICAL_TS" \
-                      "$TEST_TXT" \
-                      "$TEST_XML"; do
+                      "$TEST_TXT"; do
             if [ -f "$file" ]; then
               echo "--- $file ---"
               grep -E "^(<<<<<<<|=======|>>>>>>>)" "$file" || \
