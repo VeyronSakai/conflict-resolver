@@ -1,4 +1,3 @@
----
 name: Continuous Integration
 
 on:
@@ -444,7 +443,7 @@ jobs:
         id: test-action
         uses: ./
         with:
-          config-path: '__tests__/conflict-resolver-test.yml'
+          config-path: "__tests__/conflict-resolver-test.yml"
 
       - name: Print Output
         id: output
@@ -548,13 +547,13 @@ jobs:
           TEST_PNG="$TEST_DIR/test.png"
           TEST_PDF="$TEST_DIR/test.pdf"
           TEST_ZIP="$TEST_DIR/test.zip"
-          
+
           echo "::group::Content verification for resolved files"
-          
+
           # First, check if files exist
           echo "Checking if resolved files exist:"
           ls -la "$TEST_DIR/"
-          
+
           # Verify test.json has branch-1 content (theirs strategy)
           if grep -q '"version": "1.1.0"' "$TEST_JSON" && \
              grep -q '"name": "branch-1-test"' "$TEST_JSON" && \
@@ -566,7 +565,7 @@ jobs:
             cat "$TEST_JSON"
             exit 1
           fi
-          
+
           # Verify test.md has branch-2 content (ours strategy)
           if grep -q "# Branch 2 Documentation" "$TEST_MD" && \
              grep -q "Branch 2 has its own content for section 1" "$TEST_MD" && \
@@ -578,7 +577,7 @@ jobs:
             cat "$TEST_MD"
             exit 1
           fi
-          
+
           # Verify test.ts has branch-1 content (theirs strategy)
           if grep -q "branch1Function" "$TEST_TS" && \
              grep -q "Branch1Class" "$TEST_TS" && \
@@ -590,7 +589,7 @@ jobs:
             cat "$TEST_TS"
             exit 1
           fi
-          
+
           # Verify PNG file has branch-1 content (theirs strategy - 2x2 pixels)
           PNG_SIZE=$(stat -c%s "$TEST_PNG" 2>/dev/null || stat -f%z "$TEST_PNG" 2>/dev/null || wc -c < "$TEST_PNG")
           # Remove any whitespace from the size
@@ -606,7 +605,7 @@ jobs:
             ls -la "$TEST_PNG"
             # Don't fail for now, just warn
           fi
-          
+
           # Verify PDF file has branch-2 content (ours strategy)
           echo "Checking PDF content:"
           head -2 "$TEST_PDF" | od -c
@@ -622,7 +621,7 @@ jobs:
             head -5 "$TEST_PDF"
             # Don't fail for now, just warn
           fi
-          
+
           # Verify ZIP file has branch-1 content (theirs strategy)
           # Unzip and check content
           if command -v unzip >/dev/null 2>&1; then
@@ -638,7 +637,7 @@ jobs:
           else
             echo "⚠️ unzip not available, skipping ZIP content verification"
           fi
-          
+
           echo "::endgroup::"
 
       - name: Verify unresolved file contents
@@ -650,9 +649,9 @@ jobs:
           TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
           TEST_XML="$TEST_DIR/special-case.xml"
-          
+
           echo "::group::Content verification for unresolved files"
-          
+
           # Check that unresolved files still have conflict markers
           for file in "$TEST_CONFIG_YML" "$TEST_CRITICAL_TS" "$TEST_TXT" "$TEST_XML"; do
             if [ -f "$file" ]; then
@@ -669,7 +668,7 @@ jobs:
               fi
             fi
           done
-          
+
           # Verify specific content in conflict markers
           if grep -q "name: branch2-app" "$TEST_CONFIG_YML" && \
              grep -q "name: branch1-app" "$TEST_CONFIG_YML"; then
@@ -678,7 +677,7 @@ jobs:
             echo "❌ test.config.yml missing expected conflict content"
             exit 1
           fi
-          
+
           if grep -q "branch1-key-xyz" "$TEST_CRITICAL_TS" && \
              grep -q "branch2-key-abc" "$TEST_CRITICAL_TS"; then
             echo "✅ critical.ts contains both branch API keys in conflict"
@@ -686,7 +685,7 @@ jobs:
             echo "❌ critical.ts missing expected conflict content"
             exit 1
           fi
-          
+
           echo "::endgroup::"
 
       - name: Show final file contents
