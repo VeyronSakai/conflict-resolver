@@ -539,6 +539,7 @@ jobs:
 
       - name: Verify resolved file contents
         run: |
+          set -x  # Enable debug output
           # Define test file paths
           TEST_DIR="test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
@@ -549,6 +550,10 @@ jobs:
           TEST_ZIP="$TEST_DIR/test.zip"
           
           echo "::group::Content verification for resolved files"
+          
+          # First, check if files exist
+          echo "Checking if resolved files exist:"
+          ls -la "$TEST_DIR/"
           
           # Verify test.json has branch-1 content (theirs strategy)
           if grep -q '"version": "1.1.0"' "$TEST_JSON" && \
@@ -628,6 +633,7 @@ jobs:
 
       - name: Verify unresolved file contents
         run: |
+          set -x  # Enable debug output
           # Define test file paths
           TEST_DIR="test-conflict-files"
           TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
