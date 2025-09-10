@@ -86,160 +86,28 @@ jobs:
           git add "$TEST_DIR/"
           git commit -m "Add base test files" || echo "Files already committed"
 
-          # Create branch 1 with changes
-          git checkout -b test-branch-1-${{ github.run_id }}
+          # Create incoming changes branch
+          git checkout -b test-incoming-${{ github.run_id }}
 
-          # Modify text files in branch 1
-          cat > "$TEST_JSON" << 'EOF'
-          {
-            "version": "1.1.0",
-            "name": "branch-1-test",
-            "description": "Branch 1 JSON content with changes",
-            "config": {
-              "enabled": false,
-              "mode": "production",
-              "newField": "branch1-specific"
-            }
-          }
-          EOF
-
-          cat > "$TEST_MD" << 'EOF'
-          # Branch 1 Documentation
-
-          This is the branch 1 version of the documentation.
-
-          ## Section 1
-          Branch 1 has completely different content here.
-
-          ## Section 2
-          Branch 1 removed the original section 2.
-
-          ## Section 3
-          New section added only in branch 1.
-          EOF
-
-          cat > "$TEST_CONFIG_YML" << 'EOF'
-          # Configuration file - Branch 1 version
-          application:
-            name: branch1-app
-            version: 1.1.0
-            
-          settings:
-            debug: true
-            timeout: 60
-            branch1_setting: enabled
-            
-          database:
-            host: branch1.db.com
-            port: 3306
-          EOF
-
-          cat > "$TEST_TXT" << 'EOF'
-          This is branch 1 version of the text file.
-          No resolution rule is defined for this file.
-
-          Branch 1 content:
-          - Feature A
-          - Feature B
-          - Feature C
-
-          Branch 1 end.
-          EOF
-
-          # Create different binary files for branch 1
-          # PNG file (2x2 pixels)
-          {
-            printf '\x89PNG\r\n\x1a\n'
-            printf '\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02'
-            printf '\x08\x02\x00\x00\x00\xfd\xd4\x9as'
-            printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05'
-            printf '\x00\x00\x00\x00IEND\xaeB`\x82'
-          } > "$TEST_PNG"
+          # Copy incoming changes files
+          cp "$TEST_DIR/incoming-changes/"* "$TEST_DIR/"
 
           git add "$TEST_DIR/"
-          git commit -m "Branch 1 changes"
+          git commit -m "Incoming changes"
 
-          # Create branch 2 with different changes
+          # Create current branch with base version changes
           git checkout test-base-${{ github.run_id }}
-          git checkout -b test-branch-2-${{ github.run_id }}
+          git checkout -b test-current-${{ github.run_id }}
 
-          # Modify files differently in branch 2
-          cat > "$TEST_JSON" << 'EOF'
-          {
-            "version": "1.2.0",
-            "name": "branch-2-test",
-            "description": "Branch 2 JSON with different changes",
-            "config": {
-              "enabled": true,
-              "mode": "development",
-              "differentField": "branch2-specific"
-            }
-          }
-          EOF
-
-          cat > "$TEST_MD" << 'EOF'
-          # Branch 2 Documentation
-
-          This is the branch 2 version of the documentation.
-
-          ## Section 1
-          Branch 2 has its own content for section 1.
-
-          ## Section 2
-          Branch 2 kept section 2 but changed it.
-
-          ### Subsection 2.1
-          Branch 2 modified subsection.
-
-          ## Section 4
-          Branch 2 added section 4 instead of 3.
-          EOF
-
-          cat > "$TEST_CONFIG_YML" << 'EOF'
-          # Configuration file - Branch 2 version
-          application:
-            name: branch2-app
-            version: 1.2.0
-            
-          settings:
-            debug: false
-            timeout: 90
-            branch2_setting: active
-            
-          database:
-            host: branch2.db.com
-            port: 5432
-            replica: true
-          EOF
-
-          cat > "$TEST_TXT" << 'EOF'
-          This is branch 2 version of the text file.
-          No resolution rule is defined for this file.
-
-          Branch 2 content:
-          - Feature X
-          - Feature Y
-          - Feature Z
-
-          Branch 2 end.
-          EOF
-
-          # Create different binary files for branch 2
-          # PNG file (3x3 pixels)
-          {
-            printf '\x89PNG\r\n\x1a\n'
-            printf '\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03'
-            printf '\x08\x02\x00\x00\x00\xd9J"\xe8'
-            printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05'
-            printf '\x00\x00\x00\x00IEND\xaeB`\x82'
-          } > "$TEST_PNG"
+          # Copy base version files
+          cp "$TEST_DIR/base-version/"* "$TEST_DIR/"
 
           git add "$TEST_DIR/"
-          git commit -m "Branch 2 changes"
+          git commit -m "Base version changes"
 
-          # Attempt to merge branch 1 into branch 2 to create conflicts
-          echo "::notice::Attempting to merge branch-1 into branch-2..."
-          git merge test-branch-1-${{ github.run_id }} --no-ff --no-commit || true
+          # Attempt to merge incoming changes into current branch to create conflicts
+          echo "::notice::Attempting to merge incoming changes into current branch..."
+          git merge test-incoming-${{ github.run_id }} --no-ff --no-commit || true
 
           # Check conflict status
           echo "::group::Git status after merge attempt"
@@ -354,42 +222,42 @@ jobs:
           echo "Checking if resolved files exist:"
           ls -la "$TEST_DIR/"
 
-          # Verify test.json has branch-1 content (theirs strategy)
+          # Verify test.json has incoming changes content (theirs strategy)
           if grep -q '"version": "1.1.0"' "$TEST_JSON" && \
-             grep -q '"name": "branch-1-test"' "$TEST_JSON" && \
-             grep -q '"newField": "branch1-specific"' "$TEST_JSON"; then
-            echo "✅ test.json has correct branch-1 content (theirs)"
+             grep -q '"name": "incoming-test"' "$TEST_JSON" && \
+             grep -q '"customField": "incoming-value"' "$TEST_JSON"; then
+            echo "✅ test.json has correct incoming changes content (theirs)"
           else
-            echo "❌ test.json does not have expected branch-1 content"
+            echo "❌ test.json does not have expected incoming changes content"
             echo "Actual content:"
             cat "$TEST_JSON"
             exit 1
           fi
 
-          # Verify test.md has branch-2 content (ours strategy)
-          if grep -q "# Branch 2 Documentation" "$TEST_MD" && \
-             grep -q "Branch 2 has its own content for section 1" "$TEST_MD" && \
+          # Verify test.md has base version content (ours strategy)
+          if grep -q "# Base Version Documentation" "$TEST_MD" && \
+             grep -q "Base version has its own content for section 1" "$TEST_MD" && \
              grep -q "## Section 4" "$TEST_MD"; then
-            echo "✅ test.md has correct branch-2 content (ours)"
+            echo "✅ test.md has correct base version content (ours)"
           else
-            echo "❌ test.md does not have expected branch-2 content"
+            echo "❌ test.md does not have expected base version content"
             echo "Actual content:"
             cat "$TEST_MD"
             exit 1
           fi
 
-          # Verify PNG file has branch-1 content (theirs strategy - 2x2 pixels)
+          # Verify PNG file has incoming changes content (theirs strategy - 2x2 pixels)
           PNG_SIZE=$(stat -c%s "$TEST_PNG" 2>/dev/null || stat -f%z "$TEST_PNG" 2>/dev/null || wc -c < "$TEST_PNG")
           # Remove any whitespace from the size
           PNG_SIZE=$(echo "$PNG_SIZE" | tr -d ' ')
           echo "PNG file size: $PNG_SIZE bytes"
           if [ "$PNG_SIZE" -eq 57 ]; then
-            echo "✅ test.png has correct branch-1 content (2x2 pixels, 57 bytes)"
+            echo "✅ test.png has correct incoming changes content (2x2 pixels, 57 bytes)"
           elif [ "$PNG_SIZE" -eq 61 ]; then
-            echo "❌ test.png has branch-2 content (3x3 pixels, 61 bytes) instead of branch-1"
+            echo "❌ test.png has base version content (3x3 pixels, 61 bytes) instead of incoming changes"
             exit 1
           else
-            echo "❌ test.png size: $PNG_SIZE bytes (expected 57 for branch-1)"
+            echo "❌ test.png size: $PNG_SIZE bytes (expected 57 for incoming changes)"
             ls -la "$TEST_PNG"
             exit 1
           fi
@@ -424,9 +292,9 @@ jobs:
           done
 
           # Verify specific content in conflict markers
-          if grep -q "name: branch2-app" "$TEST_CONFIG_YML" && \
-             grep -q "name: branch1-app" "$TEST_CONFIG_YML"; then
-            echo "✅ test.config.yml contains both branch contents in conflict"
+          if grep -q "name: base-app" "$TEST_CONFIG_YML" && \
+             grep -q "name: incoming-app" "$TEST_CONFIG_YML"; then
+            echo "✅ test.config.yml contains both versions' contents in conflict"
           else
             echo "❌ test.config.yml missing expected conflict content"
             exit 1
@@ -443,11 +311,11 @@ jobs:
 
           echo "::group::Final resolved file contents (samples)"
 
-          echo "--- test.json (should have branch-1 content - theirs) ---"
+          echo "--- test.json (should have incoming changes content - theirs) ---"
           cat "$TEST_JSON" | head -10
 
           echo ""
-          echo "--- test.md (should have branch-2 content - ours) ---"
+          echo "--- test.md (should have base version content - ours) ---"
           cat "$TEST_MD" | head -10
 
           echo "::endgroup::"

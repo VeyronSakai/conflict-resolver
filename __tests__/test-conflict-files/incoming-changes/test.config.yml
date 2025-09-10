@@ -1,0 +1,13 @@
+# Configuration file - Incoming changes version
+application:
+  name: incoming-app
+  version: 1.1.0
+  
+settings:
+  debug: true
+  timeout: 60
+  incoming_setting: enabled
+  
+database:
+  host: incoming.db.com
+  port: 3306

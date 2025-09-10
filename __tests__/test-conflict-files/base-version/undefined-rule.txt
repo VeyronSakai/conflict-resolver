@@ -1,0 +1,8 @@
+This is base version of the text file.
+No resolution rule is defined for this file.
+
+Base content:
+- Feature A disabled
+- Feature C enabled
+
+Base version end.
