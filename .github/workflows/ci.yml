@@ -68,37 +68,34 @@ jobs:
 
       - name: Create test branches and conflicts
         id: create-conflicts
+        shell: pwsh
         run: |
-          # shellcheck disable=SC1039,SC1072,SC1073
-          # Save current branch (not used, kept for reference)
-          # ORIGINAL_BRANCH=$(git branch --show-current)
-
           # Define test file paths
-          TEST_DIR="test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
-          TEST_TS="$TEST_DIR/test.ts"
-          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
-          TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_XML="$TEST_DIR/special-case.xml"
-          TEST_PNG="$TEST_DIR/test.png"
-          TEST_PDF="$TEST_DIR/test.pdf"
-          TEST_ZIP="$TEST_DIR/test.zip"
-          TEST_TEMP="$TEST_DIR/temp.txt"
+          $TEST_DIR = "test-conflict-files"
+          $TEST_JSON = "$TEST_DIR/test.json"
+          $TEST_MD = "$TEST_DIR/test.md"
+          $TEST_TS = "$TEST_DIR/test.ts"
+          $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
+          $TEST_CRITICAL_TS = "$TEST_DIR/critical.ts"
+          $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
+          $TEST_XML = "$TEST_DIR/special-case.xml"
+          $TEST_PNG = "$TEST_DIR/test.png"
+          $TEST_PDF = "$TEST_DIR/test.pdf"
+          $TEST_ZIP = "$TEST_DIR/test.zip"
+          $TEST_TEMP = "$TEST_DIR/temp.txt"
 
           # Create base branch with test files
           git checkout -b test-base-${{ github.run_id }}
 
           # The test files are already in the repository
           git add "$TEST_DIR/"
-          git commit -m "Add base test files" || echo "Files already committed"
+          try { git commit -m "Add base test files" } catch { Write-Output "Files already committed" }
 
           # Create branch 1 with changes
           git checkout -b test-branch-1-${{ github.run_id }}
 
           # Modify text files in branch 1
-          cat > "$TEST_JSON" << 'EOF'
+          @'
           {
             "version": "1.1.0",
             "name": "branch-1-test",
@@ -109,9 +106,9 @@ jobs:
               "newField": "branch1-specific"
             }
           }
-          EOF
+'@ | Set-Content -Path $TEST_JSON
 
-          cat > "$TEST_MD" << 'EOF'
+          @'
           # Branch 1 Documentation
 
           This is the branch 1 version of the documentation.
@@ -124,9 +121,9 @@ jobs:
 
           ## Section 3
           New section added only in branch 1.
-          EOF
+'@ | Set-Content -Path $TEST_MD
 
-          cat > "$TEST_TS" << 'EOF'
+          @'
           export function branch1Function(): string {
             console.log('Branch 1 version');
             return 'branch1';
@@ -147,9 +144,9 @@ jobs:
               console.log('Branch 1 specific method');
             }
           }
-          EOF
+'@ | Set-Content -Path $TEST_TS
 
-          cat > "$TEST_CONFIG_YML" << 'EOF'
+          @'
           # Configuration file - Branch 1 version
           application:
             name: branch1-app
@@ -163,9 +160,9 @@ jobs:
           database:
             host: branch1.db.com
             port: 3306
-          EOF
+'@ | Set-Content -Path $TEST_CONFIG_YML
 
-          cat > "$TEST_CRITICAL_TS" << 'EOF'
+          @'
           // Critical file - Branch 1 version
           export class CriticalService {
             private apiKey: string;
@@ -186,9 +183,9 @@ jobs:
               // Branch 1 specific validation
             }
           }
-          EOF
+'@ | Set-Content -Path $TEST_CRITICAL_TS
 
-          cat > "$TEST_TXT" << 'EOF'
+          @'
           This is branch 1 version of the text file.
           No resolution rule is defined for this file.
 
@@ -198,9 +195,9 @@ jobs:
           - Feature C
 
           Branch 1 end.
-          EOF
+'@ | Set-Content -Path $TEST_TXT
 
-          cat > "$TEST_XML" << 'EOF'
+          @'
           <?xml version="1.0" encoding="UTF-8"?>
           <configuration>
             <settings>
@@ -214,29 +211,52 @@ jobs:
               <item id="3">Branch 1 New Item</item>
             </data>
           </configuration>
-          EOF
+'@ | Set-Content -Path $TEST_XML
 
           # Create different binary files for branch 1
           # PNG file (2x2 pixels)
-          printf '\x89PNG\r\n\x1a\n' > "$TEST_PNG"
-          printf '\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02' >> "$TEST_PNG"
-          printf '\x08\x02\x00\x00\x00\xfd\xd4\x9as' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x00IEND\xaeB`\x82' >> "$TEST_PNG"
+          $pngBytes = [byte[]]@(
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+            0x08, 0x02, 0x00, 0x00, 0x00, 0xFD, 0xD4, 0x9A, 0x73,
+            0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0xF8, 0x0F, 0x00, 0x00, 0x01, 0x01, 0x00, 0x05,
+            0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+          )
+          [System.IO.File]::WriteAllBytes($TEST_PNG, $pngBytes)
 
           # PDF file
-          printf '%%PDF-1.4\n%%Branch1\n' > "$TEST_PDF"
-          printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' >> "$TEST_PDF"
-          printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n' >> "$TEST_PDF"
-          printf '3 0 obj\n<< /Type /Page /Parent 2 0 R ' >> "$TEST_PDF"
-          printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n' >> "$TEST_PDF"
-          printf 'xref\n0 4\n0000000000 65535 f\n' >> "$TEST_PDF"
-          printf '0000000009 00000 n\n0000000058 00000 n\n' >> "$TEST_PDF"
-          printf '0000000115 00000 n\ntrailer\n' >> "$TEST_PDF"
-          printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF' >> "$TEST_PDF"
+          $pdfContent = @"
+%PDF-1.4
+%Branch1
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>
+endobj
+xref
+0 4
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+trailer
+<< /Size 4 /Root 1 0 R >>
+startxref
+203
+%%EOF
+"@
+          $pdfContent | Set-Content -Path $TEST_PDF -NoNewline
 
-          echo "Branch 1 content for ZIP" > "$TEST_TEMP"
-          (cd "$TEST_DIR" && zip -q "${TEST_ZIP##*/}" "${TEST_TEMP##*/}" && rm "${TEST_TEMP##*/}")
+          # ZIP file
+          "Branch 1 content for ZIP" | Set-Content -Path $TEST_TEMP
+          Push-Location $TEST_DIR
+          Compress-Archive -Path (Split-Path $TEST_TEMP -Leaf) -DestinationPath (Split-Path $TEST_ZIP -Leaf) -Force
+          Remove-Item (Split-Path $TEST_TEMP -Leaf)
+          Pop-Location
 
           git add "$TEST_DIR/"
           git commit -m "Branch 1 changes"
@@ -246,7 +266,7 @@ jobs:
           git checkout -b test-branch-2-${{ github.run_id }}
 
           # Modify files differently in branch 2
-          cat > "$TEST_JSON" << 'EOF'
+          @'
           {
             "version": "1.2.0",
             "name": "branch-2-test",
@@ -257,9 +277,9 @@ jobs:
               "differentField": "branch2-specific"
             }
           }
-          EOF
+'@ | Set-Content -Path $TEST_JSON
 
-          cat > "$TEST_MD" << 'EOF'
+          @'
           # Branch 2 Documentation
 
           This is the branch 2 version of the documentation.
@@ -275,9 +295,9 @@ jobs:
 
           ## Section 4
           Branch 2 added section 4 instead of 3.
-          EOF
+'@ | Set-Content -Path $TEST_MD
 
-          cat > "$TEST_TS" << 'EOF'
+          @'
           export function branch2Function(): string {
             console.log('Branch 2 version');
             return 'branch2';
@@ -298,9 +318,9 @@ jobs:
               console.log('Branch 2 specific method');
             }
           }
-          EOF
+'@ | Set-Content -Path $TEST_TS
 
-          cat > "$TEST_CONFIG_YML" << 'EOF'
+          @'
           # Configuration file - Branch 2 version
           application:
             name: branch2-app
@@ -315,9 +335,9 @@ jobs:
             host: branch2.db.com
             port: 5432
             replica: true
-          EOF
+'@ | Set-Content -Path $TEST_CONFIG_YML
 
-          cat > "$TEST_CRITICAL_TS" << 'EOF'
+          @'
           // Critical file - Branch 2 version
           export class CriticalService {
             private apiKey: string;
@@ -340,9 +360,9 @@ jobs:
               // Branch 2 specific validation
             }
           }
-          EOF
+'@ | Set-Content -Path $TEST_CRITICAL_TS
 
-          cat > "$TEST_TXT" << 'EOF'
+          @'
           This is branch 2 version of the text file.
           No resolution rule is defined for this file.
 
@@ -352,9 +372,9 @@ jobs:
           - Feature Z
 
           Branch 2 end.
-          EOF
+'@ | Set-Content -Path $TEST_TXT
 
-          cat > "$TEST_XML" << 'EOF'
+          @'
           <?xml version="1.0" encoding="UTF-8"?>
           <configuration>
             <settings>
@@ -368,70 +388,105 @@ jobs:
               <item id="4">Branch 2 Different Item</item>
             </data>
           </configuration>
-          EOF
+'@ | Set-Content -Path $TEST_XML
 
           # Create different binary files for branch 2
           # PNG file (3x3 pixels)
-          printf '\x89PNG\r\n\x1a\n' > "$TEST_PNG"
-          printf '\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03' >> "$TEST_PNG"
-          printf '\x08\x02\x00\x00\x00\xd9J"\xe8' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05' >> "$TEST_PNG"
-          printf '\x00\x00\x00\x00IEND\xaeB`\x82' >> "$TEST_PNG"
+          $pngBytes = [byte[]]@(
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x03,
+            0x08, 0x02, 0x00, 0x00, 0x00, 0xD9, 0x4A, 0x22, 0xE8,
+            0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0xF8, 0x0F, 0x00, 0x00, 0x01, 0x01, 0x00, 0x05,
+            0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+          )
+          [System.IO.File]::WriteAllBytes($TEST_PNG, $pngBytes)
 
           # PDF file
-          printf '%%PDF-1.4\n%%Branch2\n' > "$TEST_PDF"
-          printf '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' >> "$TEST_PDF"
-          printf '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 2 >>\nendobj\n' >> "$TEST_PDF"
-          printf '3 0 obj\n<< /Type /Page /Parent 2 0 R ' >> "$TEST_PDF"
-          printf '/Resources << >> /MediaBox [0 0 612 792] >>\nendobj\n' >> "$TEST_PDF"
-          printf 'xref\n0 4\n0000000000 65535 f\n' >> "$TEST_PDF"
-          printf '0000000009 00000 n\n0000000058 00000 n\n' >> "$TEST_PDF"
-          printf '0000000115 00000 n\ntrailer\n' >> "$TEST_PDF"
-          printf '<< /Size 4 /Root 1 0 R >>\nstartxref\n203\n%%%%EOF' >> "$TEST_PDF"
+          $pdfContent = @"
+%PDF-1.4
+%Branch2
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << >> /MediaBox [0 0 612 792] >>
+endobj
+xref
+0 4
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+trailer
+<< /Size 4 /Root 1 0 R >>
+startxref
+203
+%%EOF
+"@
+          $pdfContent | Set-Content -Path $TEST_PDF -NoNewline
 
-          echo "Branch 2 content for ZIP" > "$TEST_TEMP"
-          (cd "$TEST_DIR" && zip -q "${TEST_ZIP##*/}" "${TEST_TEMP##*/}" && rm "${TEST_TEMP##*/}")
+          # ZIP file
+          "Branch 2 content for ZIP" | Set-Content -Path $TEST_TEMP
+          Push-Location $TEST_DIR
+          Compress-Archive -Path (Split-Path $TEST_TEMP -Leaf) -DestinationPath (Split-Path $TEST_ZIP -Leaf) -Force
+          Remove-Item (Split-Path $TEST_TEMP -Leaf)
+          Pop-Location
 
           git add "$TEST_DIR/"
           git commit -m "Branch 2 changes"
 
           # Attempt to merge branch 1 into branch 2 to create conflicts
-          echo "::notice::Attempting to merge branch-1 into branch-2..."
-          git merge test-branch-1-${{ github.run_id }} --no-ff --no-commit || true
+          Write-Output "::notice::Attempting to merge branch-1 into branch-2..."
+          git merge test-branch-1-${{ github.run_id }} --no-ff --no-commit 2>$null
 
           # Check conflict status
-          echo "::group::Git status after merge attempt"
+          Write-Output "::group::Git status after merge attempt"
           git status
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
-          echo "::group::Conflicted files"
-          git status --porcelain | grep "^UU" || echo "No conflicts found"
-          echo "::endgroup::"
+          Write-Output "::group::Conflicted files"
+          $conflicted = git status --porcelain | Where-Object { $_ -match "^UU" }
+          if ($conflicted) {
+            $conflicted
+          } else {
+            Write-Output "No conflicts found"
+          }
+          Write-Output "::endgroup::"
 
           # Save conflict state
-          if git status --porcelain | grep -q "^UU"; then
-            echo "has_conflicts=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Conflicts detected. Ready to test conflict resolver."
-          else
-            echo "has_conflicts=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No conflicts detected."
-          fi
+          if (git status --porcelain | Where-Object { $_ -match "^UU" }) {
+            "has_conflicts=true" | Add-Content -Path $env:GITHUB_OUTPUT
+            Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
+          } else {
+            "has_conflicts=false" | Add-Content -Path $env:GITHUB_OUTPUT
+            Write-Output "::warning::No conflicts detected."
+          }
 
       - name: Show conflict details
         if: steps.create-conflicts.outputs.has_conflicts == 'true'
+        shell: pwsh
         run: |
-          echo "::group::List of conflicted files"
+          Write-Output "::group::List of conflicted files"
           git diff --name-only --diff-filter=U
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
-          for file in "$TEST_DIR"/*.{json,md,ts,yml,txt,xml}; do
-            if [ -f "$file" ] && \
-               git diff --check "$file" 2>/dev/null | grep -q "conflict"; then
-              echo "::group::Conflict in $file"
-              cat "$file" | head -50
-              echo "::endgroup::"
-            fi
-          done
+          $TEST_DIR = "test-conflict-files"
+          $extensions = @("json", "md", "ts", "yml", "txt", "xml")
+          
+          foreach ($ext in $extensions) {
+            $files = Get-ChildItem -Path "$TEST_DIR/*.$ext" -ErrorAction SilentlyContinue
+            foreach ($file in $files) {
+              $conflictCheck = git diff --check $file.FullName 2>$null | Select-String "conflict"
+              if ($conflictCheck) {
+                Write-Output "::group::Conflict in $($file.Name)"
+                Get-Content $file.FullName | Select-Object -First 50
+                Write-Output "::endgroup::"
+              }
+            }
+          }
 
       - name: Test Local Action
         id: test-action
@@ -441,125 +496,133 @@ jobs:
 
       - name: Print Output
         id: output
+        shell: pwsh
         env:
           RESOLVED_FILES: ${{ steps.test-action.outputs.resolved-files }}
           UNRESOLVED_FILES: ${{ steps.test-action.outputs.unresolved-files }}
         run: |
-          echo "::notice::Resolved files: $RESOLVED_FILES"
-          echo "::notice::Unresolved files: $UNRESOLVED_FILES"
+          Write-Output "::notice::Resolved files: $env:RESOLVED_FILES"
+          Write-Output "::notice::Unresolved files: $env:UNRESOLVED_FILES"
 
           # Define test file paths for verification
-          TEST_DIR="test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
-          TEST_TS="$TEST_DIR/test.ts"
-          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_CRITICAL_TS="$TEST_DIR/critical.ts"
-          TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_XML="$TEST_DIR/special-case.xml"
-          TEST_PNG="$TEST_DIR/test.png"
-          TEST_PDF="$TEST_DIR/test.pdf"
-          TEST_ZIP="$TEST_DIR/test.zip"
+          $TEST_DIR = "test-conflict-files"
+          $TEST_JSON = "$TEST_DIR/test.json"
+          $TEST_MD = "$TEST_DIR/test.md"
+          $TEST_TS = "$TEST_DIR/test.ts"
+          $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
+          $TEST_CRITICAL_TS = "$TEST_DIR/critical.ts"
+          $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
+          $TEST_XML = "$TEST_DIR/special-case.xml"
+          $TEST_PNG = "$TEST_DIR/test.png"
+          $TEST_PDF = "$TEST_DIR/test.pdf"
+          $TEST_ZIP = "$TEST_DIR/test.zip"
 
           # Verify expected outcomes
-          echo "::group::Verification Results"
+          Write-Output "::group::Verification Results"
 
           # Check resolved files
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_JSON"; then
-            echo "✅ test.json resolved (theirs strategy)"
-          else
-            echo "❌ test.json should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_JSON)) {
+            Write-Output "✅ test.json resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ test.json should have been resolved"
+          }
 
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_MD"; then
-            echo "✅ test.md resolved (ours strategy)"
-          else
-            echo "❌ test.md should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_MD)) {
+            Write-Output "✅ test.md resolved (ours strategy)"
+          } else {
+            Write-Output "❌ test.md should have been resolved"
+          }
 
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_TS"; then
-            echo "✅ test.ts resolved (theirs strategy)"
-          else
-            echo "❌ test.ts should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_TS)) {
+            Write-Output "✅ test.ts resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ test.ts should have been resolved"
+          }
 
           # Check binary files
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_PNG"; then
-            echo "✅ test.png resolved (theirs strategy)"
-          else
-            echo "❌ test.png should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_PNG)) {
+            Write-Output "✅ test.png resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ test.png should have been resolved"
+          }
 
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_PDF"; then
-            echo "✅ test.pdf resolved (ours strategy)"
-          else
-            echo "❌ test.pdf should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_PDF)) {
+            Write-Output "✅ test.pdf resolved (ours strategy)"
+          } else {
+            Write-Output "❌ test.pdf should have been resolved"
+          }
 
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_ZIP"; then
-            echo "✅ test.zip resolved (theirs strategy)"
-          else
-            echo "❌ test.zip should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_ZIP)) {
+            Write-Output "✅ test.zip resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ test.zip should have been resolved"
+          }
 
           # Check unresolved files (manual strategy)
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_CONFIG_YML"; then
-            echo "✅ test.config.yml unresolved (manual strategy)"
-          else
-            echo "❌ test.config.yml should remain unresolved"
-          fi
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_CONFIG_YML)) {
+            Write-Output "✅ test.config.yml unresolved (manual strategy)"
+          } else {
+            Write-Output "❌ test.config.yml should remain unresolved"
+          }
 
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_CRITICAL_TS"; then
-            echo "✅ critical.ts unresolved (manual strategy)"
-          else
-            echo "❌ critical.ts should remain unresolved"
-          fi
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_CRITICAL_TS)) {
+            Write-Output "✅ critical.ts unresolved (manual strategy)"
+          } else {
+            Write-Output "❌ critical.ts should remain unresolved"
+          }
 
           # Check files without rules
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_TXT"; then
-            echo "✅ undefined-rule.txt unresolved (no rule defined)"
-          else
-            echo "❌ undefined-rule.txt should remain unresolved"
-          fi
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_TXT)) {
+            Write-Output "✅ undefined-rule.txt unresolved (no rule defined)"
+          } else {
+            Write-Output "❌ undefined-rule.txt should remain unresolved"
+          }
 
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_XML"; then
-            echo "✅ special-case.xml unresolved (no rule defined)"
-          else
-            echo "❌ special-case.xml should remain unresolved"
-          fi
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_XML)) {
+            Write-Output "✅ special-case.xml unresolved (no rule defined)"
+          } else {
+            Write-Output "❌ special-case.xml should remain unresolved"
+          }
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
       - name: Show final file contents
+        shell: pwsh
         run: |
           # Define test file paths
-          TEST_DIR="test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
+          $TEST_DIR = "test-conflict-files"
+          $TEST_JSON = "$TEST_DIR/test.json"
+          $TEST_MD = "$TEST_DIR/test.md"
+          $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
+          $TEST_CRITICAL_TS = "$TEST_DIR/critical.ts"
+          $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
+          $TEST_XML = "$TEST_DIR/special-case.xml"
 
-          echo "::group::Final resolved file contents (samples)"
+          Write-Output "::group::Final resolved file contents (samples)"
 
-          echo "--- test.json (should have branch-1 content - theirs) ---"
-          cat "$TEST_JSON" | head -10
+          Write-Output "--- test.json (should have branch-1 content - theirs) ---"
+          Get-Content $TEST_JSON | Select-Object -First 10
 
-          echo ""
-          echo "--- test.md (should have branch-2 content - ours) ---"
-          cat "$TEST_MD" | head -10
+          Write-Output ""
+          Write-Output "--- test.md (should have branch-2 content - ours) ---"
+          Get-Content $TEST_MD | Select-Object -First 10
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
-          echo "::group::Unresolved files with conflict markers"
+          Write-Output "::group::Unresolved files with conflict markers"
 
-          for file in "$TEST_CONFIG_YML" \
-                      "$TEST_CRITICAL_TS" \
-                      "$TEST_TXT" \
-                      "$TEST_XML"; do
-            if [ -f "$file" ]; then
-              echo "--- $file ---"
-              grep -E "^(<<<<<<<|=======|>>>>>>>)" "$file" || \
-                echo "No conflict markers found (might be an error)"
-              echo ""
-            fi
-          done
+          $unresolved = @($TEST_CONFIG_YML, $TEST_CRITICAL_TS, $TEST_TXT, $TEST_XML)
+          foreach ($file in $unresolved) {
+            if (Test-Path $file) {
+              Write-Output "--- $file ---"
+              $markers = Get-Content $file | Where-Object { $_ -match "^(<<<<<<<|=======|>>>>>>>)" }
+              if ($markers) {
+                $markers
+              } else {
+                Write-Output "No conflict markers found (might be an error)"
+              }
+              Write-Output ""
+            }
+          }
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
