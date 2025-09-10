@@ -598,12 +598,12 @@ jobs:
           if [ "$PNG_SIZE" -eq 57 ]; then
             echo "✅ test.png has correct branch-1 content (2x2 pixels, 57 bytes)"
           elif [ "$PNG_SIZE" -eq 61 ]; then
-            echo "⚠️ test.png has branch-2 content (3x3 pixels, 61 bytes) instead of branch-1"
-            # Don't fail for now, just warn
+            echo "❌ test.png has branch-2 content (3x3 pixels, 61 bytes) instead of branch-1"
+            exit 1
           else
-            echo "⚠️ test.png size: $PNG_SIZE bytes (expected 57 for branch-1 or 61 for branch-2)"
+            echo "❌ test.png size: $PNG_SIZE bytes (expected 57 for branch-1)"
             ls -la "$TEST_PNG"
-            # Don't fail for now, just warn
+            exit 1
           fi
 
           # Verify PDF file has branch-2 content (ours strategy)
@@ -613,13 +613,13 @@ jobs:
              grep -q "/Count 2" "$TEST_PDF"; then
             echo "✅ test.pdf has correct branch-2 content (ours)"
           elif grep -q "%%Branch1" "$TEST_PDF"; then
-            echo "⚠️ test.pdf has branch-1 content instead of branch-2 (strategy may be inverted for binary files)"
-            # Don't fail for now, just warn
+            echo "❌ test.pdf has branch-1 content instead of branch-2"
+            exit 1
           else
-            echo "❌ test.pdf does not have expected content"
+            echo "❌ test.pdf does not have expected branch-2 content"
             echo "Actual PDF header:"
             head -5 "$TEST_PDF"
-            # Don't fail for now, just warn
+            exit 1
           fi
 
           # Verify ZIP file has branch-1 content (theirs strategy)
@@ -632,10 +632,11 @@ jobs:
               echo "❌ test.zip does not have expected branch-1 content"
               echo "Actual content:"
               cat /tmp/zip_content.txt
-              # Don't fail for now, just warn
+              exit 1
             fi
           else
-            echo "⚠️ unzip not available, skipping ZIP content verification"
+            echo "❌ unzip not available, cannot verify ZIP content"
+            exit 1
           fi
 
           echo "::endgroup::"
