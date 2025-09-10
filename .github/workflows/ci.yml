@@ -623,21 +623,25 @@ jobs:
           fi
 
           # Verify ZIP file has branch-1 content (theirs strategy)
-          # Unzip and check content
-          if command -v unzip >/dev/null 2>&1; then
-            unzip -p "$TEST_ZIP" temp.txt > /tmp/zip_content.txt 2>/dev/null
-            if grep -q "Branch 1 content for ZIP" /tmp/zip_content.txt; then
-              echo "✅ test.zip has correct branch-1 content (theirs)"
-            else
-              echo "❌ test.zip does not have expected branch-1 content"
-              echo "Actual content:"
-              cat /tmp/zip_content.txt
-              exit 1
-            fi
-          else
-            echo "❌ unzip not available, cannot verify ZIP content"
-            exit 1
-          fi
+          # Use Python to verify ZIP content (always available in GitHub Actions)
+          echo "Verifying ZIP content..."
+          python3 -c "
+import zipfile
+import sys
+try:
+    with zipfile.ZipFile('$TEST_ZIP', 'r') as z:
+        content = z.read('temp.txt').decode('utf-8')
+        if 'Branch 1 content for ZIP' in content:
+            print('✅ test.zip has correct branch-1 content (theirs)')
+            sys.exit(0)
+        else:
+            print('❌ test.zip does not have expected branch-1 content')
+            print('Actual content:', content)
+            sys.exit(1)
+except Exception as e:
+    print(f'❌ Failed to read ZIP file: {e}')
+    sys.exit(1)
+"
 
           echo "::endgroup::"
 
