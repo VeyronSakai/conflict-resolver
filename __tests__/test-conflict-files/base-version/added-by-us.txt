@@ -1,3 +1,0 @@
-# AddedByUs Test File
-This file is only added on our side.
-Content from base version.

@@ -42,17 +42,5 @@ rules:
     strategy: 'theirs'
     conflict_type: 'both-added'
 
-  # AddedByUs - file only added on our side
-  # Use ours strategy to keep our addition
-  - paths: '__tests__/test-conflict-files/added-by-us.txt'
-    strategy: 'ours'
-    conflict_type: 'added-by-us'
-
-  # AddedByThem - file only added on their side
-  # Use theirs strategy to accept their addition
-  - paths: '__tests__/test-conflict-files/added-by-them.txt'
-    strategy: 'theirs'
-    conflict_type: 'added-by-them'
-
   # Note: Files without rules (undefined-rule.txt)
   # will remain unresolved with conflict markers
