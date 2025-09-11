@@ -144,6 +144,12 @@ jobs:
           Write-Output "::notice::Resolved files: $env:RESOLVED_FILES"
           Write-Output "::notice::Unresolved files: $env:UNRESOLVED_FILES"
 
+      - name: Verify resolution status
+        shell: pwsh
+        env:
+          RESOLVED_FILES: ${{ steps.test-action.outputs.resolved-files }}
+          UNRESOLVED_FILES: ${{ steps.test-action.outputs.unresolved-files }}
+        run: |
           # Define test file paths for verification
           $TEST_DIR = "__tests__/test-conflict-files"
           $TEST_JSON = "$TEST_DIR/test.json"
@@ -152,7 +158,6 @@ jobs:
           $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
           $TEST_PNG = "$TEST_DIR/test.png"
 
-          # Verify expected outcomes
           Write-Output "::group::Verification Results"
 
           # Check resolved files
