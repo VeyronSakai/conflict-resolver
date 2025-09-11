@@ -61,82 +61,101 @@ jobs:
           persist-credentials: false
 
       - name: Setup Git
+        shell: pwsh
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
       - name: Create test branches and conflicts
         id: create-conflicts
+        shell: pwsh
+        env:
+          RUN_ID: ${{ github.run_id }}
         run: |
           # Save current branch (not used, kept for reference)
-          # ORIGINAL_BRANCH=$(git branch --show-current)
+          # $ORIGINAL_BRANCH = git branch --show-current
 
           # Define test directory
-          TEST_DIR="__tests__/test-conflict-files"
+          $TEST_DIR = "__tests__/test-conflict-files"
 
           # Create base branch with test files
-          git checkout -b test-base-${{ github.run_id }}
+          git checkout -b "test-base-$env:RUN_ID"
 
           # The test files are already in the repository
           git add "$TEST_DIR/"
-          git commit -m "Add base test files" || echo "Files already committed"
+          try { git commit -m "Add base test files" } catch { Write-Output "Files already committed" }
 
           # Create incoming changes branch
-          git checkout -b test-incoming-${{ github.run_id }}
+          git checkout -b "test-incoming-$env:RUN_ID"
 
           # Copy incoming changes files
-          cp "$TEST_DIR/incoming-changes/"* "$TEST_DIR/"
+          Copy-Item "$TEST_DIR/incoming-changes/*" "$TEST_DIR/" -Force
 
           git add "$TEST_DIR/"
           git commit -m "Incoming changes"
 
           # Create current branch with base version changes
-          git checkout test-base-${{ github.run_id }}
-          git checkout -b test-current-${{ github.run_id }}
+          git checkout "test-base-$env:RUN_ID"
+          git checkout -b "test-current-$env:RUN_ID"
 
           # Copy base version files
-          cp "$TEST_DIR/base-version/"* "$TEST_DIR/"
+          Copy-Item "$TEST_DIR/base-version/*" "$TEST_DIR/" -Force
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
 
           # Attempt to merge incoming changes into current branch to create conflicts
-          echo "::notice::Attempting to merge incoming changes into current branch..."
-          git merge test-incoming-${{ github.run_id }} --no-ff --no-commit || true
+          Write-Output "::notice::Attempting to merge incoming changes into current branch..."
+          try { 
+            git merge "test-incoming-$env:RUN_ID" --no-ff --no-commit
+          } catch { 
+            # Merge conflict is expected
+          }
 
           # Check conflict status
-          echo "::group::Git status after merge attempt"
+          Write-Output "::group::Git status after merge attempt"
           git status
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
-          echo "::group::Conflicted files"
-          git status --porcelain | grep "^UU" || echo "No conflicts found"
-          echo "::endgroup::"
+          Write-Output "::group::Conflicted files"
+          $conflicted = git status --porcelain | Select-String "^UU"
+          if ($conflicted) {
+            $conflicted
+          } else {
+            Write-Output "No conflicts found"
+          }
+          Write-Output "::endgroup::"
 
           # Save conflict state
-          if git status --porcelain | grep -q "^UU"; then
-            echo "has_conflicts=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Conflicts detected. Ready to test conflict resolver."
-          else
-            echo "has_conflicts=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No conflicts detected."
-          fi
+          if (git status --porcelain | Select-String -Quiet "^UU") {
+            "has_conflicts=true" | Out-File -Append $env:GITHUB_OUTPUT
+            Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
+          } else {
+            "has_conflicts=false" | Out-File -Append $env:GITHUB_OUTPUT
+            Write-Output "::warning::No conflicts detected."
+          }
 
       - name: Show conflict details
         if: steps.create-conflicts.outputs.has_conflicts == 'true'
+        shell: pwsh
         run: |
-          echo "::group::List of conflicted files"
+          Write-Output "::group::List of conflicted files"
           git diff --name-only --diff-filter=U
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
-          for file in "$TEST_DIR"/*.{json,md,ts,yml,txt,xml}; do
-            if [ -f "$file" ] && \
-               git diff --check "$file" 2>/dev/null | grep -q "conflict"; then
-              echo "::group::Conflict in $file"
-              cat "$file" | head -50
-              echo "::endgroup::"
-            fi
-          done
+          $TEST_DIR = "__tests__/test-conflict-files"
+          $patterns = @("*.json", "*.md", "*.ts", "*.yml", "*.txt", "*.xml")
+          foreach ($pattern in $patterns) {
+            Get-ChildItem "$TEST_DIR/$pattern" -File -ErrorAction SilentlyContinue | ForEach-Object {
+              $file = $_.FullName
+              $conflict = git diff --check "$file" 2>$null | Select-String "conflict" -Quiet
+              if ($conflict) {
+                Write-Output "::group::Conflict in $file"
+                Get-Content "$file" | Select-Object -First 50
+                Write-Output "::endgroup::"
+              }
+            }
+          }
 
       - name: Test Local Action
         id: test-action
@@ -146,182 +165,193 @@ jobs:
 
       - name: Print Output
         id: output
+        shell: pwsh
         env:
           RESOLVED_FILES: ${{ steps.test-action.outputs.resolved-files }}
           UNRESOLVED_FILES: ${{ steps.test-action.outputs.unresolved-files }}
         run: |
-          echo "::notice::Resolved files: $RESOLVED_FILES"
-          echo "::notice::Unresolved files: $UNRESOLVED_FILES"
+          Write-Output "::notice::Resolved files: $env:RESOLVED_FILES"
+          Write-Output "::notice::Unresolved files: $env:UNRESOLVED_FILES"
 
           # Define test file paths for verification
-          TEST_DIR="__tests__/test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
-          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_PNG="$TEST_DIR/test.png"
+          $TEST_DIR = "__tests__/test-conflict-files"
+          $TEST_JSON = "$TEST_DIR/test.json"
+          $TEST_MD = "$TEST_DIR/test.md"
+          $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
+          $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
+          $TEST_PNG = "$TEST_DIR/test.png"
 
           # Verify expected outcomes
-          echo "::group::Verification Results"
+          Write-Output "::group::Verification Results"
 
           # Check resolved files
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_JSON"; then
-            echo "✅ test.json resolved (theirs strategy)"
-          else
-            echo "❌ test.json should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_JSON)) {
+            Write-Output "✅ test.json resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ test.json should have been resolved"
+          }
 
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_MD"; then
-            echo "✅ test.md resolved (ours strategy)"
-          else
-            echo "❌ test.md should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_MD)) {
+            Write-Output "✅ test.md resolved (ours strategy)"
+          } else {
+            Write-Output "❌ test.md should have been resolved"
+          }
 
           # Check binary files
-          if echo "$RESOLVED_FILES" | grep -q "$TEST_PNG"; then
-            echo "✅ test.png resolved (theirs strategy)"
-          else
-            echo "❌ test.png should have been resolved"
-          fi
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_PNG)) {
+            Write-Output "✅ test.png resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ test.png should have been resolved"
+          }
 
           # Check unresolved files (manual strategy)
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_CONFIG_YML"; then
-            echo "✅ test.config.yml unresolved (manual strategy)"
-          else
-            echo "❌ test.config.yml should remain unresolved"
-          fi
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_CONFIG_YML)) {
+            Write-Output "✅ test.config.yml unresolved (manual strategy)"
+          } else {
+            Write-Output "❌ test.config.yml should remain unresolved"
+          }
 
           # Check files without rules
-          if echo "$UNRESOLVED_FILES" | grep -q "$TEST_TXT"; then
-            echo "✅ undefined-rule.txt unresolved (no rule defined)"
-          else
-            echo "❌ undefined-rule.txt should remain unresolved"
-          fi
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_TXT)) {
+            Write-Output "✅ undefined-rule.txt unresolved (no rule defined)"
+          } else {
+            Write-Output "❌ undefined-rule.txt should remain unresolved"
+          }
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
       - name: Verify resolved file contents
+        shell: pwsh
         run: |
-          set -x  # Enable debug output
+          Set-PSDebug -Trace 1  # Enable debug output
           # Define test file paths
-          TEST_DIR="__tests__/test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
-          TEST_PNG="$TEST_DIR/test.png"
+          $TEST_DIR = "__tests__/test-conflict-files"
+          $TEST_JSON = "$TEST_DIR/test.json"
+          $TEST_MD = "$TEST_DIR/test.md"
+          $TEST_PNG = "$TEST_DIR/test.png"
 
-          echo "::group::Content verification for resolved files"
+          Write-Output "::group::Content verification for resolved files"
 
           # First, check if files exist
-          echo "Checking if resolved files exist:"
-          ls -la "$TEST_DIR/"
+          Write-Output "Checking if resolved files exist:"
+          Get-ChildItem "$TEST_DIR/"
 
           # Verify test.json has incoming changes content (theirs strategy)
-          if grep -q '"version": "1.1.0"' "$TEST_JSON" && \
-             grep -q '"name": "incoming-test"' "$TEST_JSON" && \
-             grep -q '"customField": "incoming-value"' "$TEST_JSON"; then
-            echo "✅ test.json has correct incoming changes content (theirs)"
-          else
-            echo "❌ test.json does not have expected incoming changes content"
-            echo "Actual content:"
-            cat "$TEST_JSON"
+          $jsonContent = Get-Content "$TEST_JSON" -Raw
+          if ($jsonContent -match '"version":\s*"1.1.0"' -and
+              $jsonContent -match '"name":\s*"incoming-test"' -and
+              $jsonContent -match '"customField":\s*"incoming-value"') {
+            Write-Output "✅ test.json has correct incoming changes content (theirs)"
+          } else {
+            Write-Output "❌ test.json does not have expected incoming changes content"
+            Write-Output "Actual content:"
+            Get-Content "$TEST_JSON"
             exit 1
-          fi
+          }
 
           # Verify test.md has base version content (ours strategy)
-          if grep -q "# Base Version Documentation" "$TEST_MD" && \
-             grep -q "Base version has its own content for section 1" "$TEST_MD" && \
-             grep -q "## Section 4" "$TEST_MD"; then
-            echo "✅ test.md has correct base version content (ours)"
-          else
-            echo "❌ test.md does not have expected base version content"
-            echo "Actual content:"
-            cat "$TEST_MD"
+          $mdContent = Get-Content "$TEST_MD" -Raw
+          if ($mdContent -match "# Base Version Documentation" -and
+              $mdContent -match "Base version has its own content for section 1" -and
+              $mdContent -match "## Section 4") {
+            Write-Output "✅ test.md has correct base version content (ours)"
+          } else {
+            Write-Output "❌ test.md does not have expected base version content"
+            Write-Output "Actual content:"
+            Get-Content "$TEST_MD"
             exit 1
-          fi
+          }
 
           # Verify PNG file has incoming changes content (theirs strategy)
-          PNG_SIZE=$(stat -c%s "$TEST_PNG" 2>/dev/null || stat -f%z "$TEST_PNG" 2>/dev/null || wc -c < "$TEST_PNG")
-          # Remove any whitespace from the size
-          PNG_SIZE=$(echo "$PNG_SIZE" | tr -d ' ')
-          echo "PNG file size: $PNG_SIZE bytes"
-          if [ "$PNG_SIZE" -eq 71 ]; then
-            echo "✅ test.png has correct incoming changes content (71 bytes)"
-          else
-            echo "❌ test.png size: $PNG_SIZE bytes (expected 71 for incoming changes)"
-            ls -la "$TEST_PNG"
+          $PNG_SIZE = (Get-Item "$TEST_PNG").Length
+          Write-Output "PNG file size: $PNG_SIZE bytes"
+          if ($PNG_SIZE -eq 71) {
+            Write-Output "✅ test.png has correct incoming changes content (71 bytes)"
+          } else {
+            Write-Output "❌ test.png size: $PNG_SIZE bytes (expected 71 for incoming changes)"
+            Get-ChildItem "$TEST_PNG"
             exit 1
-          fi
+          }
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
+          Set-PSDebug -Off
 
       - name: Verify unresolved file contents
+        shell: pwsh
         run: |
-          set -x  # Enable debug output
+          Set-PSDebug -Trace 1  # Enable debug output
           # Define test file paths
-          TEST_DIR="__tests__/test-conflict-files"
-          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_TXT="$TEST_DIR/undefined-rule.txt"
+          $TEST_DIR = "__tests__/test-conflict-files"
+          $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
+          $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
 
-          echo "::group::Content verification for unresolved files"
+          Write-Output "::group::Content verification for unresolved files"
 
           # Check that unresolved files still have conflict markers
-          for file in "$TEST_CONFIG_YML" "$TEST_TXT"; do
-            if [ -f "$file" ]; then
-              FILE_NAME=$(basename "$file")
-              if grep -q "<<<<<<< HEAD" "$file" && \
-                 grep -q "=======" "$file" && \
-                 grep -q ">>>>>>>" "$file"; then
-                echo "✅ $FILE_NAME correctly contains conflict markers"
-              else
-                echo "❌ $FILE_NAME should contain conflict markers but doesn't"
-                echo "Actual content:"
-                head -20 "$file"
+          foreach ($file in @($TEST_CONFIG_YML, $TEST_TXT)) {
+            if (Test-Path $file -PathType Leaf) {
+              $FILE_NAME = Split-Path $file -Leaf
+              $content = Get-Content $file -Raw
+              if ($content -match "<<<<<<< HEAD" -and
+                  $content -match "=======" -and
+                  $content -match ">>>>>>>") {
+                Write-Output "✅ $FILE_NAME correctly contains conflict markers"
+              } else {
+                Write-Output "❌ $FILE_NAME should contain conflict markers but doesn't"
+                Write-Output "Actual content:"
+                Get-Content $file | Select-Object -First 20
                 exit 1
-              fi
-            fi
-          done
+              }
+            }
+          }
 
           # Verify specific content in conflict markers
-          if grep -q "name: base-app" "$TEST_CONFIG_YML" && \
-             grep -q "name: incoming-app" "$TEST_CONFIG_YML"; then
-            echo "✅ test.config.yml contains both versions' contents in conflict"
-          else
-            echo "❌ test.config.yml missing expected conflict content"
+          $configContent = Get-Content $TEST_CONFIG_YML -Raw
+          if ($configContent -match "name: base-app" -and
+              $configContent -match "name: incoming-app") {
+            Write-Output "✅ test.config.yml contains both versions' contents in conflict"
+          } else {
+            Write-Output "❌ test.config.yml missing expected conflict content"
             exit 1
-          fi
+          }
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
+          Set-PSDebug -Off
 
       - name: Show final file contents
+        shell: pwsh
         run: |
           # Define test file paths
-          TEST_DIR="__tests__/test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
-          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_TXT="$TEST_DIR/undefined-rule.txt"
+          $TEST_DIR = "__tests__/test-conflict-files"
+          $TEST_JSON = "$TEST_DIR/test.json"
+          $TEST_MD = "$TEST_DIR/test.md"
+          $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
+          $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
 
-          echo "::group::Final resolved file contents (samples)"
+          Write-Output "::group::Final resolved file contents (samples)"
 
-          echo "--- test.json (should have incoming changes content - theirs) ---"
-          cat "$TEST_JSON" | head -10
+          Write-Output "--- test.json (should have incoming changes content - theirs) ---"
+          Get-Content "$TEST_JSON" | Select-Object -First 10
 
-          echo ""
-          echo "--- test.md (should have base version content - ours) ---"
-          cat "$TEST_MD" | head -10
+          Write-Output ""
+          Write-Output "--- test.md (should have base version content - ours) ---"
+          Get-Content "$TEST_MD" | Select-Object -First 10
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
 
-          echo "::group::Unresolved files with conflict markers"
+          Write-Output "::group::Unresolved files with conflict markers"
 
-          for file in "$TEST_CONFIG_YML" \
-                      "$TEST_TXT"; do
-            if [ -f "$file" ]; then
-              echo "--- $file ---"
-              grep -E "^(<<<<<<<|=======|>>>>>>>)" "$file" || \
-                echo "No conflict markers found (might be an error)"
-              echo ""
-            fi
-          done
+          foreach ($file in @($TEST_CONFIG_YML, $TEST_TXT)) {
+            if (Test-Path $file -PathType Leaf) {
+              Write-Output "--- $file ---"
+              $markers = Select-String -Path $file -Pattern "^(<<<<<<<|=======|>>>>>>>)" -AllMatches
+              if ($markers) {
+                $markers | ForEach-Object { $_.Line }
+              } else {
+                Write-Output "No conflict markers found (might be an error)"
+              }
+              Write-Output ""
+            }
+          }
 
-          echo "::endgroup::"
+          Write-Output "::endgroup::"
