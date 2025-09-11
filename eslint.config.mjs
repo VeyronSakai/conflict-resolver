@@ -27,7 +27,8 @@ export default [
       '**/dist',
       '**/linter',
       '**/node_modules',
-      '**/__mocks__'
+      '**/__mocks__',
+      '**/__tests__/test-conflict-files'
     ]
   },
   ...compat.extends(

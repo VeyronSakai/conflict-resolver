@@ -1,0 +1,10 @@
+{
+  "version": "1.2.0",
+  "name": "base-test",
+  "description": "Base version JSON with different changes",
+  "config": {
+    "enabled": true,
+    "mode": "development",
+    "differentField": "base-specific"
+  }
+}

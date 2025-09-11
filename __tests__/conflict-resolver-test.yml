@@ -1,0 +1,26 @@
+# Git Conflict Resolver Configuration for CI Tests
+# This file is used for testing the conflict resolver action
+
+rules:
+  # === Test conflict files rules ===
+
+  # JSON files - use incoming changes (theirs strategy)
+  - paths: '__tests__/test-conflict-files/*.json'
+    strategy: 'theirs'
+    conflict_type: 'both-modified'
+
+  # Markdown files - keep our version (ours strategy)
+  - paths: '__tests__/test-conflict-files/*.md'
+    strategy: 'ours'
+    conflict_type: 'both-modified'
+
+  # Config YAML files - require manual review (manual strategy)
+  - paths: '__tests__/test-conflict-files/*.config.yml'
+    strategy: 'manual'
+
+  # Binary files - use incoming changes (theirs strategy)
+  - paths: '__tests__/test-conflict-files/*.png'
+    strategy: 'theirs'
+
+  # Note: Files without rules (undefined-rule.txt)
+  # will remain unresolved with conflict markers

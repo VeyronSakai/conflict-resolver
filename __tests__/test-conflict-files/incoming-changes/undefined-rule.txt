@@ -1,0 +1,8 @@
+This is incoming changes version of the text file.
+No resolution rule is defined for this file.
+
+Incoming content:
+- Feature A enabled
+- Feature B disabled
+
+Incoming changes end.

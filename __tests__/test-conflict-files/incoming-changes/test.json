@@ -1,0 +1,10 @@
+{
+  "version": "1.1.0",
+  "name": "incoming-test",
+  "description": "Incoming changes JSON with specific modifications",
+  "config": {
+    "enabled": false,
+    "mode": "production",
+    "customField": "incoming-value"
+  }
+}

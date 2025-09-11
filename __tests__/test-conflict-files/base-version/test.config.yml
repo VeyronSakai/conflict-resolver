@@ -1,0 +1,14 @@
+# Configuration file - Base version
+application:
+  name: base-app
+  version: 1.2.0
+  
+settings:
+  debug: false
+  timeout: 90
+  base_setting: active
+  
+database:
+  host: base.db.com
+  port: 5432
+  replica: true
