@@ -357,8 +357,13 @@ jobs:
           # Verify deleted-by-us.png was restored with incoming changes (theirs strategy)
           if (Test-Path $DELETED_BY_US_PNG) {
             $deletedByUsPngSize = (Get-Item "$DELETED_BY_US_PNG").Length
-            Write-Output "✅ deleted-by-us.png restored ($deletedByUsPngSize bytes - theirs strategy)"
-            # Size may vary due to how Git handles binary file restoration
+            $expectedDeletedByUsPngSize = (Get-Item "$TEST_DIR/incoming-changes/deleted-by-us.png").Length
+            if ($deletedByUsPngSize -eq $expectedDeletedByUsPngSize) {
+              Write-Output "✅ deleted-by-us.png restored with incoming changes ($expectedDeletedByUsPngSize bytes - theirs)"
+            } else {
+              Write-Output "❌ deleted-by-us.png size: $deletedByUsPngSize bytes (expected $expectedDeletedByUsPngSize)"
+              exit 1
+            }
           } else {
             Write-Output "❌ deleted-by-us.png should exist (restored by theirs strategy)"
             exit 1
@@ -384,8 +389,13 @@ jobs:
           # Verify deleted-by-them.png kept with our content (ours strategy)
           if (Test-Path $DELETED_BY_THEM_PNG) {
             $deletedByThemPngSize = (Get-Item "$DELETED_BY_THEM_PNG").Length
-            Write-Output "✅ deleted-by-them.png kept ($deletedByThemPngSize bytes - ours strategy)"
-            # Size may vary due to how Git handles binary file conflicts
+            $expectedDeletedByThemPngSize = (Get-Item "$TEST_DIR/base-version/deleted-by-them.png").Length
+            if ($deletedByThemPngSize -eq $expectedDeletedByThemPngSize) {
+              Write-Output "✅ deleted-by-them.png kept with base version ($expectedDeletedByThemPngSize bytes - ours)"
+            } else {
+              Write-Output "❌ deleted-by-them.png size: $deletedByThemPngSize bytes (expected $expectedDeletedByThemPngSize)"
+              exit 1
+            }
           } else {
             Write-Output "❌ deleted-by-them.png should exist (kept by ours strategy)"
             exit 1
@@ -408,15 +418,41 @@ jobs:
             exit 1
           }
           
-          # Verify both-added.png exists (theirs strategy)
-          # Note: Binary files with both-added conflicts are complex to handle
-          # Git and the action may process them differently than regular files
+          # Verify both-added.png has incoming changes content (theirs strategy)
           if (Test-Path $BOTH_ADDED_PNG) {
             $bothAddedPngSize = (Get-Item "$BOTH_ADDED_PNG").Length
-            Write-Output "✅ both-added.png exists after resolution ($bothAddedPngSize bytes - theirs strategy applied)"
-            # For binary both-added conflicts, we only verify the file exists
-            # The actual content validation is complex due to how Git handles binary conflicts
-            Write-Output "Note: Binary both-added conflicts may result in files that differ from the original"
+            $expectedBothAddedPngSize = (Get-Item "$TEST_DIR/incoming-changes/both-added.png").Length
+            
+            # Check PNG header to ensure it's a valid PNG file
+            $pngBytes = [System.IO.File]::ReadAllBytes($BOTH_ADDED_PNG)
+            $expectedHeader = @(137, 80, 78, 71, 13, 10, 26, 10)  # PNG signature
+            $isValidPng = $true
+            
+            if ($pngBytes.Length -ge 8) {
+              for ($i = 0; $i -lt 8; $i++) {
+                if ($pngBytes[$i] -ne $expectedHeader[$i]) {
+                  $isValidPng = $false
+                  break
+                }
+              }
+            } else {
+              $isValidPng = $false
+            }
+            
+            if (-not $isValidPng) {
+              Write-Output "❌ both-added.png is not a valid PNG file after resolution"
+              $actualHeader = $pngBytes[0..7] -join ', '
+              Write-Output "Expected header: 137, 80, 78, 71, 13, 10, 26, 10"
+              Write-Output "Actual header: $actualHeader"
+              exit 1
+            }
+            
+            if ($bothAddedPngSize -eq $expectedBothAddedPngSize) {
+              Write-Output "✅ both-added.png has correct incoming changes ($expectedBothAddedPngSize bytes - theirs)"
+            } else {
+              Write-Output "❌ both-added.png size: $bothAddedPngSize bytes (expected $expectedBothAddedPngSize)"
+              exit 1
+            }
           } else {
             Write-Output "❌ both-added.png should exist"
             exit 1
