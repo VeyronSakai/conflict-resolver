@@ -424,15 +424,19 @@ jobs:
           if (Test-Path $BOTH_ADDED_PNG) {
             $bothAddedPngSize = (Get-Item "$BOTH_ADDED_PNG").Length
             Write-Output "✅ both-added.png exists after resolution ($bothAddedPngSize bytes - theirs strategy applied)"
-            # Just verify it's a valid PNG file
-            $pngHeader = Get-Content "$BOTH_ADDED_PNG" -Encoding Byte -TotalCount 8
+            # Just verify it's a valid PNG file using .NET methods for compatibility
+            $pngBytes = [System.IO.File]::ReadAllBytes($BOTH_ADDED_PNG)
             $expectedHeader = @(137, 80, 78, 71, 13, 10, 26, 10)  # PNG signature
             $isValidPng = $true
-            for ($i = 0; $i -lt 8; $i++) {
-              if ($pngHeader[$i] -ne $expectedHeader[$i]) {
-                $isValidPng = $false
-                break
+            if ($pngBytes.Length -ge 8) {
+              for ($i = 0; $i -lt 8; $i++) {
+                if ($pngBytes[$i] -ne $expectedHeader[$i]) {
+                  $isValidPng = $false
+                  break
+                }
               }
+            } else {
+              $isValidPng = $false
             }
             if (-not $isValidPng) {
               Write-Output "❌ both-added.png is not a valid PNG file after resolution"
