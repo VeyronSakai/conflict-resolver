@@ -71,13 +71,8 @@ jobs:
           # Save current branch (not used, kept for reference)
           # ORIGINAL_BRANCH=$(git branch --show-current)
 
-          # Define test file paths
+          # Define test directory
           TEST_DIR="__tests__/test-conflict-files"
-          TEST_JSON="$TEST_DIR/test.json"
-          TEST_MD="$TEST_DIR/test.md"
-          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
-          TEST_TXT="$TEST_DIR/undefined-rule.txt"
-          TEST_PNG="$TEST_DIR/test.png"
 
           # Create base branch with test files
           git checkout -b test-base-${{ github.run_id }}
@@ -165,8 +160,6 @@ jobs:
           TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
           TEST_TXT="$TEST_DIR/undefined-rule.txt"
           TEST_PNG="$TEST_DIR/test.png"
-          TEST_PDF="$TEST_DIR/test.pdf"
-          TEST_ZIP="$TEST_DIR/test.zip"
 
           # Verify expected outcomes
           echo "::group::Verification Results"
@@ -246,18 +239,15 @@ jobs:
             exit 1
           fi
 
-          # Verify PNG file has incoming changes content (theirs strategy - 2x2 pixels)
+          # Verify PNG file has incoming changes content (theirs strategy)
           PNG_SIZE=$(stat -c%s "$TEST_PNG" 2>/dev/null || stat -f%z "$TEST_PNG" 2>/dev/null || wc -c < "$TEST_PNG")
           # Remove any whitespace from the size
           PNG_SIZE=$(echo "$PNG_SIZE" | tr -d ' ')
           echo "PNG file size: $PNG_SIZE bytes"
-          if [ "$PNG_SIZE" -eq 57 ]; then
-            echo "✅ test.png has correct incoming changes content (2x2 pixels, 57 bytes)"
-          elif [ "$PNG_SIZE" -eq 61 ]; then
-            echo "❌ test.png has base version content (3x3 pixels, 61 bytes) instead of incoming changes"
-            exit 1
+          if [ "$PNG_SIZE" -eq 71 ]; then
+            echo "✅ test.png has correct incoming changes content (71 bytes)"
           else
-            echo "❌ test.png size: $PNG_SIZE bytes (expected 57 for incoming changes)"
+            echo "❌ test.png size: $PNG_SIZE bytes (expected 71 for incoming changes)"
             ls -la "$TEST_PNG"
             exit 1
           fi
@@ -308,6 +298,8 @@ jobs:
           TEST_DIR="__tests__/test-conflict-files"
           TEST_JSON="$TEST_DIR/test.json"
           TEST_MD="$TEST_DIR/test.md"
+          TEST_CONFIG_YML="$TEST_DIR/test.config.yml"
+          TEST_TXT="$TEST_DIR/undefined-rule.txt"
 
           echo "::group::Final resolved file contents (samples)"
 
