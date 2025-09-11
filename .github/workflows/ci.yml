@@ -79,14 +79,14 @@ jobs:
           $TEST_DIR = "__tests__/test-conflict-files"
 
           # Create base branch with test files
-          git checkout -b "test-base-$env:RUN_ID"
+          git switch -C "test-base-$env:RUN_ID"
 
           # The test files are already in the repository
           git add "$TEST_DIR/"
           try { git commit -m "Add base test files" } catch { Write-Output "Files already committed" }
 
           # Create incoming changes branch
-          git checkout -b "test-incoming-$env:RUN_ID"
+          git switch -C "test-incoming-$env:RUN_ID"
 
           # Copy incoming changes files
           Copy-Item "$TEST_DIR/incoming-changes/*" "$TEST_DIR/" -Force
@@ -95,8 +95,8 @@ jobs:
           git commit -m "Incoming changes"
 
           # Create current branch with base version changes
-          git checkout "test-base-$env:RUN_ID"
-          git checkout -b "test-current-$env:RUN_ID"
+          git switch "test-base-$env:RUN_ID"
+          git switch -C "test-current-$env:RUN_ID"
 
           # Copy base version files
           Copy-Item "$TEST_DIR/base-version/*" "$TEST_DIR/" -Force
