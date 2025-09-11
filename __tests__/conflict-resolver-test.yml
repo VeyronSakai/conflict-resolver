@@ -2,37 +2,6 @@
 # This file is used for testing the conflict resolver action
 
 rules:
-  # Test rule for package-lock.json
-  - paths: 'package-lock.json'
-    strategy: 'theirs'
-
-  # Test rule for generated files
-  - paths: '*.generated.ts'
-    strategy: 'ours'
-
-  # Test rule for dist files
-  - paths: 'dist/**/*'
-    strategy: 'ours'
-
-  # Example with conflict_type: only apply when both sides modified
-  - paths: 'src/**/*.test.ts'
-    conflict_type: 'both-modified'
-    strategy: 'theirs'
-
-  # Example with conflict_type: handle files added by both sides
-  - paths: 'docs/**/*.md'
-    conflict_type: 'both-added'
-    strategy: 'theirs'
-
-  # Example with manual strategy: require human review
-  - paths: '.github/workflows/*.yml'
-    strategy: 'manual'
-
-  # Example with manual strategy and conflict_type
-  - paths: '**/*.config.js'
-    conflict_type: 'both-modified'
-    strategy: 'manual'
-
   # === Test conflict files rules ===
 
   # JSON files - use incoming changes (theirs strategy)
