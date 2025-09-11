@@ -128,14 +128,6 @@ jobs:
             Write-Output "::warning::No conflicts detected."
           }
 
-      - name: Show conflict details
-        if: steps.create-conflicts.outputs.has_conflicts == 'true'
-        shell: pwsh
-        run: |
-          Write-Output "::group::Git status with conflicts"
-          git status
-          Write-Output "::endgroup::"
-
       - name: Test Local Action
         id: test-action
         uses: ./
