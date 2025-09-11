@@ -1,0 +1,2 @@
+# DeletedByThem Test File - Initial
+This file exists in the initial state and will be used to create conflict scenarios.

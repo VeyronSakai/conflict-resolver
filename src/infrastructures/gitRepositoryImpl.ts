@@ -106,8 +106,18 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    const content = await this.getFileContent(file.path, strategy)
-    fs.writeFileSync(file.path, content)
+    // Check if file is binary
+    const isBinary = await this.isBinaryFile(file.path)
+
+    if (isBinary) {
+      // For binary files, use git checkout to properly handle binary content
+      await this.execGitCommand(['checkout', `--${strategy}`, file.path])
+    } else {
+      // For text files, use the existing string-based approach
+      const content = await this.getFileContent(file.path, strategy)
+      fs.writeFileSync(file.path, content)
+    }
+
     await this.execGitCommand(['add', file.path])
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
@@ -129,6 +139,63 @@ export class GitRepositoryImpl implements GitRepository {
       return await this.execGitCommand(['show', `:2:${filePath}`])
     } else {
       return await this.execGitCommand(['show', `:3:${filePath}`])
+    }
+  }
+
+  private async isBinaryFile(filePath: string): Promise<boolean> {
+    try {
+      // Use git diff to check if file is binary
+      // Git will report binary files in the diff output
+      const output = await this.execGitCommand([
+        'diff',
+        '--numstat',
+        'HEAD',
+        '--',
+        filePath
+      ])
+
+      // Binary files show as "-\t-\t" in numstat output
+      if (output.includes('-\t-\t')) {
+        return true
+      }
+
+      // Also check using git's attributes
+      const checkBinaryOutput = await this.execGitCommand([
+        'check-attr',
+        'binary',
+        filePath
+      ])
+
+      if (checkBinaryOutput.includes('binary: set')) {
+        return true
+      }
+
+      // Check common binary file extensions as fallback
+      const binaryExtensions = [
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.bmp',
+        '.ico',
+        '.pdf',
+        '.zip',
+        '.tar',
+        '.gz',
+        '.exe',
+        '.dll',
+        '.so',
+        '.dylib',
+        '.bin',
+        '.dat'
+      ]
+      const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
+      return binaryExtensions.includes(ext)
+    } catch {
+      // If detection fails, check file extension as fallback
+      const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
+      const binaryExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico']
+      return binaryExtensions.includes(ext)
     }
   }
 
