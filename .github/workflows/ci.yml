@@ -246,10 +246,13 @@ jobs:
           # Verify PNG file has incoming changes content (theirs strategy)
           $PNG_SIZE = (Get-Item "$TEST_PNG").Length
           Write-Output "PNG file size: $PNG_SIZE bytes"
-          if ($PNG_SIZE -eq 71) {
-            Write-Output "✅ test.png has correct incoming changes content (71 bytes)"
+          if ($PNG_SIZE -eq 75) {
+            Write-Output "✅ test.png has correct incoming changes content (75 bytes - theirs)"
+          } elseif ($PNG_SIZE -eq 69) {
+            Write-Output "❌ test.png has base version content (69 bytes) instead of incoming changes"
+            exit 1
           } else {
-            Write-Output "❌ test.png size: $PNG_SIZE bytes (expected 71 for incoming changes)"
+            Write-Output "❌ test.png size: $PNG_SIZE bytes (expected 75 for incoming changes, got unexpected size)"
             Get-ChildItem "$TEST_PNG"
             exit 1
           }
