@@ -1,0 +1,3 @@
+# BothAdded Test File
+This file is added on both sides with different content.
+Content from base version (ours).

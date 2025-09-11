@@ -81,8 +81,14 @@ jobs:
           # Create incoming changes branch
           git switch -C "test-incoming-$env:RUN_ID"
 
-          # Copy incoming changes files
+          # Copy incoming changes files (for both-modified, both-added, and added-by-them)
           Copy-Item "$TEST_DIR/incoming-changes/*" "$TEST_DIR/" -Force
+          
+          # Remove files that should be deleted on their side (deleted-by-them)
+          Remove-Item "$TEST_DIR/deleted-by-them.txt" -Force -ErrorAction SilentlyContinue
+          
+          # Remove files that should not exist on their side (added-by-us)
+          Remove-Item "$TEST_DIR/added-by-us.txt" -Force -ErrorAction SilentlyContinue
 
           git add "$TEST_DIR/"
           git commit -m "Incoming changes"
@@ -91,8 +97,14 @@ jobs:
           git switch "test-base-$env:RUN_ID"
           git switch -C "test-current-$env:RUN_ID"
 
-          # Copy base version files
+          # Copy base version files (for both-modified, both-added, and added-by-us)
           Copy-Item "$TEST_DIR/base-version/*" "$TEST_DIR/" -Force
+          
+          # Remove files that should be deleted on our side (deleted-by-us)
+          Remove-Item "$TEST_DIR/deleted-by-us.txt" -Force -ErrorAction SilentlyContinue
+          
+          # Remove files that should not exist on our side (added-by-them)
+          Remove-Item "$TEST_DIR/added-by-them.txt" -Force -ErrorAction SilentlyContinue
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
@@ -110,17 +122,23 @@ jobs:
           git status
           Write-Output "::endgroup::"
 
-          Write-Output "::group::Conflicted files"
-          $conflicted = git status --porcelain | Select-String "^UU"
-          if ($conflicted) {
-            $conflicted
-          } else {
-            Write-Output "No conflicts found"
-          }
+          Write-Output "::group::Conflicted files by type"
+          Write-Output "Both modified (UU):"
+          git status --porcelain | Select-String "^UU"
+          Write-Output "Deleted by us (DU):"
+          git status --porcelain | Select-String "^DU"
+          Write-Output "Deleted by them (UD):"
+          git status --porcelain | Select-String "^UD"
+          Write-Output "Both added (AA):"
+          git status --porcelain | Select-String "^AA"
+          Write-Output "Added by us (AU):"
+          git status --porcelain | Select-String "^AU"
+          Write-Output "Added by them (UA):"
+          git status --porcelain | Select-String "^UA"
           Write-Output "::endgroup::"
 
           # Save conflict state
-          if (git status --porcelain | Select-String -Quiet "^UU") {
+          if (git status --porcelain | Select-String -Quiet "^(UU|DU|UD|AA|AU|UA)") {
             "has_conflicts=true" | Out-File -Append $env:GITHUB_OUTPUT
             Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
           } else {
@@ -157,19 +175,27 @@ jobs:
           $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
           $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
           $TEST_PNG = "$TEST_DIR/test.png"
+          $DELETED_BY_US = "$TEST_DIR/deleted-by-us.txt"
+          $DELETED_BY_THEM = "$TEST_DIR/deleted-by-them.txt"
+          $BOTH_ADDED = "$TEST_DIR/both-added.txt"
+          $ADDED_BY_US = "$TEST_DIR/added-by-us.txt"
+          $ADDED_BY_THEM = "$TEST_DIR/added-by-them.txt"
 
           Write-Output "::group::Verification Results"
+          
+          # === Both-Modified conflicts ===
+          Write-Output "=== Verifying Both-Modified conflicts ==="
 
-          # Check resolved files
+          # Check resolved files (both-modified)
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_JSON)) {
-            Write-Output "✅ test.json resolved (theirs strategy)"
+            Write-Output "✅ test.json resolved (theirs strategy, both-modified)"
           } else {
             Write-Output "❌ test.json should have been resolved"
             exit 1
           }
 
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_MD)) {
-            Write-Output "✅ test.md resolved (ours strategy)"
+            Write-Output "✅ test.md resolved (ours strategy, both-modified)"
           } else {
             Write-Output "❌ test.md should have been resolved"
             exit 1
@@ -177,11 +203,64 @@ jobs:
 
           # Check binary files
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_PNG)) {
-            Write-Output "✅ test.png resolved (theirs strategy)"
+            Write-Output "✅ test.png resolved (theirs strategy, both-modified)"
           } else {
             Write-Output "❌ test.png should have been resolved"
             exit 1
           }
+          
+          # === Deleted-By-Us conflicts ===
+          Write-Output "`n=== Verifying Deleted-By-Us conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_US)) {
+            Write-Output "✅ deleted-by-us.txt resolved (theirs strategy, deleted-by-us)"
+          } else {
+            Write-Output "❌ deleted-by-us.txt should have been resolved"
+            exit 1
+          }
+          
+          # === Deleted-By-Them conflicts ===
+          Write-Output "`n=== Verifying Deleted-By-Them conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_THEM)) {
+            Write-Output "✅ deleted-by-them.txt resolved (ours strategy, deleted-by-them)"
+          } else {
+            Write-Output "❌ deleted-by-them.txt should have been resolved"
+            exit 1
+          }
+          
+          # === Both-Added conflicts ===
+          Write-Output "`n=== Verifying Both-Added conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($BOTH_ADDED)) {
+            Write-Output "✅ both-added.txt resolved (theirs strategy, both-added)"
+          } else {
+            Write-Output "❌ both-added.txt should have been resolved"
+            exit 1
+          }
+          
+          # === Added-By-Us conflicts ===
+          Write-Output "`n=== Verifying Added-By-Us conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($ADDED_BY_US)) {
+            Write-Output "✅ added-by-us.txt resolved (ours strategy, added-by-us)"
+          } else {
+            Write-Output "❌ added-by-us.txt should have been resolved"
+            exit 1
+          }
+          
+          # === Added-By-Them conflicts ===
+          Write-Output "`n=== Verifying Added-By-Them conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($ADDED_BY_THEM)) {
+            Write-Output "✅ added-by-them.txt resolved (theirs strategy, added-by-them)"
+          } else {
+            Write-Output "❌ added-by-them.txt should have been resolved"
+            exit 1
+          }
+          
+          # === Unresolved files ===
+          Write-Output "`n=== Verifying Unresolved files ==="
 
           # Check unresolved files (manual strategy)
           if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_CONFIG_YML)) {
@@ -209,12 +288,19 @@ jobs:
           $TEST_JSON = "$TEST_DIR/test.json"
           $TEST_MD = "$TEST_DIR/test.md"
           $TEST_PNG = "$TEST_DIR/test.png"
+          $DELETED_BY_US = "$TEST_DIR/deleted-by-us.txt"
+          $DELETED_BY_THEM = "$TEST_DIR/deleted-by-them.txt"
+          $BOTH_ADDED = "$TEST_DIR/both-added.txt"
+          $ADDED_BY_US = "$TEST_DIR/added-by-us.txt"
+          $ADDED_BY_THEM = "$TEST_DIR/added-by-them.txt"
 
           Write-Output "::group::Content verification for resolved files"
 
           # First, check if files exist
           Write-Output "Checking if resolved files exist:"
           Get-ChildItem "$TEST_DIR/"
+          
+          Write-Output "`n=== Verifying Both-Modified file contents ==="
 
           # Verify test.json has incoming changes content (theirs strategy)
           $jsonContent = Get-Content "$TEST_JSON" -Raw
@@ -253,6 +339,91 @@ jobs:
           } else {
             Write-Output "❌ test.png size: $PNG_SIZE bytes (expected $EXPECTED_SIZE for incoming changes)"
             Get-ChildItem "$TEST_PNG"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Deleted-By-Us file contents ==="
+          
+          # Verify deleted-by-us.txt was restored with incoming changes (theirs strategy)
+          if (Test-Path $DELETED_BY_US) {
+            $deletedByUsContent = Get-Content "$DELETED_BY_US" -Raw
+            $expectedDeletedByUsContent = Get-Content "$TEST_DIR/incoming-changes/deleted-by-us.txt" -Raw
+            if ($deletedByUsContent -eq $expectedDeletedByUsContent) {
+              Write-Output "✅ deleted-by-us.txt restored with incoming changes content (theirs)"
+            } else {
+              Write-Output "❌ deleted-by-us.txt does not have expected incoming changes content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ deleted-by-us.txt should exist (restored by theirs strategy)"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Deleted-By-Them file contents ==="
+          
+          # Verify deleted-by-them.txt kept with our content (ours strategy)
+          if (Test-Path $DELETED_BY_THEM) {
+            $deletedByThemContent = Get-Content "$DELETED_BY_THEM" -Raw
+            $expectedDeletedByThemContent = Get-Content "$TEST_DIR/base-version/deleted-by-them.txt" -Raw
+            if ($deletedByThemContent -eq $expectedDeletedByThemContent) {
+              Write-Output "✅ deleted-by-them.txt kept with base version content (ours)"
+            } else {
+              Write-Output "❌ deleted-by-them.txt does not have expected base version content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ deleted-by-them.txt should exist (kept by ours strategy)"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Both-Added file contents ==="
+          
+          # Verify both-added.txt has incoming changes content (theirs strategy)
+          if (Test-Path $BOTH_ADDED) {
+            $bothAddedContent = Get-Content "$BOTH_ADDED" -Raw
+            $expectedBothAddedContent = Get-Content "$TEST_DIR/incoming-changes/both-added.txt" -Raw
+            if ($bothAddedContent -eq $expectedBothAddedContent) {
+              Write-Output "✅ both-added.txt has correct incoming changes content (theirs)"
+            } else {
+              Write-Output "❌ both-added.txt does not have expected incoming changes content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ both-added.txt should exist"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Added-By-Us file contents ==="
+          
+          # Verify added-by-us.txt kept with our content (ours strategy)
+          if (Test-Path $ADDED_BY_US) {
+            $addedByUsContent = Get-Content "$ADDED_BY_US" -Raw
+            $expectedAddedByUsContent = Get-Content "$TEST_DIR/base-version/added-by-us.txt" -Raw
+            if ($addedByUsContent -eq $expectedAddedByUsContent) {
+              Write-Output "✅ added-by-us.txt kept with base version content (ours)"
+            } else {
+              Write-Output "❌ added-by-us.txt does not have expected base version content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ added-by-us.txt should exist"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Added-By-Them file contents ==="
+          
+          # Verify added-by-them.txt accepted with their content (theirs strategy)
+          if (Test-Path $ADDED_BY_THEM) {
+            $addedByThemContent = Get-Content "$ADDED_BY_THEM" -Raw
+            $expectedAddedByThemContent = Get-Content "$TEST_DIR/incoming-changes/added-by-them.txt" -Raw
+            if ($addedByThemContent -eq $expectedAddedByThemContent) {
+              Write-Output "✅ added-by-them.txt accepted with incoming changes content (theirs)"
+            } else {
+              Write-Output "❌ added-by-them.txt does not have expected incoming changes content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ added-by-them.txt should exist"
             exit 1
           }
 
