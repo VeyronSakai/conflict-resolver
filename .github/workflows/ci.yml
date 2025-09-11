@@ -146,12 +146,12 @@ jobs:
           $TEST_DIR = "__tests__/test-conflict-files"
           $patterns = @("*.json", "*.md", "*.ts", "*.yml", "*.txt", "*.xml")
           foreach ($pattern in $patterns) {
-            Get-ChildItem "$TEST_DIR/$pattern" -File -ErrorAction SilentlyContinue | ForEach-Object {
-              $file = $_.FullName
-              $conflict = git diff --check "$file" 2>$null | Select-String "conflict" -Quiet
+            $files = Get-ChildItem -Path $TEST_DIR -Filter $pattern -File -ErrorAction SilentlyContinue
+            foreach ($file in $files) {
+              $conflict = git diff --check "$($file.FullName)" 2>$null | Select-String "conflict" -Quiet
               if ($conflict) {
-                Write-Output "::group::Conflict in $file"
-                Get-Content "$file" | Select-Object -First 50
+                Write-Output "::group::Conflict in $($file.FullName)"
+                Get-Content $file.FullName | Select-Object -First 50
                 Write-Output "::endgroup::"
               }
             }
