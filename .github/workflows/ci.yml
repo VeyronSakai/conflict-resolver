@@ -160,12 +160,14 @@ jobs:
             Write-Output "✅ test.json resolved (theirs strategy)"
           } else {
             Write-Output "❌ test.json should have been resolved"
+            exit 1
           }
 
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_MD)) {
             Write-Output "✅ test.md resolved (ours strategy)"
           } else {
             Write-Output "❌ test.md should have been resolved"
+            exit 1
           }
 
           # Check binary files
@@ -173,6 +175,7 @@ jobs:
             Write-Output "✅ test.png resolved (theirs strategy)"
           } else {
             Write-Output "❌ test.png should have been resolved"
+            exit 1
           }
 
           # Check unresolved files (manual strategy)
@@ -180,6 +183,7 @@ jobs:
             Write-Output "✅ test.config.yml unresolved (manual strategy)"
           } else {
             Write-Output "❌ test.config.yml should remain unresolved"
+            exit 1
           }
 
           # Check files without rules
@@ -187,6 +191,7 @@ jobs:
             Write-Output "✅ undefined-rule.txt unresolved (no rule defined)"
           } else {
             Write-Output "❌ undefined-rule.txt should remain unresolved"
+            exit 1
           }
 
           Write-Output "::endgroup::"
