@@ -248,11 +248,8 @@ jobs:
           Write-Output "PNG file size: $PNG_SIZE bytes"
           if ($PNG_SIZE -eq 75) {
             Write-Output "✅ test.png has correct incoming changes content (75 bytes - theirs)"
-          } elseif ($PNG_SIZE -eq 69) {
-            Write-Output "❌ test.png has base version content (69 bytes) instead of incoming changes"
-            exit 1
           } else {
-            Write-Output "❌ test.png size: $PNG_SIZE bytes (expected 75 for incoming changes, got unexpected size)"
+            Write-Output "❌ test.png size: $PNG_SIZE bytes (expected 75 for incoming changes)"
             Get-ChildItem "$TEST_PNG"
             exit 1
           }
