@@ -140,21 +140,20 @@ jobs:
         shell: pwsh
         run: |
           Write-Output "::group::List of conflicted files"
-          git diff --name-only --diff-filter=U
+          $conflictedFiles = git diff --name-only --diff-filter=U
+          $conflictedFiles
           Write-Output "::endgroup::"
 
-          $TEST_DIR = "__tests__/test-conflict-files"
-          $patterns = @("*.json", "*.md", "*.ts", "*.yml", "*.txt", "*.xml")
-          foreach ($pattern in $patterns) {
-            $files = Get-ChildItem -Path $TEST_DIR -Filter $pattern -File -ErrorAction SilentlyContinue
-            foreach ($file in $files) {
-              $conflict = git diff --check "$($file.FullName)" 2>$null | Select-String "conflict" -Quiet
-              if ($conflict) {
-                Write-Output "::group::Conflict in $($file.FullName)"
-                Get-Content $file.FullName | Select-Object -First 50
+          if ($conflictedFiles) {
+            foreach ($file in $conflictedFiles) {
+              if (Test-Path $file) {
+                Write-Output "::group::Conflict in $file"
+                Get-Content $file | Select-Object -First 50
                 Write-Output "::endgroup::"
               }
             }
+          } else {
+            Write-Output "No conflicted files to show details for"
           }
 
       - name: Test Local Action
