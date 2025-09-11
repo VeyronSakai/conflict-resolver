@@ -32417,9 +32417,24 @@ class GitRepositoryImpl {
                 return true;
             }
             // Check common binary file extensions as fallback
-            const binaryExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico',
-                '.pdf', '.zip', '.tar', '.gz', '.exe', '.dll',
-                '.so', '.dylib', '.bin', '.dat'];
+            const binaryExtensions = [
+                '.png',
+                '.jpg',
+                '.jpeg',
+                '.gif',
+                '.bmp',
+                '.ico',
+                '.pdf',
+                '.zip',
+                '.tar',
+                '.gz',
+                '.exe',
+                '.dll',
+                '.so',
+                '.dylib',
+                '.bin',
+                '.dat'
+            ];
             const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
             return binaryExtensions.includes(ext);
         }
