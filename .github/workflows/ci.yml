@@ -139,22 +139,9 @@ jobs:
         if: steps.create-conflicts.outputs.has_conflicts == 'true'
         shell: pwsh
         run: |
-          Write-Output "::group::List of conflicted files"
-          $conflictedFiles = git diff --name-only --diff-filter=U
-          $conflictedFiles
+          Write-Output "::group::Git status with conflicts"
+          git status
           Write-Output "::endgroup::"
-
-          if ($conflictedFiles) {
-            foreach ($file in $conflictedFiles) {
-              if (Test-Path $file) {
-                Write-Output "::group::Conflict in $file"
-                Get-Content $file | Select-Object -First 50
-                Write-Output "::endgroup::"
-              }
-            }
-          } else {
-            Write-Output "No conflicted files to show details for"
-          }
 
       - name: Test Local Action
         id: test-action
