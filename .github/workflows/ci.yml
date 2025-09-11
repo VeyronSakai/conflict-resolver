@@ -72,22 +72,11 @@ jobs:
         env:
           RUN_ID: ${{ github.run_id }}
         run: |
-          # Save current branch (not used, kept for reference)
-          # $ORIGINAL_BRANCH = git branch --show-current
-
           # Define test directory
           $TEST_DIR = "__tests__/test-conflict-files"
 
           # Create base branch with test files
           git switch -C "test-base-$env:RUN_ID"
-
-          # The test files are already in the repository
-          git add "$TEST_DIR/"
-          try { 
-            git commit -m "Add base test files" 
-          } catch { 
-            Write-Output "Files already committed" 
-          }
 
           # Create incoming changes branch
           git switch -C "test-incoming-$env:RUN_ID"
