@@ -83,7 +83,11 @@ jobs:
 
           # The test files are already in the repository
           git add "$TEST_DIR/"
-          try { git commit -m "Add base test files" } catch { Write-Output "Files already committed" }
+          try { 
+            git commit -m "Add base test files" 
+          } catch { 
+            Write-Output "Files already committed" 
+          }
 
           # Create incoming changes branch
           git switch -C "test-incoming-$env:RUN_ID"
