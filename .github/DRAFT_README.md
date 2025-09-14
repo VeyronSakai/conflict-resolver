@@ -32,7 +32,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: develop/v2.0  # Target branch
+          ref: develop/v2.0 # Target branch
 
       - name: Create feature branch
         run: |
@@ -122,16 +122,20 @@ rules:
 ### Configuration Notes
 
 **Rule Properties:**
+
 - `paths` supports glob patterns (e.g., `*.js`, `src/**/*.ts`)
 - `strategy` must be either `ours` or `theirs`
-- `conflict_type` is optional. If not specified, the rule applies to all conflict types
+- `conflict_type` is optional. If not specified, the rule applies to all
+  conflict types
 
 **Rule Evaluation:**
+
 - Rules are evaluated in order (first match wins)
 - Place more specific patterns before general ones
 - Test your patterns carefully, especially for critical files
 
 **Valid conflict_type values:**
+
 - `both-modified` (UU): Both sides modified the file
 - `both-added` (AA): Both sides added the same file
 - `both-deleted` (DD): Both sides deleted the file
