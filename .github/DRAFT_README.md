@@ -74,9 +74,9 @@ jobs:
           fi
 ```
 
-### Configuration File
+### Configuration File Example
 
-Create a `.github/conflict-resolver.yml` file in your repository:
+Create a `.github/conflict-resolver.yml` file in your repository as follows:
 
 ```yaml
 # Git Conflict Resolver Configuration Example
