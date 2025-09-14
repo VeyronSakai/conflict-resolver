@@ -65,3 +65,25 @@ rules:
 
   # Note: Files without rules (undefined-rule.txt)
   # will remain unresolved with conflict markers
+
+  # === Test for conflict_type mismatch ===
+  # These rules should NOT match because conflict_type doesn't match actual conflict type
+
+  # test.json is actually both-modified, but rule specifies deleted-by-us
+  # This should NOT resolve the conflict
+  - paths: '__tests__/test-conflict-files/test.json'
+    strategy: 'ours'
+    conflict_type: 'deleted-by-us'
+
+  # undefined-rule.txt is actually both-modified, but rule specifies both-added
+  # This should NOT resolve the conflict
+  - paths: '__tests__/test-conflict-files/undefined-rule.txt'
+    strategy: 'theirs'
+    conflict_type: 'both-added'
+
+  # === Test for rule priority ===
+  # This rule should be ignored because an earlier rule already matches test.md
+  # The earlier rule (line 13-15) with 'ours' strategy should take precedence
+  - paths: '__tests__/test-conflict-files/*.md'
+    strategy: 'theirs'
+    conflict_type: 'both-modified'

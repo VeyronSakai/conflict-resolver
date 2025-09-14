@@ -263,11 +263,35 @@ jobs:
             exit 1
           }
 
-          # Check files without rules
+          # Check files without rules or with conflict_type mismatch
           if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_TXT)) {
-            Write-Output "✅ undefined-rule.txt unresolved (no rule defined)"
+            Write-Output "✅ undefined-rule.txt unresolved (has rule with conflict_type mismatch - should be ignored)"
           } else {
             Write-Output "❌ undefined-rule.txt should remain unresolved"
+            exit 1
+          }
+
+          # === Verify conflict_type mismatch behavior ===
+          Write-Output "`n=== Verifying conflict_type mismatch behavior ==="
+
+          # test.json should be resolved by the FIRST matching rule (line 8-10 in config)
+          # The second rule with wrong conflict_type (deleted-by-us) should be ignored
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_JSON)) {
+            Write-Output "✅ test.json resolved by first matching rule (conflict_type mismatch rule ignored)"
+          } else {
+            Write-Output "❌ test.json should be resolved by the first matching rule"
+            exit 1
+          }
+
+          # === Verify rule priority ===
+          Write-Output "`n=== Verifying rule priority ==="
+
+          # test.md should be resolved with 'ours' strategy from the first matching rule
+          # The later rule with 'theirs' strategy should be ignored
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_MD)) {
+            Write-Output "✅ test.md resolved by first matching rule (later rule ignored)"
+          } else {
+            Write-Output "❌ test.md should be resolved by the first matching rule"
             exit 1
           }
 
@@ -311,10 +335,11 @@ jobs:
           }
 
           # Verify test.md has base version content (ours strategy)
+          # This also verifies rule priority - the first rule (ours) takes precedence over the later rule (theirs)
           $mdContent = Get-Content "$TEST_MD" -Raw
           $expectedMdContent = Get-Content "$TEST_DIR/base-version/test.md" -Raw
           if ($mdContent -eq $expectedMdContent) {
-            Write-Output "✅ test.md has correct base version content (ours)"
+            Write-Output "✅ test.md has correct base version content (ours) - first rule takes precedence"
           } else {
             Write-Output "❌ test.md does not have expected base version content"
             Write-Output "Actual content:"
