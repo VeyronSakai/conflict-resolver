@@ -20,12 +20,12 @@ rules in a YAML configuration file.
 ### Basic Example
 
 ```yaml
-name: Auto-resolve conflicts
+name: Merge develop branch with auto-resolved conflicts
 on:
   workflow_dispatch:
 
 jobs:
-  resolve-conflicts:
+  merge:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
