@@ -18,9 +18,50 @@ rules:
   - paths: '__tests__/test-conflict-files/*.config.yml'
     strategy: 'manual'
 
-  # Binary files - use incoming changes (theirs strategy)
-  - paths: '__tests__/test-conflict-files/*.png'
+  # Binary files (both-modified) - use incoming changes (theirs strategy)
+  - paths: '__tests__/test-conflict-files/test.png'
     strategy: 'theirs'
+    conflict_type: 'both-modified'
+
+  # === Rules for additional conflict types ===
+
+  # DeletedByUs - file deleted on our side but modified on their side
+  # Use theirs strategy to restore the file with their changes
+  - paths: '__tests__/test-conflict-files/deleted-by-us.txt'
+    strategy: 'theirs'
+    conflict_type: 'deleted-by-us'
+
+  # DeletedByThem - file modified on our side but deleted on their side
+  # Use ours strategy to keep our modified file
+  - paths: '__tests__/test-conflict-files/deleted-by-them.txt'
+    strategy: 'ours'
+    conflict_type: 'deleted-by-them'
+
+  # BothAdded - same file added with different content on both sides
+  # Use theirs strategy to take their version
+  - paths: '__tests__/test-conflict-files/both-added.txt'
+    strategy: 'theirs'
+    conflict_type: 'both-added'
+
+  # === Binary file rules for additional conflict types ===
+
+  # Binary DeletedByUs - PNG deleted on our side but modified on their side
+  # Use theirs strategy to restore the file with their changes
+  - paths: '__tests__/test-conflict-files/deleted-by-us.png'
+    strategy: 'theirs'
+    conflict_type: 'deleted-by-us'
+
+  # Binary DeletedByThem - PNG modified on our side but deleted on their side
+  # Use ours strategy to keep our modified file
+  - paths: '__tests__/test-conflict-files/deleted-by-them.png'
+    strategy: 'ours'
+    conflict_type: 'deleted-by-them'
+
+  # Binary BothAdded - same PNG added with different content on both sides
+  # Use theirs strategy to take their version
+  - paths: '__tests__/test-conflict-files/both-added.png'
+    strategy: 'theirs'
+    conflict_type: 'both-added'
 
   # Note: Files without rules (undefined-rule.txt)
   # will remain unresolved with conflict markers

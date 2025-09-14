@@ -1,0 +1,3 @@
+# DeletedByUs Test File
+This file will be deleted on our side but modified on their side.
+Original content from base version.

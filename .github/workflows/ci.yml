@@ -81,25 +81,32 @@ jobs:
           # Create incoming changes branch
           git switch -C "test-incoming-$env:RUN_ID"
 
-          # Copy incoming changes files
+          # Copy incoming changes files (for both-modified and both-added)
           Copy-Item "$TEST_DIR/incoming-changes/*" "$TEST_DIR/" -Force
+          
+          # Remove files that should be deleted on their side (deleted-by-them)
+          Remove-Item "$TEST_DIR/deleted-by-them.txt" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$TEST_DIR/deleted-by-them.png" -Force -ErrorAction SilentlyContinue
 
           git add "$TEST_DIR/"
           git commit -m "Incoming changes"
 
-          # Create current branch with base version changes
+          # Switch back to base branch and add base version changes
           git switch "test-base-$env:RUN_ID"
-          git switch -C "test-current-$env:RUN_ID"
 
-          # Copy base version files
+          # Copy base version files (for both-modified and both-added)
           Copy-Item "$TEST_DIR/base-version/*" "$TEST_DIR/" -Force
+
+          # Remove files that should be deleted on our side (deleted-by-us)
+          Remove-Item "$TEST_DIR/deleted-by-us.txt" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$TEST_DIR/deleted-by-us.png" -Force -ErrorAction SilentlyContinue
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
 
-          # Attempt to merge incoming changes into current branch to create conflicts
-          Write-Output "::notice::Attempting to merge incoming changes into current branch..."
-          try { 
+          # Attempt to merge incoming changes into base branch to create conflicts
+          Write-Output "::notice::Attempting to merge incoming changes into base branch..."
+          try {
             git merge "test-incoming-$env:RUN_ID" --no-ff --no-commit
           } catch { 
             # Merge conflict is expected
@@ -110,17 +117,19 @@ jobs:
           git status
           Write-Output "::endgroup::"
 
-          Write-Output "::group::Conflicted files"
-          $conflicted = git status --porcelain | Select-String "^UU"
-          if ($conflicted) {
-            $conflicted
-          } else {
-            Write-Output "No conflicts found"
-          }
+          Write-Output "::group::Conflicted files by type"
+          Write-Output "Both modified (UU):"
+          git status --porcelain | Select-String "^UU"
+          Write-Output "Deleted by us (DU):"
+          git status --porcelain | Select-String "^DU"
+          Write-Output "Deleted by them (UD):"
+          git status --porcelain | Select-String "^UD"
+          Write-Output "Both added (AA):"
+          git status --porcelain | Select-String "^AA"
           Write-Output "::endgroup::"
 
           # Save conflict state
-          if (git status --porcelain | Select-String -Quiet "^UU") {
+          if (git status --porcelain | Select-String -Quiet "^(UU|DU|UD|AA)") {
             "has_conflicts=true" | Out-File -Append $env:GITHUB_OUTPUT
             Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
           } else {
@@ -157,19 +166,28 @@ jobs:
           $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
           $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
           $TEST_PNG = "$TEST_DIR/test.png"
+          $DELETED_BY_US_TXT = "$TEST_DIR/deleted-by-us.txt"
+          $DELETED_BY_THEM_TXT = "$TEST_DIR/deleted-by-them.txt"
+          $BOTH_ADDED_TXT = "$TEST_DIR/both-added.txt"
+          $DELETED_BY_US_PNG = "$TEST_DIR/deleted-by-us.png"
+          $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
+          $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
 
           Write-Output "::group::Verification Results"
+          
+          # === Both-Modified conflicts ===
+          Write-Output "=== Verifying Both-Modified conflicts ==="
 
-          # Check resolved files
+          # Check resolved files (both-modified)
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_JSON)) {
-            Write-Output "✅ test.json resolved (theirs strategy)"
+            Write-Output "✅ test.json resolved (theirs strategy, both-modified)"
           } else {
             Write-Output "❌ test.json should have been resolved"
             exit 1
           }
 
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_MD)) {
-            Write-Output "✅ test.md resolved (ours strategy)"
+            Write-Output "✅ test.md resolved (ours strategy, both-modified)"
           } else {
             Write-Output "❌ test.md should have been resolved"
             exit 1
@@ -177,11 +195,65 @@ jobs:
 
           # Check binary files
           if ($env:RESOLVED_FILES -match [regex]::Escape($TEST_PNG)) {
-            Write-Output "✅ test.png resolved (theirs strategy)"
+            Write-Output "✅ test.png resolved (theirs strategy, both-modified)"
           } else {
             Write-Output "❌ test.png should have been resolved"
             exit 1
           }
+          
+          # === Deleted-By-Us conflicts ===
+          Write-Output "`n=== Verifying Deleted-By-Us conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_US_TXT)) {
+            Write-Output "✅ deleted-by-us.txt resolved (theirs strategy, deleted-by-us)"
+          } else {
+            Write-Output "❌ deleted-by-us.txt should have been resolved"
+            exit 1
+          }
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_US_PNG)) {
+            Write-Output "✅ deleted-by-us.png resolved (theirs strategy, deleted-by-us)"
+          } else {
+            Write-Output "❌ deleted-by-us.png should have been resolved"
+            exit 1
+          }
+          
+          # === Deleted-By-Them conflicts ===
+          Write-Output "`n=== Verifying Deleted-By-Them conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_THEM_TXT)) {
+            Write-Output "✅ deleted-by-them.txt resolved (ours strategy, deleted-by-them)"
+          } else {
+            Write-Output "❌ deleted-by-them.txt should have been resolved"
+            exit 1
+          }
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_THEM_PNG)) {
+            Write-Output "✅ deleted-by-them.png resolved (ours strategy, deleted-by-them)"
+          } else {
+            Write-Output "❌ deleted-by-them.png should have been resolved"
+            exit 1
+          }
+          
+          # === Both-Added conflicts ===
+          Write-Output "`n=== Verifying Both-Added conflicts ==="
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($BOTH_ADDED_TXT)) {
+            Write-Output "✅ both-added.txt resolved (theirs strategy, both-added)"
+          } else {
+            Write-Output "❌ both-added.txt should have been resolved"
+            exit 1
+          }
+          
+          if ($env:RESOLVED_FILES -match [regex]::Escape($BOTH_ADDED_PNG)) {
+            Write-Output "✅ both-added.png resolved (theirs strategy, both-added)"
+          } else {
+            Write-Output "❌ both-added.png should have been resolved"
+            exit 1
+          }
+          
+          # === Unresolved files ===
+          Write-Output "`n=== Verifying Unresolved files ==="
 
           # Check unresolved files (manual strategy)
           if ($env:UNRESOLVED_FILES -match [regex]::Escape($TEST_CONFIG_YML)) {
@@ -209,12 +281,20 @@ jobs:
           $TEST_JSON = "$TEST_DIR/test.json"
           $TEST_MD = "$TEST_DIR/test.md"
           $TEST_PNG = "$TEST_DIR/test.png"
+          $DELETED_BY_US_TXT = "$TEST_DIR/deleted-by-us.txt"
+          $DELETED_BY_THEM_TXT = "$TEST_DIR/deleted-by-them.txt"
+          $BOTH_ADDED_TXT = "$TEST_DIR/both-added.txt"
+          $DELETED_BY_US_PNG = "$TEST_DIR/deleted-by-us.png"
+          $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
+          $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
 
           Write-Output "::group::Content verification for resolved files"
 
           # First, check if files exist
           Write-Output "Checking if resolved files exist:"
           Get-ChildItem "$TEST_DIR/"
+          
+          Write-Output "`n=== Verifying Both-Modified file contents ==="
 
           # Verify test.json has incoming changes content (theirs strategy)
           $jsonContent = Get-Content "$TEST_JSON" -Raw
@@ -253,6 +333,127 @@ jobs:
           } else {
             Write-Output "❌ test.png size: $PNG_SIZE bytes (expected $EXPECTED_SIZE for incoming changes)"
             Get-ChildItem "$TEST_PNG"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Deleted-By-Us file contents ==="
+          
+          # Verify deleted-by-us.txt was restored with incoming changes (theirs strategy)
+          if (Test-Path $DELETED_BY_US_TXT) {
+            $deletedByUsContent = Get-Content "$DELETED_BY_US_TXT" -Raw
+            $expectedDeletedByUsContent = Get-Content "$TEST_DIR/incoming-changes/deleted-by-us.txt" -Raw
+            if ($deletedByUsContent -eq $expectedDeletedByUsContent) {
+              Write-Output "✅ deleted-by-us.txt restored with incoming changes content (theirs)"
+            } else {
+              Write-Output "❌ deleted-by-us.txt does not have expected incoming changes content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ deleted-by-us.txt should exist (restored by theirs strategy)"
+            exit 1
+          }
+          
+          # Verify deleted-by-us.png was restored with incoming changes (theirs strategy)
+          if (Test-Path $DELETED_BY_US_PNG) {
+            $deletedByUsPngSize = (Get-Item "$DELETED_BY_US_PNG").Length
+            $expectedDeletedByUsPngSize = (Get-Item "$TEST_DIR/incoming-changes/deleted-by-us.png").Length
+            if ($deletedByUsPngSize -eq $expectedDeletedByUsPngSize) {
+              Write-Output "✅ deleted-by-us.png restored with incoming changes ($expectedDeletedByUsPngSize bytes - theirs)"
+            } else {
+              Write-Output "❌ deleted-by-us.png size: $deletedByUsPngSize bytes (expected $expectedDeletedByUsPngSize)"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ deleted-by-us.png should exist (restored by theirs strategy)"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Deleted-By-Them file contents ==="
+          
+          # Verify deleted-by-them.txt kept with our content (ours strategy)
+          if (Test-Path $DELETED_BY_THEM_TXT) {
+            $deletedByThemContent = Get-Content "$DELETED_BY_THEM_TXT" -Raw
+            $expectedDeletedByThemContent = Get-Content "$TEST_DIR/base-version/deleted-by-them.txt" -Raw
+            if ($deletedByThemContent -eq $expectedDeletedByThemContent) {
+              Write-Output "✅ deleted-by-them.txt kept with base version content (ours)"
+            } else {
+              Write-Output "❌ deleted-by-them.txt does not have expected base version content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ deleted-by-them.txt should exist (kept by ours strategy)"
+            exit 1
+          }
+          
+          # Verify deleted-by-them.png kept with our content (ours strategy)
+          if (Test-Path $DELETED_BY_THEM_PNG) {
+            $deletedByThemPngSize = (Get-Item "$DELETED_BY_THEM_PNG").Length
+            $expectedDeletedByThemPngSize = (Get-Item "$TEST_DIR/base-version/deleted-by-them.png").Length
+            if ($deletedByThemPngSize -eq $expectedDeletedByThemPngSize) {
+              Write-Output "✅ deleted-by-them.png kept with base version ($expectedDeletedByThemPngSize bytes - ours)"
+            } else {
+              Write-Output "❌ deleted-by-them.png size: $deletedByThemPngSize bytes (expected $expectedDeletedByThemPngSize)"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ deleted-by-them.png should exist (kept by ours strategy)"
+            exit 1
+          }
+          
+          Write-Output "`n=== Verifying Both-Added file contents ==="
+          
+          # Verify both-added.txt has incoming changes content (theirs strategy)
+          if (Test-Path $BOTH_ADDED_TXT) {
+            $bothAddedContent = Get-Content "$BOTH_ADDED_TXT" -Raw
+            $expectedBothAddedContent = Get-Content "$TEST_DIR/incoming-changes/both-added.txt" -Raw
+            if ($bothAddedContent -eq $expectedBothAddedContent) {
+              Write-Output "✅ both-added.txt has correct incoming changes content (theirs)"
+            } else {
+              Write-Output "❌ both-added.txt does not have expected incoming changes content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ both-added.txt should exist"
+            exit 1
+          }
+          
+          # Verify both-added.png has incoming changes content (theirs strategy)
+          if (Test-Path $BOTH_ADDED_PNG) {
+            $bothAddedPngSize = (Get-Item "$BOTH_ADDED_PNG").Length
+            $expectedBothAddedPngSize = (Get-Item "$TEST_DIR/incoming-changes/both-added.png").Length
+            
+            # Check PNG header to ensure it's a valid PNG file
+            $pngBytes = [System.IO.File]::ReadAllBytes($BOTH_ADDED_PNG)
+            $expectedHeader = @(137, 80, 78, 71, 13, 10, 26, 10)  # PNG signature
+            $isValidPng = $true
+            
+            if ($pngBytes.Length -ge 8) {
+              for ($i = 0; $i -lt 8; $i++) {
+                if ($pngBytes[$i] -ne $expectedHeader[$i]) {
+                  $isValidPng = $false
+                  break
+                }
+              }
+            } else {
+              $isValidPng = $false
+            }
+            
+            if (-not $isValidPng) {
+              Write-Output "❌ both-added.png is not a valid PNG file after resolution"
+              $actualHeader = $pngBytes[0..7] -join ', '
+              Write-Output "Expected header: 137, 80, 78, 71, 13, 10, 26, 10"
+              Write-Output "Actual header: $actualHeader"
+              exit 1
+            }
+            
+            if ($bothAddedPngSize -eq $expectedBothAddedPngSize) {
+              Write-Output "✅ both-added.png has correct incoming changes ($expectedBothAddedPngSize bytes - theirs)"
+            } else {
+              Write-Output "❌ both-added.png size: $bothAddedPngSize bytes (expected $expectedBothAddedPngSize)"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ both-added.png should exist"
             exit 1
           }
 
