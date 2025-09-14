@@ -1,6 +1,6 @@
 name: Git Conflict Resolver
 description: Automatically resolve Git conflicts based on predefined rules
-author: Conflict Resolver Action
+author: Yuki Sakai
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
