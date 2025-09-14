@@ -20,7 +20,7 @@ rules in a YAML configuration file.
 ### Basic Example
 
 ```yaml
-name: Auto-resolve conflicts
+name: Merge develop branch with auto-resolved conflicts
 on:
   workflow_dispatch:
 
