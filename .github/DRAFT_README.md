@@ -138,9 +138,6 @@ rules:
 
 - `both-modified` (UU): Both sides modified the file
 - `both-added` (AA): Both sides added the same file
-- `both-deleted` (DD): Both sides deleted the file
-- `added-by-us` (AU): We added, they modified
-- `added-by-them` (UA): They added, we modified
 - `deleted-by-us` (DU): We deleted, they modified
 - `deleted-by-them` (UD): They deleted, we modified
 
@@ -165,9 +162,6 @@ The action recognizes the following Git conflict states:
 | ----------------- | ----------- | ------------------------------ |
 | `both-modified`   | UU          | Both sides modified the file   |
 | `both-added`      | AA          | Both sides added the same file |
-| `both-deleted`    | DD          | Both sides deleted the file    |
-| `added-by-us`     | AU          | We added, they modified        |
-| `added-by-them`   | UA          | They added, we modified        |
 | `deleted-by-us`   | DU          | We deleted, they modified      |
 | `deleted-by-them` | UD          | They deleted, we modified      |
 
