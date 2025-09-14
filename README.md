@@ -10,42 +10,73 @@ rules in a YAML configuration file.
 
 - 🔧 **Configuration-based resolution**: Define conflict resolution rules in a
   YAML file
-- 🎯 **Accurate conflict detection**: Detects 7 different types of Git conflict
-  states
 - ⚡ **Automatic resolution**: Resolves conflicts using `ours` or `theirs`
   strategies
 - 🎨 **Flexible pattern matching**: Use glob patterns to match files
 - 🏷️ **Conflict type filtering**: Apply rules only to specific conflict types
-- 📊 **Detailed reporting**: Get comprehensive output of resolved and unresolved
-  files
 
 ## Usage
 
 ### Basic Example
 
 ```yaml
-name: Auto-resolve conflicts
+name: Merge develop branch with auto-resolved conflicts
 on:
-  pull_request:
-    types: [opened, synchronize]
+  workflow_dispatch:
 
 jobs:
-  resolve-conflicts:
+  merge:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: develop/v2.0 # Target branch
+
+      - name: Create feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c feature/develop/v2.0-update
+
+      - name: Merge develop branch
+        run: |
+          git fetch origin develop/v1.0
+          git merge origin/develop/v1.0 --no-commit --no-ff || true
 
       - name: Resolve conflicts
-        uses: VeyronSakai/conflict-resolver@v1
-        with:
-          config-path: '.github/conflict-resolver.yml'
+        id: resolve
+        uses: VeyronSakai/conflict-resolver@v0.1
+
+      - name: Handle resolution results
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UNRESOLVED_FILES: ${{ steps.resolve.outputs.unresolved-files }}
+          RESOLVED_FILES: ${{ steps.resolve.outputs.resolved-files }}
+        run: |
+          if [ -z "$UNRESOLVED_FILES" ]; then
+            # No unresolved conflicts - commit and create PR
+            git add .
+            git commit -m "Auto-resolve merge conflicts from develop/v1.0"
+            git push -u origin feature/develop/v2.0-update
+
+            gh pr create \
+              --title "Merge develop/v1.0 with auto-resolved conflicts" \
+              --base develop/v2.0 \
+              --head feature/develop/v2.0-update
+          else
+            # Unresolved conflicts remain - fail the workflow
+            echo "❌ Error: Unable to automatically resolve all conflicts"
+            echo "Unresolved files:"
+            echo "$UNRESOLVED_FILES"
+            exit 1
+          fi
 ```
 
-### Configuration File
+### Configuration File Example
 
-Create a `.github/conflict-resolver.yml` file in your repository:
+Create a `.github/conflict-resolver.yml` file in your repository as follows:
 
 ```yaml
 # Git Conflict Resolver Configuration Example
@@ -86,32 +117,32 @@ rules:
   - paths: 'docs/**/*.md'
     conflict_type: 'both-added'
     strategy: 'theirs'
-
-  # Configuration files - be careful with these
-  # You might want to manually resolve conflicts in config files
-  # Uncomment if you want automatic resolution:
-  # - paths: ".github/workflows/*.yml"
-  #   strategy: "theirs"
-
-  # Database migration files - usually want to keep both
-  # This example shows preferring 'ours' for migrations
-  # - paths: "migrations/*.sql"
-  #   conflict_type: "both-added"
-  #   strategy: "ours"
-# Notes:
-# - Rules are evaluated in order. The first matching rule wins.
-# - 'paths' supports glob patterns (e.g., *.js, src/**/*.ts)
-# - 'strategy' must be either 'ours' or 'theirs'
-# - 'conflict_type' is optional. If not specified, the rule applies to all conflict types.
-# - Valid conflict_type values:
-#   - 'both-modified' (UU): Both sides modified the file
-#   - 'both-added' (AA): Both sides added the same file
-#   - 'both-deleted' (DD): Both sides deleted the file
-#   - 'added-by-us' (AU): We added, they modified
-#   - 'added-by-them' (UA): They added, we modified
-#   - 'deleted-by-us' (DU): We deleted, they modified
-#   - 'deleted-by-them' (UD): They deleted, we modified
 ```
+
+### Configuration Notes
+
+**Rule Properties:**
+
+- `paths` supports glob patterns (e.g., `*.js`, `src/**/*.ts`)
+- `strategy` must be either `ours` or `theirs`
+- `conflict_type` is optional. If not specified, the rule applies to all
+  conflict types
+
+**Rule Evaluation:**
+
+- Rules are evaluated in order (first match wins)
+- Place more specific patterns before general ones
+- Test your patterns carefully, especially for critical files
+
+**Valid conflict_type values:**
+
+- `both-modified` (UU): Both sides modified the file
+- `both-added` (AA): Both sides added the same file
+- `both-deleted` (DD): Both sides deleted the file
+- `added-by-us` (AU): We added, they modified
+- `added-by-them` (UA): They added, we modified
+- `deleted-by-us` (DU): We deleted, they modified
+- `deleted-by-them` (UD): They deleted, we modified
 
 ## Inputs
 
@@ -151,50 +182,6 @@ The action recognizes the following Git conflict states:
   - `theirs`: Keep their version
 - **`conflict_type`** (optional): Apply rule only to specific conflict types
   - If not specified, the rule applies to all conflict types
-
-### Rule Evaluation
-
-- Rules are evaluated in order (first match wins)
-- Use more specific patterns before general ones
-- Test your patterns carefully, especially for critical files
-
-## Examples
-
-### Auto-resolve dependency lock files
-
-```yaml
-rules:
-  - paths: 'package-lock.json'
-    strategy: 'theirs'
-  - paths: 'yarn.lock'
-    strategy: 'theirs'
-  - paths: 'pnpm-lock.yaml'
-    strategy: 'theirs'
-```
-
-### Handle generated files
-
-```yaml
-rules:
-  - paths: '**/*.generated.*'
-    strategy: 'ours'
-  - paths: 'dist/**/*'
-    strategy: 'ours'
-  - paths: 'build/**/*'
-    strategy: 'ours'
-```
-
-### Resolve test files
-
-```yaml
-rules:
-  - paths: '**/*.test.ts'
-    conflict_type: 'both-modified'
-    strategy: 'theirs'
-  - paths: '**/*.spec.js'
-    conflict_type: 'both-modified'
-    strategy: 'theirs'
-```
 
 ## Important Notes
 
