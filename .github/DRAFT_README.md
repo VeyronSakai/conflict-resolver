@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  resolve-conflicts:
+  merge:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
