@@ -91,13 +91,12 @@ jobs:
           git add "$TEST_DIR/"
           git commit -m "Incoming changes"
 
-          # Create current branch with base version changes
+          # Switch back to base branch and add base version changes
           git switch "test-base-$env:RUN_ID"
-          git switch -C "test-current-$env:RUN_ID"
 
           # Copy base version files (for both-modified and both-added)
           Copy-Item "$TEST_DIR/base-version/*" "$TEST_DIR/" -Force
-          
+
           # Remove files that should be deleted on our side (deleted-by-us)
           Remove-Item "$TEST_DIR/deleted-by-us.txt" -Force -ErrorAction SilentlyContinue
           Remove-Item "$TEST_DIR/deleted-by-us.png" -Force -ErrorAction SilentlyContinue
@@ -105,9 +104,9 @@ jobs:
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
 
-          # Attempt to merge incoming changes into current branch to create conflicts
-          Write-Output "::notice::Attempting to merge incoming changes into current branch..."
-          try { 
+          # Attempt to merge incoming changes into base branch to create conflicts
+          Write-Output "::notice::Attempting to merge incoming changes into base branch..."
+          try {
             git merge "test-incoming-$env:RUN_ID" --no-ff --no-commit
           } catch { 
             # Merge conflict is expected
