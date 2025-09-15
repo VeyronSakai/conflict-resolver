@@ -32281,7 +32281,7 @@ class GitRepositoryImpl {
         }
     }
     async stageFile(filePath) {
-        await this.execGitCommand(['add', '--', filePath]);
+        await this.gitAddFile(filePath);
     }
     async commitChanges(message) {
         await this.execGitCommand(['commit', '-m', message]);
@@ -32315,12 +32315,12 @@ class GitRepositoryImpl {
         switch (strategy) {
             case ResolutionStrategy.Ours:
                 // Our side deleted the file, so keep it deleted
-                await this.execGitCommand(['rm', '--', file.path]);
+                await this.gitRemoveFile(file.path);
                 coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
                 break;
             case ResolutionStrategy.Theirs:
                 // Their side kept the file, so restore it
-                await this.execGitCommand(['add', '--', file.path]);
+                await this.gitAddFile(file.path);
                 coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
                 break;
         }
@@ -32329,25 +32329,34 @@ class GitRepositoryImpl {
         switch (strategy) {
             case ResolutionStrategy.Ours:
                 // Our side kept the file, so keep it
-                await this.execGitCommand(['add', '--', file.path]);
+                await this.gitAddFile(file.path);
                 coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
                 break;
             case ResolutionStrategy.Theirs:
                 // Their side deleted the file, so accept deletion
-                await this.execGitCommand(['rm', '--', file.path]);
+                await this.gitRemoveFile(file.path);
                 coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
                 break;
         }
     }
     async resolveBothAddedConflict(file, strategy) {
-        await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path]);
-        await this.execGitCommand(['add', '--', file.path]);
+        await this.gitCheckoutFile(file.path, strategy);
+        await this.gitAddFile(file.path);
         coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
     }
     async resolveBothModifiedConflict(file, strategy) {
-        await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path]);
-        await this.execGitCommand(['add', '--', file.path]);
+        await this.gitCheckoutFile(file.path, strategy);
+        await this.gitAddFile(file.path);
         coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
+    }
+    async gitAddFile(filePath) {
+        await this.execGitCommand(['add', '--', filePath]);
+    }
+    async gitRemoveFile(filePath) {
+        await this.execGitCommand(['rm', '--', filePath]);
+    }
+    async gitCheckoutFile(filePath, strategy) {
+        await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath]);
     }
     async execGitCommand(args) {
         let output = '';
