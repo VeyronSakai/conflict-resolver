@@ -1,4 +1,4 @@
-import { ConflictType } from './conflictType.js'
+import { ConflictType } from '../value-objects/conflictType.js'
 
 export type ConflictedFile = {
   readonly path: string

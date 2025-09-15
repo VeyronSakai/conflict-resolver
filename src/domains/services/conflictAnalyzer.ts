@@ -1,5 +1,5 @@
 import { minimatch } from 'minimatch'
-import { ConflictedFile } from '@domains/value-objects/conflictedFile.js'
+import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
