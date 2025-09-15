@@ -38,15 +38,23 @@ export class GitRepositoryImpl implements GitRepository {
       return
     }
 
-    if (
-      file.conflictType === ConflictType.DeletedByUs ||
-      file.conflictType === ConflictType.DeletedByThem
-    ) {
-      await this.handleDeletedConflict(file, strategy)
-    } else if (file.conflictType === ConflictType.BothAdded) {
-      await this.handleAddedConflict(file, strategy)
-    } else {
-      await this.handleModifiedConflict(file, strategy)
+    switch (file.conflictType) {
+      case ConflictType.DeletedByUs:
+        await this.resolveDeletedByUsConflict(file, strategy)
+        break
+      case ConflictType.DeletedByThem:
+        await this.resolveDeletedByThemConflict(file, strategy)
+        break
+      case ConflictType.BothAdded:
+        await this.resolveBothAddedConflict(file, strategy)
+        break
+      case ConflictType.BothModified:
+        await this.resolveBothModifiedConflict(file, strategy)
+        break
+      default:
+        throw new Error(
+          `Unexpected conflict type for ${file.path}: ${file.conflictType}`
+        )
     }
   }
 
@@ -88,30 +96,37 @@ export class GitRepositoryImpl implements GitRepository {
     }
   }
 
-  private async handleDeletedConflict(
+  private async resolveDeletedByUsConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    if (file.conflictType === ConflictType.DeletedByUs) {
-      if (strategy === ResolutionStrategy.Ours) {
-        await this.execGitCommand(['rm', '--', file.path])
-        core.info(`Resolved ${file.path} by keeping deletion (ours)`)
-      } else {
-        await this.execGitCommand(['add', '--', file.path])
-        core.info(`Resolved ${file.path} by keeping file (theirs)`)
-      }
-    } else if (file.conflictType === ConflictType.DeletedByThem) {
-      if (strategy === ResolutionStrategy.Ours) {
-        await this.execGitCommand(['add', '--', file.path])
-        core.info(`Resolved ${file.path} by keeping file (ours)`)
-      } else {
-        await this.execGitCommand(['rm', '--', file.path])
-        core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
-      }
+    if (strategy === ResolutionStrategy.Ours) {
+      // Our side deleted the file, so keep it deleted
+      await this.execGitCommand(['rm', '--', file.path])
+      core.info(`Resolved ${file.path} by keeping deletion (ours)`)
+    } else {
+      // Their side kept the file, so restore it
+      await this.execGitCommand(['add', '--', file.path])
+      core.info(`Resolved ${file.path} by keeping file (theirs)`)
     }
   }
 
-  private async handleAddedConflict(
+  private async resolveDeletedByThemConflict(
+    file: ConflictedFile,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    if (strategy === ResolutionStrategy.Ours) {
+      // Our side kept the file, so keep it
+      await this.execGitCommand(['add', '--', file.path])
+      core.info(`Resolved ${file.path} by keeping file (ours)`)
+    } else {
+      // Their side deleted the file, so accept deletion
+      await this.execGitCommand(['rm', '--', file.path])
+      core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
+    }
+  }
+
+  private async resolveBothAddedConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
@@ -131,7 +146,7 @@ export class GitRepositoryImpl implements GitRepository {
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
-  private async handleModifiedConflict(
+  private async resolveBothModifiedConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
