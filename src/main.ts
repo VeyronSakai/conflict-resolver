@@ -22,6 +22,6 @@ export async function run(): Promise<void> {
   const conflictResolver = new ConflictResolver(configRepository, gitRepository)
 
   // Create and run presentation layer
-  const actionHandler = new ActionHandler(conflictResolver)
+  const actionHandler = new ActionHandler(conflictResolver, configPath)
   await actionHandler.run()
 }

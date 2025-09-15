@@ -27249,19 +27249,15 @@ var coreExports = requireCore();
 
 class ActionHandler {
     conflictResolver;
-    constructor(conflictResolver) {
+    configPath;
+    constructor(conflictResolver, configPath) {
         this.conflictResolver = conflictResolver;
+        this.configPath = configPath;
     }
     async run() {
         try {
             coreExports.info('Starting Git Conflict Resolver');
-            const configPath = coreExports.getInput('config-path');
-            if (configPath) {
-                coreExports.info(`Config path: ${configPath}`);
-            }
-            else {
-                coreExports.info('Config path: .conflict-resolver.yml (default)');
-            }
+            coreExports.info(`Config path: ${this.configPath}`);
             const result = await this.conflictResolver.resolve();
             this.setOutputs(result.resolvedFiles, result.unresolvedFiles);
             this.logFinalStatus(result.resolvedFiles, result.unresolvedFiles);
@@ -32454,7 +32450,7 @@ async function run() {
     // Create use-case with injected dependencies
     const conflictResolver = new ConflictResolver(configRepository, gitRepository);
     // Create and run presentation layer
-    const actionHandler = new ActionHandler(conflictResolver);
+    const actionHandler = new ActionHandler(conflictResolver, configPath);
     await actionHandler.run();
 }
 
