@@ -2,9 +2,18 @@ import { minimatch } from 'minimatch'
 import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
+import { ConflictType } from '@domains/value-objects/conflictType.js'
 
 export class ConflictAnalyzer {
-  findMatchingRule(
+  determineStrategy(
+    file: ConflictedFile,
+    rules: ConflictResolveRule[]
+  ): ResolutionStrategy | undefined {
+    const matchingRule = this.findMatchingRule(file, rules)
+    return matchingRule?.strategy
+  }
+
+  private findMatchingRule(
     file: ConflictedFile,
     rules: ConflictResolveRule[]
   ): ConflictResolveRule | undefined {
@@ -19,19 +28,11 @@ export class ConflictAnalyzer {
   private matches(
     rule: ConflictResolveRule,
     filePath: string,
-    conflictType: string
+    conflictType: ConflictType
   ): boolean {
     if (!minimatch(filePath, rule.targetPathPattern)) {
       return false
     }
     return !(rule.conflictType && rule.conflictType !== conflictType)
-  }
-
-  determineStrategy(
-    file: ConflictedFile,
-    rules: ConflictResolveRule[]
-  ): ResolutionStrategy | undefined {
-    const matchingRule = this.findMatchingRule(file, rules)
-    return matchingRule?.strategy
   }
 }
