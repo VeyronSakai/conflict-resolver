@@ -46,7 +46,7 @@ describe('ConflictResolver', () => {
         {
           targetPathPattern: 'package-lock.json',
           strategy: ResolutionStrategy.Theirs
-        },
+        }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -151,7 +151,7 @@ describe('ConflictResolver', () => {
       gitRepositoryStub.setConflictedFiles(conflicts)
 
       const rules: ConflictResolveRule[] = [
-        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs },
+        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
       ]
       configRepositoryStub.setRules(rules)
 
