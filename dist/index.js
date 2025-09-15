@@ -32291,10 +32291,7 @@ class GitRepositoryImpl {
             '--porcelain',
             filePath
         ]);
-        if (statusOutput.includes('DD')) {
-            return ConflictType.BothModified; // Both sides deleted
-        }
-        else if (statusOutput.includes('AA')) {
+        if (statusOutput.includes('AA')) {
             return ConflictType.BothAdded;
         }
         else if (statusOutput.includes('DU')) {
@@ -32307,8 +32304,8 @@ class GitRepositoryImpl {
             return ConflictType.BothModified;
         }
         else {
-            // AU and UA are not conflicts - they are files added on one side only
-            // If we somehow get here with AU/UA, treat as a regular modification conflict
+            // AU, UA, and DD are not conflicts
+            // If we somehow get here, default to BothModified
             return ConflictType.BothModified;
         }
     }
