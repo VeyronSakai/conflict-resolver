@@ -53,7 +53,7 @@ export class GitRepositoryImpl implements GitRepository {
   }
 
   async stageFile(filePath: string): Promise<void> {
-    await this.execGitCommand(['add', '--', filePath])
+    await this.gitAddFile(filePath)
   }
 
   async commitChanges(message: string): Promise<void> {
@@ -97,12 +97,12 @@ export class GitRepositoryImpl implements GitRepository {
     switch (strategy) {
       case ResolutionStrategy.Ours:
         // Our side deleted the file, so keep it deleted
-        await this.execGitCommand(['rm', '--', file.path])
+        await this.gitRemoveFile(file.path)
         core.info(`Resolved ${file.path} by keeping deletion (ours)`)
         break
       case ResolutionStrategy.Theirs:
         // Their side kept the file, so restore it
-        await this.execGitCommand(['add', '--', file.path])
+        await this.gitAddFile(file.path)
         core.info(`Resolved ${file.path} by keeping file (theirs)`)
         break
     }
@@ -115,12 +115,12 @@ export class GitRepositoryImpl implements GitRepository {
     switch (strategy) {
       case ResolutionStrategy.Ours:
         // Our side kept the file, so keep it
-        await this.execGitCommand(['add', '--', file.path])
+        await this.gitAddFile(file.path)
         core.info(`Resolved ${file.path} by keeping file (ours)`)
         break
       case ResolutionStrategy.Theirs:
         // Their side deleted the file, so accept deletion
-        await this.execGitCommand(['rm', '--', file.path])
+        await this.gitRemoveFile(file.path)
         core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
         break
     }
@@ -130,8 +130,8 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
-    await this.execGitCommand(['add', '--', file.path])
+    await this.gitCheckoutFile(file.path, strategy)
+    await this.gitAddFile(file.path)
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
@@ -139,9 +139,24 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
-    await this.execGitCommand(['add', '--', file.path])
+    await this.gitCheckoutFile(file.path, strategy)
+    await this.gitAddFile(file.path)
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
+  }
+
+  private async gitAddFile(filePath: string): Promise<void> {
+    await this.execGitCommand(['add', '--', filePath])
+  }
+
+  private async gitRemoveFile(filePath: string): Promise<void> {
+    await this.execGitCommand(['rm', '--', filePath])
+  }
+
+  private async gitCheckoutFile(
+    filePath: string,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath])
   }
 
   private async execGitCommand(args: string[]): Promise<string> {
