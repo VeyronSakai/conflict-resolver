@@ -33,7 +33,10 @@ describe('ConflictAnalyzer', () => {
     })
 
     it('should find a matching rule with wildcard pattern', () => {
-      const file: ConflictedFile = { path: 'src/index.ts', conflictType: ConflictType.BothModified }
+      const file: ConflictedFile = {
+        path: 'src/index.ts',
+        conflictType: ConflictType.BothModified
+      }
       const rules: ConflictResolveRule[] = [
         {
           targetPathPattern: 'src/**/*.ts',
@@ -49,7 +52,10 @@ describe('ConflictAnalyzer', () => {
     })
 
     it('should return undefined when no rule matches', () => {
-      const file: ConflictedFile = { path: 'unknown.xml', conflictType: ConflictType.BothModified }
+      const file: ConflictedFile = {
+        path: 'unknown.xml',
+        conflictType: ConflictType.BothModified
+      }
       const rules: ConflictResolveRule[] = [
         { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual },
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
@@ -61,7 +67,10 @@ describe('ConflictAnalyzer', () => {
     })
 
     it('should match rule with specific conflict type', () => {
-      const file: ConflictedFile = { path: 'test.ts', conflictType: ConflictType.DeletedByUs }
+      const file: ConflictedFile = {
+        path: 'test.ts',
+        conflictType: ConflictType.DeletedByUs
+      }
       const rules: ConflictResolveRule[] = [
         {
           targetPathPattern: '*.ts',
@@ -84,7 +93,10 @@ describe('ConflictAnalyzer', () => {
 
   describe('determineStrategy', () => {
     it('should return the strategy of matching rule', () => {
-      const file: ConflictedFile = { path: 'package.json', conflictType: ConflictType.BothModified }
+      const file: ConflictedFile = {
+        path: 'package.json',
+        conflictType: ConflictType.BothModified
+      }
       const rules: ConflictResolveRule[] = [
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
       ]
@@ -95,7 +107,10 @@ describe('ConflictAnalyzer', () => {
     })
 
     it('should return Manual strategy when no rule matches', () => {
-      const file: ConflictedFile = { path: 'unknown.xml', conflictType: ConflictType.BothModified }
+      const file: ConflictedFile = {
+        path: 'unknown.xml',
+        conflictType: ConflictType.BothModified
+      }
       const rules: ConflictResolveRule[] = [
         { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Ours },
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
@@ -107,7 +122,10 @@ describe('ConflictAnalyzer', () => {
     })
 
     it('should return Manual strategy when rules array is empty', () => {
-      const file: ConflictedFile = { path: 'test.ts', conflictType: ConflictType.BothModified }
+      const file: ConflictedFile = {
+        path: 'test.ts',
+        conflictType: ConflictType.BothModified
+      }
       const rules: ConflictResolveRule[] = []
 
       const strategy = analyzer.determineStrategy(file, rules)
