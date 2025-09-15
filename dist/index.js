@@ -32258,7 +32258,7 @@ class GitRepositoryImpl {
         const filePaths = output.trim().split('\n');
         const conflictedFiles = [];
         for (const filePath of filePaths) {
-            const conflictType = await this.detectConflictType(filePath);
+            const conflictType = await this.getConflictType(filePath);
             conflictedFiles.push({ path: filePath, conflictType });
         }
         return conflictedFiles;
@@ -32291,7 +32291,7 @@ class GitRepositoryImpl {
     async commitChanges(message) {
         await this.execGitCommand(['commit', '-m', message]);
     }
-    async detectConflictType(filePath) {
+    async getConflictType(filePath) {
         const statusOutput = await this.execGitCommand([
             'status',
             '--porcelain',
@@ -32352,12 +32352,12 @@ class GitRepositoryImpl {
             const content = await this.getFileContent(file.path, strategy);
             fs.writeFileSync(file.path, content);
         }
-        await this.execGitCommand(['add', file.path]);
+        await this.execGitCommand(['add', '--', file.path]);
         coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
     }
     async resolveBothModifiedConflict(file, strategy) {
-        await this.execGitCommand(['checkout', `--${strategy}`, file.path]);
-        await this.execGitCommand(['add', file.path]);
+        await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path]);
+        await this.execGitCommand(['add', '--', file.path]);
         coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
     }
     async getFileContent(filePath, strategy) {

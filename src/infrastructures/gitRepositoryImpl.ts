@@ -22,7 +22,7 @@ export class GitRepositoryImpl implements GitRepository {
     const conflictedFiles: ConflictedFile[] = []
 
     for (const filePath of filePaths) {
-      const conflictType = await this.detectConflictType(filePath)
+      const conflictType = await this.getConflictType(filePath)
       conflictedFiles.push({ path: filePath, conflictType })
     }
 
@@ -66,7 +66,7 @@ export class GitRepositoryImpl implements GitRepository {
     await this.execGitCommand(['commit', '-m', message])
   }
 
-  private async detectConflictType(filePath: string): Promise<ConflictType> {
+  private async getConflictType(filePath: string): Promise<ConflictType> {
     const statusOutput = await this.execGitCommand([
       'status',
       '--porcelain',
@@ -142,7 +142,7 @@ export class GitRepositoryImpl implements GitRepository {
       fs.writeFileSync(file.path, content)
     }
 
-    await this.execGitCommand(['add', file.path])
+    await this.execGitCommand(['add', '--', file.path])
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
@@ -150,8 +150,8 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    await this.execGitCommand(['checkout', `--${strategy}`, file.path])
-    await this.execGitCommand(['add', file.path])
+    await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
+    await this.execGitCommand(['add', '--', file.path])
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
