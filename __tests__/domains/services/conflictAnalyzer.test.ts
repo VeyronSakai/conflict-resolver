@@ -72,12 +72,12 @@ describe('ConflictAnalyzer', () => {
       const rules: ConflictResolveRule[] = [
         {
           targetPathPattern: '*.ts',
-          conflictType: 'both-modified',
+          conflictType: ConflictType.BothModified,
           strategy: ResolutionStrategy.Ours
         },
         {
           targetPathPattern: '*.ts',
-          conflictType: 'deleted-by-us',
+          conflictType: ConflictType.DeletedByUs,
           strategy: ResolutionStrategy.Ours
         }
       ]
