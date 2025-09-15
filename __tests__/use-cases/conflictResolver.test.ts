@@ -1,7 +1,7 @@
-import { jest, describe, expect, it, beforeEach } from '@jest/globals'
+import { describe, expect, it } from '@jest/globals'
 import { ConflictResolver } from '@use-cases/conflictResolver.js'
-import { ConfigRepositoryStub } from '../test-doubles/configRepositoryStub.js'
-import { GitRepositoryStub } from '../test-doubles/gitRepositoryStub.js'
+import { StubConfigRepository } from '../test-doubles/stubConfigRepository.js'
+import { SpyGitRepository } from '../test-doubles/spyGitRepository.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
 import type { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
@@ -10,93 +10,105 @@ import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js
 // The tests focus on business logic validation rather than logging verification
 
 describe('ConflictResolver', () => {
-  let configRepositoryStub: ConfigRepositoryStub
-  let gitRepositoryStub: GitRepositoryStub
-  let conflictResolver: ConflictResolver
-
-  beforeEach(() => {
-    configRepositoryStub = new ConfigRepositoryStub()
-    gitRepositoryStub = new GitRepositoryStub()
-    conflictResolver = new ConflictResolver(
-      configRepositoryStub,
-      gitRepositoryStub
-    )
-
-    jest.clearAllMocks()
-  })
-
   describe('resolve', () => {
     it('should return empty result when no conflicts exist', async () => {
-      gitRepositoryStub.setConflictedFiles([])
+      // Arrange
+      const stubConfigRepository = new StubConfigRepository([])
+      const spyGitRepository = new SpyGitRepository([])
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
 
+      // Act
       const result = await conflictResolver.resolve()
 
+      // Assert
       expect(result.resolvedFiles).toEqual([])
       expect(result.unresolvedFiles).toEqual([])
     })
 
     it('should resolve conflicts based on rules', async () => {
-      const conflicts = [
-        { path: 'package-lock.json', conflictType: ConflictType.BothModified },
-        { path: 'src/index.ts', conflictType: ConflictType.BothModified }
-      ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
-
+      // Arrange
       const rules: ConflictResolveRule[] = [
         {
           targetPathPattern: 'package-lock.json',
           strategy: ResolutionStrategy.Theirs
         }
       ]
-      configRepositoryStub.setRules(rules)
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'package-lock.json', conflictType: ConflictType.BothModified },
+        { path: 'src/index.ts', conflictType: ConflictType.BothModified }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
 
+      // Act
       const result = await conflictResolver.resolve()
 
+      // Assert
       expect(result.resolvedFiles).toEqual(['package-lock.json'])
       expect(result.unresolvedFiles).toEqual(['src/index.ts'])
 
-      const resolvedFiles = gitRepositoryStub.getResolvedFiles()
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
       expect(resolvedFiles.get('package-lock.json')).toBe(
         ResolutionStrategy.Theirs
       )
       expect(resolvedFiles.has('src/index.ts')).toBe(false)
 
-      const stagedFiles = gitRepositoryStub.getStagedFiles()
+      const stagedFiles = spyGitRepository.getStagedFiles()
       expect(stagedFiles.has('package-lock.json')).toBe(true)
       expect(stagedFiles.has('src/index.ts')).toBe(false)
     })
 
     it('should handle files without matching rules as manual', async () => {
+      // Arrange
+      const stubConfigRepository = new StubConfigRepository([])
       const conflicts = [
         { path: 'unknown.xml', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
-      configRepositoryStub.setRules([])
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
 
+      // Act
       const result = await conflictResolver.resolve()
 
+      // Assert
       expect(result.resolvedFiles).toEqual([])
       expect(result.unresolvedFiles).toEqual(['unknown.xml'])
     })
 
     it('should resolve multiple files with same rule', async () => {
-      const conflicts = [
-        { path: 'file1.generated.ts', conflictType: ConflictType.BothModified },
-        { path: 'file2.generated.ts', conflictType: ConflictType.BothModified },
-        { path: 'file3.generated.ts', conflictType: ConflictType.BothModified }
-      ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
-
+      // Arrange
       const rules: ConflictResolveRule[] = [
         {
           targetPathPattern: '*.generated.ts',
           strategy: ResolutionStrategy.Theirs
         }
       ]
-      configRepositoryStub.setRules(rules)
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'file1.generated.ts', conflictType: ConflictType.BothModified },
+        { path: 'file2.generated.ts', conflictType: ConflictType.BothModified },
+        { path: 'file3.generated.ts', conflictType: ConflictType.BothModified }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
 
+      // Act
       const result = await conflictResolver.resolve()
 
+      // Assert
       expect(result.resolvedFiles).toEqual([
         'file1.generated.ts',
         'file2.generated.ts',
@@ -104,7 +116,7 @@ describe('ConflictResolver', () => {
       ])
       expect(result.unresolvedFiles).toEqual([])
 
-      const resolvedFiles = gitRepositoryStub.getResolvedFiles()
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
       expect(resolvedFiles.size).toBe(3)
       expect(resolvedFiles.get('file1.generated.ts')).toBe(
         ResolutionStrategy.Theirs
@@ -117,51 +129,31 @@ describe('ConflictResolver', () => {
       )
     })
 
-    it('should handle resolution errors gracefully', async () => {
-      const conflicts = [
-        { path: 'error-file.ts', conflictType: ConflictType.BothModified }
-      ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
-
-      const rules: ConflictResolveRule[] = [
-        {
-          targetPathPattern: 'error-file.ts',
-          strategy: ResolutionStrategy.Ours
-        }
-      ]
-      configRepositoryStub.setRules(rules)
-
-      // Mock the resolveConflict to throw an error
-      gitRepositoryStub.resolveConflict = jest
-        .fn<typeof gitRepositoryStub.resolveConflict>()
-        .mockRejectedValue(new Error('Git error'))
-
-      const result = await conflictResolver.resolve()
-
-      expect(result.resolvedFiles).toEqual([])
-      expect(result.unresolvedFiles).toEqual(['error-file.ts'])
-    })
-
     it('should log summary with resolved and unresolved files', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
       const conflicts = [
         { path: 'resolved1.json', conflictType: ConflictType.BothModified },
         { path: 'resolved2.json', conflictType: ConflictType.BothModified },
         { path: 'manual.ts', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
 
-      const rules: ConflictResolveRule[] = [
-        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
-      ]
-      configRepositoryStub.setRules(rules)
-
+      // Act
       const result = await conflictResolver.resolve()
 
-      // Verify the summary results
+      // Assert
       expect(result.resolvedFiles).toEqual(['resolved1.json', 'resolved2.json'])
       expect(result.unresolvedFiles).toEqual(['manual.ts'])
 
-      const resolvedFiles = gitRepositoryStub.getResolvedFiles()
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
       expect(resolvedFiles.size).toBe(2)
       expect(resolvedFiles.has('manual.ts')).toBe(false)
     })

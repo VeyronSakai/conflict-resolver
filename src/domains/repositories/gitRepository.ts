@@ -8,5 +8,4 @@ export interface GitRepository {
     strategy: ResolutionStrategy
   ): Promise<void>
   stageFile(filePath: string): Promise<void>
-  commitChanges(message: string): Promise<void>
 }

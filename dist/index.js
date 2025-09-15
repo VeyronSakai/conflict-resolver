@@ -32283,9 +32283,6 @@ class GitRepositoryImpl {
     async stageFile(filePath) {
         await this.gitAddFile(filePath);
     }
-    async commitChanges(message) {
-        await this.execGitCommand(['commit', '-m', message]);
-    }
     async getConflictType(filePath) {
         const statusOutput = await this.execGitCommand([
             'status',

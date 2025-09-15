@@ -14,6 +14,7 @@ describe('ConflictAnalyzer', () => {
   describe('determineStrategy', () => {
     describe('basic pattern matching', () => {
       it('should return the strategy of matching rule', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'package.json',
           conflictType: ConflictType.BothModified
@@ -22,12 +23,15 @@ describe('ConflictAnalyzer', () => {
           { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Theirs)
       })
 
       it('should match exact file path', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'package-lock.json',
           conflictType: ConflictType.BothModified
@@ -40,12 +44,15 @@ describe('ConflictAnalyzer', () => {
           { targetPathPattern: '*.json', strategy: ResolutionStrategy.Ours }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Theirs)
       })
 
       it('should match wildcard patterns', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'src/components/Button.tsx',
           conflictType: ConflictType.BothModified
@@ -57,12 +64,15 @@ describe('ConflictAnalyzer', () => {
           }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Ours)
       })
 
       it('should return first matching rule when multiple rules match', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'src/index.ts',
           conflictType: ConflictType.BothModified
@@ -75,14 +85,17 @@ describe('ConflictAnalyzer', () => {
           { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Theirs }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Ours)
       })
     })
 
     describe('conflict type matching', () => {
       it('should match rule with specific conflict type', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'test.ts',
           conflictType: ConflictType.DeletedByUs
@@ -100,12 +113,15 @@ describe('ConflictAnalyzer', () => {
           }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Ours)
       })
 
       it('should not match rule with different conflict type', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'test.ts',
           conflictType: ConflictType.BothModified
@@ -118,12 +134,15 @@ describe('ConflictAnalyzer', () => {
           }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBeUndefined()
       })
 
       it('should match rule without conflict type for any conflict', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'test.ts',
           conflictType: ConflictType.DeletedByThem
@@ -135,12 +154,15 @@ describe('ConflictAnalyzer', () => {
           }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Theirs)
       })
 
       it('should handle all conflict types', () => {
+        // Arrange
         const conflictTypes = [
           ConflictType.BothModified,
           ConflictType.DeletedByUs,
@@ -149,6 +171,7 @@ describe('ConflictAnalyzer', () => {
         ]
 
         conflictTypes.forEach((conflictType) => {
+          // Arrange
           const file: ConflictedFile = {
             path: 'test.ts',
             conflictType
@@ -161,8 +184,10 @@ describe('ConflictAnalyzer', () => {
             }
           ]
 
+          // Act
           const strategy = analyzer.determineStrategy(file, rules)
 
+          // Assert
           expect(strategy).toBe(ResolutionStrategy.Ours)
         })
       })
@@ -170,6 +195,7 @@ describe('ConflictAnalyzer', () => {
 
     describe('edge cases', () => {
       it('should return undefined when no rule matches', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'unknown.xml',
           conflictType: ConflictType.BothModified
@@ -179,24 +205,30 @@ describe('ConflictAnalyzer', () => {
           { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBeUndefined()
       })
 
       it('should return undefined when rules array is empty', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'test.ts',
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = []
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBeUndefined()
       })
 
       it('should handle complex glob patterns', () => {
+        // Arrange
         const file: ConflictedFile = {
           path: 'dist/bundle.min.js',
           conflictType: ConflictType.BothModified
@@ -208,8 +240,10 @@ describe('ConflictAnalyzer', () => {
           }
         ]
 
+        // Act
         const strategy = analyzer.determineStrategy(file, rules)
 
+        // Assert
         expect(strategy).toBe(ResolutionStrategy.Theirs)
       })
     })
