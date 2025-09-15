@@ -1,4 +1,4 @@
-name: Conflict Resolver
+name: Git Conflict Resolver Action
 description: Automatically resolve Git conflicts based on predefined rules
 author: Yuki Sakai
 
