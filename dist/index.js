@@ -32249,31 +32249,8 @@ var ConflictType;
     ConflictType["BothModified"] = "both-modified";
     ConflictType["DeletedByUs"] = "deleted-by-us";
     ConflictType["DeletedByThem"] = "deleted-by-them";
-    ConflictType["BothAdded"] = "both-added";
-    ConflictType["AddedByUs"] = "added-by-us";
-    ConflictType["AddedByThem"] = "added-by-them";
+    ConflictType["BothAdded"] = "both-added"; // AA
 })(ConflictType || (ConflictType = {}));
-
-class ConflictedFile {
-    path;
-    conflictType;
-    constructor(path, conflictType) {
-        this.path = path;
-        this.conflictType = conflictType;
-    }
-    isModified() {
-        return (this.conflictType === ConflictType.BothModified ||
-            this.conflictType === ConflictType.AddedByUs ||
-            this.conflictType === ConflictType.AddedByThem);
-    }
-    isDeleted() {
-        return (this.conflictType === ConflictType.DeletedByUs ||
-            this.conflictType === ConflictType.DeletedByThem);
-    }
-    isAdded() {
-        return this.conflictType === ConflictType.BothAdded;
-    }
-}
 
 class GitRepositoryImpl {
     async getConflictedFiles() {
@@ -32289,7 +32266,7 @@ class GitRepositoryImpl {
         const conflictedFiles = [];
         for (const filePath of filePaths) {
             const conflictType = await this.detectConflictType(filePath);
-            conflictedFiles.push(new ConflictedFile(filePath, conflictType));
+            conflictedFiles.push({ path: filePath, conflictType });
         }
         return conflictedFiles;
     }
@@ -32298,10 +32275,11 @@ class GitRepositoryImpl {
             coreExports.info(`Skipping ${file.path} - requires manual resolution`);
             return;
         }
-        if (file.isDeleted()) {
+        if (file.conflictType === ConflictType.DeletedByUs ||
+            file.conflictType === ConflictType.DeletedByThem) {
             await this.handleDeletedConflict(file, strategy);
         }
-        else if (file.isAdded()) {
+        else if (file.conflictType === ConflictType.BothAdded) {
             await this.handleAddedConflict(file, strategy);
         }
         else {
@@ -32323,12 +32301,6 @@ class GitRepositoryImpl {
         if (statusOutput.includes('DD')) {
             return ConflictType.BothModified; // Both sides deleted
         }
-        else if (statusOutput.includes('AU')) {
-            return ConflictType.AddedByUs;
-        }
-        else if (statusOutput.includes('UA')) {
-            return ConflictType.AddedByThem;
-        }
         else if (statusOutput.includes('AA')) {
             return ConflictType.BothAdded;
         }
@@ -32338,7 +32310,12 @@ class GitRepositoryImpl {
         else if (statusOutput.includes('UD')) {
             return ConflictType.DeletedByThem;
         }
+        else if (statusOutput.includes('UU')) {
+            return ConflictType.BothModified;
+        }
         else {
+            // AU and UA are not conflicts - they are files added on one side only
+            // If we somehow get here with AU/UA, treat as a regular modification conflict
             return ConflictType.BothModified;
         }
     }
