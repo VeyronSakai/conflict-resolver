@@ -13,10 +13,6 @@ export class ConfigRepositoryStub implements ConfigRepository {
     return this.rules
   }
 
-  setRules(rules: ConflictResolveRule[]): void {
-    this.rules = rules
-  }
-
   static createWithDefaultRules(): ConfigRepositoryStub {
     const defaultRules: ConflictResolveRule[] = [
       {
