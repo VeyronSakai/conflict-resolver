@@ -32322,10 +32322,13 @@ class GitRepositoryImpl {
             await this.execGitCommand(['rm', '--', file.path]);
             coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
         }
-        else {
+        else if (strategy === ResolutionStrategy.Theirs) {
             // Their side kept the file, so restore it
             await this.execGitCommand(['add', '--', file.path]);
             coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
+        }
+        else {
+            throw new Error(`Unexpected strategy ${strategy} for DeletedByUs conflict: ${file.path}`);
         }
     }
     async resolveDeletedByThemConflict(file, strategy) {
@@ -32334,10 +32337,13 @@ class GitRepositoryImpl {
             await this.execGitCommand(['add', '--', file.path]);
             coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
         }
-        else {
+        else if (strategy === ResolutionStrategy.Theirs) {
             // Their side deleted the file, so accept deletion
             await this.execGitCommand(['rm', '--', file.path]);
             coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
+        }
+        else {
+            throw new Error(`Unexpected strategy ${strategy} for DeletedByThem conflict: ${file.path}`);
         }
     }
     async resolveBothAddedConflict(file, strategy) {
@@ -32364,8 +32370,11 @@ class GitRepositoryImpl {
         if (strategy === ResolutionStrategy.Ours) {
             return await this.execGitCommand(['show', `:2:${filePath}`]);
         }
-        else {
+        else if (strategy === ResolutionStrategy.Theirs) {
             return await this.execGitCommand(['show', `:3:${filePath}`]);
+        }
+        else {
+            throw new Error(`Unexpected strategy ${strategy} for getting file content: ${filePath}`);
         }
     }
     async isBinaryFile(filePath) {

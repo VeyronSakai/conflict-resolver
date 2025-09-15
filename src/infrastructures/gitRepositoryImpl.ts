@@ -104,10 +104,14 @@ export class GitRepositoryImpl implements GitRepository {
       // Our side deleted the file, so keep it deleted
       await this.execGitCommand(['rm', '--', file.path])
       core.info(`Resolved ${file.path} by keeping deletion (ours)`)
-    } else {
+    } else if (strategy === ResolutionStrategy.Theirs) {
       // Their side kept the file, so restore it
       await this.execGitCommand(['add', '--', file.path])
       core.info(`Resolved ${file.path} by keeping file (theirs)`)
+    } else {
+      throw new Error(
+        `Unexpected strategy ${strategy} for DeletedByUs conflict: ${file.path}`
+      )
     }
   }
 
@@ -119,10 +123,14 @@ export class GitRepositoryImpl implements GitRepository {
       // Our side kept the file, so keep it
       await this.execGitCommand(['add', '--', file.path])
       core.info(`Resolved ${file.path} by keeping file (ours)`)
-    } else {
+    } else if (strategy === ResolutionStrategy.Theirs) {
       // Their side deleted the file, so accept deletion
       await this.execGitCommand(['rm', '--', file.path])
       core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
+    } else {
+      throw new Error(
+        `Unexpected strategy ${strategy} for DeletedByThem conflict: ${file.path}`
+      )
     }
   }
 
@@ -161,8 +169,12 @@ export class GitRepositoryImpl implements GitRepository {
   ): Promise<string> {
     if (strategy === ResolutionStrategy.Ours) {
       return await this.execGitCommand(['show', `:2:${filePath}`])
-    } else {
+    } else if (strategy === ResolutionStrategy.Theirs) {
       return await this.execGitCommand(['show', `:3:${filePath}`])
+    } else {
+      throw new Error(
+        `Unexpected strategy ${strategy} for getting file content: ${filePath}`
+      )
     }
   }
 
