@@ -2,16 +2,11 @@ import * as core from '@actions/core'
 import { ConflictResolver } from '@use-cases/conflictResolver.js'
 
 export class ActionHandler {
-  constructor(
-    private conflictResolver: ConflictResolver,
-    private configPath: string
-  ) {}
+  constructor(private conflictResolver: ConflictResolver) {}
 
   async run(): Promise<void> {
     try {
       core.info('Starting Git Conflict Resolver')
-
-      core.info(`Config path: ${this.configPath}`)
 
       const result = await this.conflictResolver.resolve()
 
