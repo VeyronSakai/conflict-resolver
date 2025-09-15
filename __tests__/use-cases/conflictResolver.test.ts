@@ -2,7 +2,6 @@ import { jest, describe, expect, it, beforeEach } from '@jest/globals'
 import { ConflictResolver } from '@use-cases/conflictResolver.js'
 import { ConfigRepositoryStub } from '../test-doubles/configRepositoryStub.js'
 import { GitRepositoryStub } from '../test-doubles/gitRepositoryStub.js'
-import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
 import type { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
@@ -38,8 +37,8 @@ describe('ConflictResolver', () => {
 
     it('should resolve conflicts based on rules', async () => {
       const conflicts = [
-        new ConflictedFile('package-lock.json', ConflictType.BothModified),
-        new ConflictedFile('src/index.ts', ConflictType.BothModified)
+        { path: 'package-lock.json', conflictType: ConflictType.BothModified },
+        { path: 'src/index.ts', conflictType: ConflictType.BothModified }
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
@@ -47,8 +46,7 @@ describe('ConflictResolver', () => {
         {
           targetPathPattern: 'package-lock.json',
           strategy: ResolutionStrategy.Theirs
-        },
-        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual }
+        }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -70,7 +68,7 @@ describe('ConflictResolver', () => {
 
     it('should handle files without matching rules as manual', async () => {
       const conflicts = [
-        new ConflictedFile('unknown.xml', ConflictType.BothModified)
+        { path: 'unknown.xml', conflictType: ConflictType.BothModified }
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
       configRepositoryStub.setRules([])
@@ -83,9 +81,9 @@ describe('ConflictResolver', () => {
 
     it('should resolve multiple files with same rule', async () => {
       const conflicts = [
-        new ConflictedFile('file1.generated.ts', ConflictType.BothModified),
-        new ConflictedFile('file2.generated.ts', ConflictType.BothModified),
-        new ConflictedFile('file3.generated.ts', ConflictType.BothModified)
+        { path: 'file1.generated.ts', conflictType: ConflictType.BothModified },
+        { path: 'file2.generated.ts', conflictType: ConflictType.BothModified },
+        { path: 'file3.generated.ts', conflictType: ConflictType.BothModified }
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
@@ -121,7 +119,7 @@ describe('ConflictResolver', () => {
 
     it('should handle resolution errors gracefully', async () => {
       const conflicts = [
-        new ConflictedFile('error-file.ts', ConflictType.BothModified)
+        { path: 'error-file.ts', conflictType: ConflictType.BothModified }
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
@@ -146,15 +144,14 @@ describe('ConflictResolver', () => {
 
     it('should log summary with resolved and unresolved files', async () => {
       const conflicts = [
-        new ConflictedFile('resolved1.json', ConflictType.BothModified),
-        new ConflictedFile('resolved2.json', ConflictType.BothModified),
-        new ConflictedFile('manual.ts', ConflictType.BothModified)
+        { path: 'resolved1.json', conflictType: ConflictType.BothModified },
+        { path: 'resolved2.json', conflictType: ConflictType.BothModified },
+        { path: 'manual.ts', conflictType: ConflictType.BothModified }
       ]
       gitRepositoryStub.setConflictedFiles(conflicts)
 
       const rules: ConflictResolveRule[] = [
-        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs },
-        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual }
+        { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
       ]
       configRepositoryStub.setRules(rules)
 

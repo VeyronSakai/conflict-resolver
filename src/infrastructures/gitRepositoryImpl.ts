@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import * as fs from 'fs'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
 import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
@@ -22,8 +21,8 @@ export class GitRepositoryImpl implements GitRepository {
     const conflictedFiles: ConflictedFile[] = []
 
     for (const filePath of filePaths) {
-      const conflictType = await this.detectConflictType(filePath)
-      conflictedFiles.push(new ConflictedFile(filePath, conflictType))
+      const conflictType = await this.getConflictType(filePath)
+      conflictedFiles.push({ path: filePath, conflictType })
     }
 
     return conflictedFiles
@@ -33,170 +32,131 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    if (strategy === ResolutionStrategy.Manual) {
-      core.info(`Skipping ${file.path} - requires manual resolution`)
-      return
-    }
-
-    if (file.isDeleted()) {
-      await this.handleDeletedConflict(file, strategy)
-    } else if (file.isAdded()) {
-      await this.handleAddedConflict(file, strategy)
-    } else {
-      await this.handleModifiedConflict(file, strategy)
+    switch (file.conflictType) {
+      case ConflictType.DeletedByUs:
+        await this.resolveDeletedByUsConflict(file, strategy)
+        break
+      case ConflictType.DeletedByThem:
+        await this.resolveDeletedByThemConflict(file, strategy)
+        break
+      case ConflictType.BothAdded:
+        await this.resolveBothAddedConflict(file, strategy)
+        break
+      case ConflictType.BothModified:
+        await this.resolveBothModifiedConflict(file, strategy)
+        break
+      default:
+        throw new Error(
+          `Unexpected conflict type for ${file.path}: ${file.conflictType}`
+        )
     }
   }
 
   async stageFile(filePath: string): Promise<void> {
-    await this.execGitCommand(['add', filePath])
+    await this.gitAddFile(filePath)
   }
 
   async commitChanges(message: string): Promise<void> {
     await this.execGitCommand(['commit', '-m', message])
   }
 
-  private async detectConflictType(filePath: string): Promise<ConflictType> {
+  private async getConflictType(filePath: string): Promise<ConflictType> {
     const statusOutput = await this.execGitCommand([
       'status',
       '--porcelain',
+      '--',
       filePath
     ])
 
-    if (statusOutput.includes('DD')) {
-      return ConflictType.BothModified // Both sides deleted
-    } else if (statusOutput.includes('AU')) {
-      return ConflictType.AddedByUs
-    } else if (statusOutput.includes('UA')) {
-      return ConflictType.AddedByThem
-    } else if (statusOutput.includes('AA')) {
-      return ConflictType.BothAdded
-    } else if (statusOutput.includes('DU')) {
-      return ConflictType.DeletedByUs
-    } else if (statusOutput.includes('UD')) {
-      return ConflictType.DeletedByThem
-    } else {
-      return ConflictType.BothModified
+    // Git status --porcelain format: XY filename
+    // The first two characters are the status code
+    const statusCode = statusOutput.substring(0, 2)
+
+    switch (statusCode) {
+      case 'AA':
+        return ConflictType.BothAdded
+      case 'DU':
+        return ConflictType.DeletedByUs
+      case 'UD':
+        return ConflictType.DeletedByThem
+      case 'UU':
+        return ConflictType.BothModified
+      default:
+        // AU, UA, and DD are not conflicts
+        // If we somehow get here, it's an unexpected status
+        throw new Error(
+          `Unexpected git status for ${filePath}: ${statusOutput.trim()}`
+        )
     }
   }
 
-  private async handleDeletedConflict(
+  private async resolveDeletedByUsConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    if (file.conflictType === ConflictType.DeletedByUs) {
-      if (strategy === ResolutionStrategy.Ours) {
-        await this.execGitCommand(['rm', file.path])
+    switch (strategy) {
+      case ResolutionStrategy.Ours:
+        // Our side deleted the file, so keep it deleted
+        await this.gitRemoveFile(file.path)
         core.info(`Resolved ${file.path} by keeping deletion (ours)`)
-      } else {
-        await this.execGitCommand(['add', file.path])
+        break
+      case ResolutionStrategy.Theirs:
+        // Their side kept the file, so restore it
+        await this.gitAddFile(file.path)
         core.info(`Resolved ${file.path} by keeping file (theirs)`)
-      }
-    } else if (file.conflictType === ConflictType.DeletedByThem) {
-      if (strategy === ResolutionStrategy.Ours) {
-        await this.execGitCommand(['add', file.path])
+        break
+    }
+  }
+
+  private async resolveDeletedByThemConflict(
+    file: ConflictedFile,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    switch (strategy) {
+      case ResolutionStrategy.Ours:
+        // Our side kept the file, so keep it
+        await this.gitAddFile(file.path)
         core.info(`Resolved ${file.path} by keeping file (ours)`)
-      } else {
-        await this.execGitCommand(['rm', file.path])
+        break
+      case ResolutionStrategy.Theirs:
+        // Their side deleted the file, so accept deletion
+        await this.gitRemoveFile(file.path)
         core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
-      }
+        break
     }
   }
 
-  private async handleAddedConflict(
+  private async resolveBothAddedConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    // Check if file is binary
-    const isBinary = await this.isBinaryFile(file.path)
-
-    if (isBinary) {
-      // For binary files, use git checkout to properly handle binary content
-      await this.execGitCommand(['checkout', `--${strategy}`, file.path])
-    } else {
-      // For text files, use the existing string-based approach
-      const content = await this.getFileContent(file.path, strategy)
-      fs.writeFileSync(file.path, content)
-    }
-
-    await this.execGitCommand(['add', file.path])
+    await this.gitCheckoutFile(file.path, strategy)
+    await this.gitAddFile(file.path)
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
-  private async handleModifiedConflict(
+  private async resolveBothModifiedConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    await this.execGitCommand(['checkout', `--${strategy}`, file.path])
-    await this.execGitCommand(['add', file.path])
+    await this.gitCheckoutFile(file.path, strategy)
+    await this.gitAddFile(file.path)
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
-  private async getFileContent(
+  private async gitAddFile(filePath: string): Promise<void> {
+    await this.execGitCommand(['add', '--', filePath])
+  }
+
+  private async gitRemoveFile(filePath: string): Promise<void> {
+    await this.execGitCommand(['rm', '--', filePath])
+  }
+
+  private async gitCheckoutFile(
     filePath: string,
     strategy: ResolutionStrategy
-  ): Promise<string> {
-    if (strategy === ResolutionStrategy.Ours) {
-      return await this.execGitCommand(['show', `:2:${filePath}`])
-    } else {
-      return await this.execGitCommand(['show', `:3:${filePath}`])
-    }
-  }
-
-  private async isBinaryFile(filePath: string): Promise<boolean> {
-    try {
-      // Use git diff to check if file is binary
-      // Git will report binary files in the diff output
-      const output = await this.execGitCommand([
-        'diff',
-        '--numstat',
-        'HEAD',
-        '--',
-        filePath
-      ])
-
-      // Binary files show as "-\t-\t" in numstat output
-      if (output.includes('-\t-\t')) {
-        return true
-      }
-
-      // Also check using git's attributes
-      const checkBinaryOutput = await this.execGitCommand([
-        'check-attr',
-        'binary',
-        filePath
-      ])
-
-      if (checkBinaryOutput.includes('binary: set')) {
-        return true
-      }
-
-      // Check common binary file extensions as fallback
-      const binaryExtensions = [
-        '.png',
-        '.jpg',
-        '.jpeg',
-        '.gif',
-        '.bmp',
-        '.ico',
-        '.pdf',
-        '.zip',
-        '.tar',
-        '.gz',
-        '.exe',
-        '.dll',
-        '.so',
-        '.dylib',
-        '.bin',
-        '.dat'
-      ]
-      const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
-      return binaryExtensions.includes(ext)
-    } catch {
-      // If detection fails, check file extension as fallback
-      const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
-      const binaryExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico']
-      return binaryExtensions.includes(ext)
-    }
+  ): Promise<void> {
+    await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath])
   }
 
   private async execGitCommand(args: string[]): Promise<string> {

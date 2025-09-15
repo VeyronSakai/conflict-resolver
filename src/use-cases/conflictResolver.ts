@@ -2,7 +2,6 @@ import * as core from '@actions/core'
 import { ConfigRepository } from '@domains/repositories/configRepository.js'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
 import { ConflictAnalyzer } from '@domains/services/conflictAnalyzer.js'
-import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export interface ResolutionResult {
   resolvedFiles: string[]
@@ -36,7 +35,7 @@ export class ConflictResolver {
     for (const file of conflictedFiles) {
       const strategy = this.conflictAnalyzer.determineStrategy(file, rules)
 
-      if (strategy === ResolutionStrategy.Manual) {
+      if (!strategy) {
         core.warning(
           `${file.path} requires manual resolution (conflict type: ${file.conflictType})`
         )

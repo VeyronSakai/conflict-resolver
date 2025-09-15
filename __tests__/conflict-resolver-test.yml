@@ -14,9 +14,8 @@ rules:
     strategy: 'ours'
     conflict_type: 'both-modified'
 
-  # Config YAML files - require manual review (manual strategy)
-  - paths: '__tests__/test-conflict-files/*.config.yml'
-    strategy: 'manual'
+  # Config YAML files - will remain unresolved (no strategy specified)
+  # Files without matching rules will require manual resolution
 
   # Binary files (both-modified) - use incoming changes (theirs strategy)
   - paths: '__tests__/test-conflict-files/test.png'

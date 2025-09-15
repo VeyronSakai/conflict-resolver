@@ -8,13 +8,6 @@ export class ActionHandler {
     try {
       core.info('Starting Git Conflict Resolver')
 
-      const configPath = core.getInput('config-path')
-      if (configPath) {
-        core.info(`Config path: ${configPath}`)
-      } else {
-        core.info('Config path: .conflict-resolver.yml (default)')
-      }
-
       const result = await this.conflictResolver.resolve()
 
       this.setOutputs(result.resolvedFiles, result.unresolvedFiles)

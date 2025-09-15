@@ -30,8 +30,8 @@ export class ConflictAnalyzer {
   determineStrategy(
     file: ConflictedFile,
     rules: ConflictResolveRule[]
-  ): ResolutionStrategy {
+  ): ResolutionStrategy | undefined {
     const matchingRule = this.findMatchingRule(file, rules)
-    return matchingRule?.strategy ?? ResolutionStrategy.Manual
+    return matchingRule?.strategy
   }
 }
