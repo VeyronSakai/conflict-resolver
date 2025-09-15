@@ -32305,8 +32305,8 @@ class GitRepositoryImpl {
         }
         else {
             // AU, UA, and DD are not conflicts
-            // If we somehow get here, default to BothModified
-            return ConflictType.BothModified;
+            // If we somehow get here, it's an unexpected status
+            throw new Error(`Unexpected git status for ${filePath}: ${statusOutput.trim()}`);
         }
     }
     async handleDeletedConflict(file, strategy) {
