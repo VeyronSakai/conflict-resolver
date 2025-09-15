@@ -51,7 +51,7 @@ export class GitRepositoryImpl implements GitRepository {
   }
 
   async stageFile(filePath: string): Promise<void> {
-    await this.execGitCommand(['add', filePath])
+    await this.execGitCommand(['add', '--', filePath])
   }
 
   async commitChanges(message: string): Promise<void> {
@@ -62,6 +62,7 @@ export class GitRepositoryImpl implements GitRepository {
     const statusOutput = await this.execGitCommand([
       'status',
       '--porcelain',
+      '--',
       filePath
     ])
 
@@ -93,18 +94,18 @@ export class GitRepositoryImpl implements GitRepository {
   ): Promise<void> {
     if (file.conflictType === ConflictType.DeletedByUs) {
       if (strategy === ResolutionStrategy.Ours) {
-        await this.execGitCommand(['rm', file.path])
+        await this.execGitCommand(['rm', '--', file.path])
         core.info(`Resolved ${file.path} by keeping deletion (ours)`)
       } else {
-        await this.execGitCommand(['add', file.path])
+        await this.execGitCommand(['add', '--', file.path])
         core.info(`Resolved ${file.path} by keeping file (theirs)`)
       }
     } else if (file.conflictType === ConflictType.DeletedByThem) {
       if (strategy === ResolutionStrategy.Ours) {
-        await this.execGitCommand(['add', file.path])
+        await this.execGitCommand(['add', '--', file.path])
         core.info(`Resolved ${file.path} by keeping file (ours)`)
       } else {
-        await this.execGitCommand(['rm', file.path])
+        await this.execGitCommand(['rm', '--', file.path])
         core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
       }
     }
@@ -119,7 +120,7 @@ export class GitRepositoryImpl implements GitRepository {
 
     if (isBinary) {
       // For binary files, use git checkout to properly handle binary content
-      await this.execGitCommand(['checkout', `--${strategy}`, file.path])
+      await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
     } else {
       // For text files, use the existing string-based approach
       const content = await this.getFileContent(file.path, strategy)
@@ -171,6 +172,7 @@ export class GitRepositoryImpl implements GitRepository {
       const checkBinaryOutput = await this.execGitCommand([
         'check-attr',
         'binary',
+        '--',
         filePath
       ])
 

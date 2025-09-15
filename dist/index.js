@@ -32280,7 +32280,7 @@ class GitRepositoryImpl {
         }
     }
     async stageFile(filePath) {
-        await this.execGitCommand(['add', filePath]);
+        await this.execGitCommand(['add', '--', filePath]);
     }
     async commitChanges(message) {
         await this.execGitCommand(['commit', '-m', message]);
@@ -32289,6 +32289,7 @@ class GitRepositoryImpl {
         const statusOutput = await this.execGitCommand([
             'status',
             '--porcelain',
+            '--',
             filePath
         ]);
         // Git status --porcelain format: XY filename
@@ -32312,21 +32313,21 @@ class GitRepositoryImpl {
     async handleDeletedConflict(file, strategy) {
         if (file.conflictType === ConflictType.DeletedByUs) {
             if (strategy === ResolutionStrategy.Ours) {
-                await this.execGitCommand(['rm', file.path]);
+                await this.execGitCommand(['rm', '--', file.path]);
                 coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
             }
             else {
-                await this.execGitCommand(['add', file.path]);
+                await this.execGitCommand(['add', '--', file.path]);
                 coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
             }
         }
         else if (file.conflictType === ConflictType.DeletedByThem) {
             if (strategy === ResolutionStrategy.Ours) {
-                await this.execGitCommand(['add', file.path]);
+                await this.execGitCommand(['add', '--', file.path]);
                 coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
             }
             else {
-                await this.execGitCommand(['rm', file.path]);
+                await this.execGitCommand(['rm', '--', file.path]);
                 coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
             }
         }
@@ -32336,7 +32337,7 @@ class GitRepositoryImpl {
         const isBinary = await this.isBinaryFile(file.path);
         if (isBinary) {
             // For binary files, use git checkout to properly handle binary content
-            await this.execGitCommand(['checkout', `--${strategy}`, file.path]);
+            await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path]);
         }
         else {
             // For text files, use the existing string-based approach
@@ -32378,6 +32379,7 @@ class GitRepositoryImpl {
             const checkBinaryOutput = await this.execGitCommand([
                 'check-attr',
                 'binary',
+                '--',
                 filePath
             ]);
             if (checkBinaryOutput.includes('binary: set')) {
