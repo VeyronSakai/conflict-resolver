@@ -4,10 +4,14 @@ import { ConflictType } from '@domains/value-objects/conflictType.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export class GitRepositoryStub implements GitRepository {
-  private conflictedFiles: ConflictedFile[] = []
+  private conflictedFiles: ConflictedFile[]
   private resolvedFiles: Map<string, ResolutionStrategy> = new Map()
   private stagedFiles: Set<string> = new Set()
   private commits: string[] = []
+
+  constructor(conflictedFiles: ConflictedFile[] = []) {
+    this.conflictedFiles = conflictedFiles
+  }
 
   async getConflictedFiles(): Promise<ConflictedFile[]> {
     return this.conflictedFiles
@@ -26,10 +30,6 @@ export class GitRepositoryStub implements GitRepository {
 
   async commitChanges(message: string): Promise<void> {
     this.commits.push(message)
-  }
-
-  setConflictedFiles(files: ConflictedFile[]): void {
-    this.conflictedFiles = files
   }
 
   getResolvedFiles(): Map<string, ResolutionStrategy> {
@@ -52,13 +52,11 @@ export class GitRepositoryStub implements GitRepository {
   }
 
   static createWithSampleConflicts(): GitRepositoryStub {
-    const stub = new GitRepositoryStub()
-    stub.setConflictedFiles([
+    return new GitRepositoryStub([
       { path: 'package-lock.json', conflictType: ConflictType.BothModified },
       { path: 'src/index.ts', conflictType: ConflictType.BothModified },
       { path: 'config.generated.ts', conflictType: ConflictType.BothModified },
       { path: 'deleted-file.ts', conflictType: ConflictType.DeletedByUs }
     ])
-    return stub
   }
 }

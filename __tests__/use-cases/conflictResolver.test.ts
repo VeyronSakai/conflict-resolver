@@ -14,8 +14,7 @@ describe('ConflictResolver', () => {
     it('should return empty result when no conflicts exist', async () => {
       // Arrange
       const configRepositoryStub = new ConfigRepositoryStub([])
-      const gitRepositoryStub = new GitRepositoryStub()
-      gitRepositoryStub.setConflictedFiles([])
+      const gitRepositoryStub = new GitRepositoryStub([])
       const conflictResolver = new ConflictResolver(
         configRepositoryStub,
         gitRepositoryStub
@@ -38,12 +37,11 @@ describe('ConflictResolver', () => {
         }
       ]
       const configRepositoryStub = new ConfigRepositoryStub(rules)
-      const gitRepositoryStub = new GitRepositoryStub()
       const conflicts = [
         { path: 'package-lock.json', conflictType: ConflictType.BothModified },
         { path: 'src/index.ts', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
+      const gitRepositoryStub = new GitRepositoryStub(conflicts)
       const conflictResolver = new ConflictResolver(
         configRepositoryStub,
         gitRepositoryStub
@@ -70,11 +68,10 @@ describe('ConflictResolver', () => {
     it('should handle files without matching rules as manual', async () => {
       // Arrange
       const configRepositoryStub = new ConfigRepositoryStub([])
-      const gitRepositoryStub = new GitRepositoryStub()
       const conflicts = [
         { path: 'unknown.xml', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
+      const gitRepositoryStub = new GitRepositoryStub(conflicts)
       const conflictResolver = new ConflictResolver(
         configRepositoryStub,
         gitRepositoryStub
@@ -97,13 +94,12 @@ describe('ConflictResolver', () => {
         }
       ]
       const configRepositoryStub = new ConfigRepositoryStub(rules)
-      const gitRepositoryStub = new GitRepositoryStub()
       const conflicts = [
         { path: 'file1.generated.ts', conflictType: ConflictType.BothModified },
         { path: 'file2.generated.ts', conflictType: ConflictType.BothModified },
         { path: 'file3.generated.ts', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
+      const gitRepositoryStub = new GitRepositoryStub(conflicts)
       const conflictResolver = new ConflictResolver(
         configRepositoryStub,
         gitRepositoryStub
@@ -142,11 +138,10 @@ describe('ConflictResolver', () => {
         }
       ]
       const configRepositoryStub = new ConfigRepositoryStub(rules)
-      const gitRepositoryStub = new GitRepositoryStub()
       const conflicts = [
         { path: 'error-file.ts', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
+      const gitRepositoryStub = new GitRepositoryStub(conflicts)
 
       // Mock the resolveConflict to throw an error
       gitRepositoryStub.resolveConflict = jest
@@ -172,13 +167,12 @@ describe('ConflictResolver', () => {
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
       ]
       const configRepositoryStub = new ConfigRepositoryStub(rules)
-      const gitRepositoryStub = new GitRepositoryStub()
       const conflicts = [
         { path: 'resolved1.json', conflictType: ConflictType.BothModified },
         { path: 'resolved2.json', conflictType: ConflictType.BothModified },
         { path: 'manual.ts', conflictType: ConflictType.BothModified }
       ]
-      gitRepositoryStub.setConflictedFiles(conflicts)
+      const gitRepositoryStub = new GitRepositoryStub(conflicts)
       const conflictResolver = new ConflictResolver(
         configRepositoryStub,
         gitRepositoryStub
