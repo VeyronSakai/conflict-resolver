@@ -1,5 +1,5 @@
 import { GitRepository } from '@domains/repositories/gitRepository.js'
-import { ConflictedFile } from '@domains/entities/conflictedFile.js'
+import { ConflictedFile } from '@domains/value-objects/conflictedFile.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
@@ -54,10 +54,10 @@ export class GitRepositoryStub implements GitRepository {
   static createWithSampleConflicts(): GitRepositoryStub {
     const stub = new GitRepositoryStub()
     stub.setConflictedFiles([
-      new ConflictedFile('package-lock.json', ConflictType.BothModified),
-      new ConflictedFile('src/index.ts', ConflictType.BothModified),
-      new ConflictedFile('config.generated.ts', ConflictType.BothModified),
-      new ConflictedFile('deleted-file.ts', ConflictType.DeletedByUs)
+      { path: 'package-lock.json', conflictType: ConflictType.BothModified },
+      { path: 'src/index.ts', conflictType: ConflictType.BothModified },
+      { path: 'config.generated.ts', conflictType: ConflictType.BothModified },
+      { path: 'deleted-file.ts', conflictType: ConflictType.DeletedByUs }
     ])
     return stub
   }

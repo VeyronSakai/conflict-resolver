@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
-import { ConflictedFile } from '@domains/entities/conflictedFile.js'
+import { ConflictedFile } from '@domains/value-objects/conflictedFile.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
@@ -23,7 +23,7 @@ export class GitRepositoryImpl implements GitRepository {
 
     for (const filePath of filePaths) {
       const conflictType = await this.detectConflictType(filePath)
-      conflictedFiles.push(new ConflictedFile(filePath, conflictType))
+      conflictedFiles.push({ path: filePath, conflictType })
     }
 
     return conflictedFiles
@@ -38,9 +38,12 @@ export class GitRepositoryImpl implements GitRepository {
       return
     }
 
-    if (file.isDeleted()) {
+    if (
+      file.conflictType === ConflictType.DeletedByUs ||
+      file.conflictType === ConflictType.DeletedByThem
+    ) {
       await this.handleDeletedConflict(file, strategy)
-    } else if (file.isAdded()) {
+    } else if (file.conflictType === ConflictType.BothAdded) {
       await this.handleAddedConflict(file, strategy)
     } else {
       await this.handleModifiedConflict(file, strategy)
@@ -64,17 +67,17 @@ export class GitRepositoryImpl implements GitRepository {
 
     if (statusOutput.includes('DD')) {
       return ConflictType.BothModified // Both sides deleted
-    } else if (statusOutput.includes('AU')) {
-      return ConflictType.AddedByUs
-    } else if (statusOutput.includes('UA')) {
-      return ConflictType.AddedByThem
     } else if (statusOutput.includes('AA')) {
       return ConflictType.BothAdded
     } else if (statusOutput.includes('DU')) {
       return ConflictType.DeletedByUs
     } else if (statusOutput.includes('UD')) {
       return ConflictType.DeletedByThem
+    } else if (statusOutput.includes('UU')) {
+      return ConflictType.BothModified
     } else {
+      // AU and UA are not conflicts - they are files added on one side only
+      // If we somehow get here with AU/UA, treat as a regular modification conflict
       return ConflictType.BothModified
     }
   }
