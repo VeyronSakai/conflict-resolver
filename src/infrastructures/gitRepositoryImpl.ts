@@ -56,10 +56,6 @@ export class GitRepositoryImpl implements GitRepository {
     await this.gitAddFile(filePath)
   }
 
-  async commitChanges(message: string): Promise<void> {
-    await this.execGitCommand(['commit', '-m', message])
-  }
-
   private async getConflictType(filePath: string): Promise<ConflictType> {
     const statusOutput = await this.execGitCommand([
       'status',
