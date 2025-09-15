@@ -32317,33 +32317,37 @@ class GitRepositoryImpl {
         }
     }
     async resolveDeletedByUsConflict(file, strategy) {
-        if (strategy === ResolutionStrategy.Ours) {
-            // Our side deleted the file, so keep it deleted
-            await this.execGitCommand(['rm', '--', file.path]);
-            coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
-        }
-        else if (strategy === ResolutionStrategy.Theirs) {
-            // Their side kept the file, so restore it
-            await this.execGitCommand(['add', '--', file.path]);
-            coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
-        }
-        else {
-            throw new Error(`Unexpected strategy ${strategy} for DeletedByUs conflict: ${file.path}`);
+        switch (strategy) {
+            case ResolutionStrategy.Ours:
+                // Our side deleted the file, so keep it deleted
+                await this.execGitCommand(['rm', '--', file.path]);
+                coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
+                break;
+            case ResolutionStrategy.Theirs:
+                // Their side kept the file, so restore it
+                await this.execGitCommand(['add', '--', file.path]);
+                coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
+                break;
+            case ResolutionStrategy.Manual:
+                // Manual resolution is handled at the resolveConflict level
+                break;
         }
     }
     async resolveDeletedByThemConflict(file, strategy) {
-        if (strategy === ResolutionStrategy.Ours) {
-            // Our side kept the file, so keep it
-            await this.execGitCommand(['add', '--', file.path]);
-            coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
-        }
-        else if (strategy === ResolutionStrategy.Theirs) {
-            // Their side deleted the file, so accept deletion
-            await this.execGitCommand(['rm', '--', file.path]);
-            coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
-        }
-        else {
-            throw new Error(`Unexpected strategy ${strategy} for DeletedByThem conflict: ${file.path}`);
+        switch (strategy) {
+            case ResolutionStrategy.Ours:
+                // Our side kept the file, so keep it
+                await this.execGitCommand(['add', '--', file.path]);
+                coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
+                break;
+            case ResolutionStrategy.Theirs:
+                // Their side deleted the file, so accept deletion
+                await this.execGitCommand(['rm', '--', file.path]);
+                coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
+                break;
+            case ResolutionStrategy.Manual:
+                // Manual resolution is handled at the resolveConflict level
+                break;
         }
     }
     async resolveBothAddedConflict(file, strategy) {
@@ -32367,14 +32371,17 @@ class GitRepositoryImpl {
         coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
     }
     async getFileContent(filePath, strategy) {
-        if (strategy === ResolutionStrategy.Ours) {
-            return await this.execGitCommand(['show', `:2:${filePath}`]);
-        }
-        else if (strategy === ResolutionStrategy.Theirs) {
-            return await this.execGitCommand(['show', `:3:${filePath}`]);
-        }
-        else {
-            throw new Error(`Unexpected strategy ${strategy} for getting file content: ${filePath}`);
+        switch (strategy) {
+            case ResolutionStrategy.Ours:
+                return await this.execGitCommand(['show', `:2:${filePath}`]);
+            case ResolutionStrategy.Theirs:
+                return await this.execGitCommand(['show', `:3:${filePath}`]);
+            case ResolutionStrategy.Manual:
+                // Manual resolution shouldn't reach here, but return empty string as fallback
+                return '';
+            default:
+                // This should never happen due to TypeScript exhaustiveness checking
+                return '';
         }
     }
     async isBinaryFile(filePath) {
