@@ -29302,6 +29302,10 @@ minimatch.escape = escape;
 minimatch.unescape = unescape;
 
 class ConflictAnalyzer {
+    determineStrategy(file, rules) {
+        const matchingRule = this.findMatchingRule(file, rules);
+        return matchingRule?.strategy;
+    }
     findMatchingRule(file, rules) {
         for (const rule of rules) {
             if (this.matches(rule, file.path, file.conflictType)) {
@@ -29315,10 +29319,6 @@ class ConflictAnalyzer {
             return false;
         }
         return !(rule.conflictType && rule.conflictType !== conflictType);
-    }
-    determineStrategy(file, rules) {
-        const matchingRule = this.findMatchingRule(file, rules);
-        return matchingRule?.strategy;
     }
 }
 
