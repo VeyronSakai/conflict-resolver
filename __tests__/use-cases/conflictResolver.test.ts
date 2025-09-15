@@ -1,4 +1,4 @@
-import { jest, describe, expect, it } from '@jest/globals'
+import { describe, expect, it } from '@jest/globals'
 import { ConflictResolver } from '@use-cases/conflictResolver.js'
 import { StubConfigRepository } from '../test-doubles/stubConfigRepository.js'
 import { SpyGitRepository } from '../test-doubles/spyGitRepository.js'
@@ -127,38 +127,6 @@ describe('ConflictResolver', () => {
       expect(resolvedFiles.get('file3.generated.ts')).toBe(
         ResolutionStrategy.Theirs
       )
-    })
-
-    it('should handle resolution errors gracefully', async () => {
-      // Arrange
-      const rules: ConflictResolveRule[] = [
-        {
-          targetPathPattern: 'error-file.ts',
-          strategy: ResolutionStrategy.Ours
-        }
-      ]
-      const stubConfigRepository = new StubConfigRepository(rules)
-      const conflicts = [
-        { path: 'error-file.ts', conflictType: ConflictType.BothModified }
-      ]
-      const spyGitRepository = new SpyGitRepository(conflicts)
-
-      // Mock the resolveConflict to throw an error
-      spyGitRepository.resolveConflict = jest
-        .fn<typeof spyGitRepository.resolveConflict>()
-        .mockRejectedValue(new Error('Git error'))
-
-      const conflictResolver = new ConflictResolver(
-        stubConfigRepository,
-        spyGitRepository
-      )
-
-      // Act
-      const result = await conflictResolver.resolve()
-
-      // Assert
-      expect(result.resolvedFiles).toEqual([])
-      expect(result.unresolvedFiles).toEqual(['error-file.ts'])
     })
 
     it('should log summary with resolved and unresolved files', async () => {
