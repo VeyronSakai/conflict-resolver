@@ -47,7 +47,6 @@ describe('ConflictResolver', () => {
           targetPathPattern: 'package-lock.json',
           strategy: ResolutionStrategy.Theirs
         },
-        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual }
       ]
       configRepositoryStub.setRules(rules)
 
@@ -153,7 +152,6 @@ describe('ConflictResolver', () => {
 
       const rules: ConflictResolveRule[] = [
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs },
-        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual }
       ]
       configRepositoryStub.setRules(rules)
 

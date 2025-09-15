@@ -26,11 +26,6 @@ export class ConfigRepositoryStub implements ConfigRepository {
       {
         targetPathPattern: '*.generated.ts',
         strategy: ResolutionStrategy.Theirs
-      },
-      {
-        targetPathPattern: 'src/**/*.ts',
-        conflictType: 'both-modified',
-        strategy: ResolutionStrategy.Manual
       }
     ]
     return new ConfigRepositoryStub(defaultRules)

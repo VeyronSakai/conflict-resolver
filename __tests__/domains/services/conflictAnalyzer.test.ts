@@ -18,7 +18,6 @@ describe('ConflictAnalyzer', () => {
         conflictType: ConflictType.BothModified
       }
       const rules: ConflictResolveRule[] = [
-        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual },
         {
           targetPathPattern: 'package-lock.json',
           strategy: ResolutionStrategy.Theirs
@@ -40,7 +39,7 @@ describe('ConflictAnalyzer', () => {
       const rules: ConflictResolveRule[] = [
         {
           targetPathPattern: 'src/**/*.ts',
-          strategy: ResolutionStrategy.Manual
+          strategy: ResolutionStrategy.Ours
         },
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
       ]
@@ -48,7 +47,7 @@ describe('ConflictAnalyzer', () => {
       const matchingRule = analyzer.findMatchingRule(file, rules)
 
       expect(matchingRule).toBeDefined()
-      expect(matchingRule?.strategy).toBe(ResolutionStrategy.Manual)
+      expect(matchingRule?.strategy).toBe(ResolutionStrategy.Ours)
     })
 
     it('should return undefined when no rule matches', () => {
@@ -57,7 +56,6 @@ describe('ConflictAnalyzer', () => {
         conflictType: ConflictType.BothModified
       }
       const rules: ConflictResolveRule[] = [
-        { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Manual },
         { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
       ]
 
@@ -75,7 +73,7 @@ describe('ConflictAnalyzer', () => {
         {
           targetPathPattern: '*.ts',
           conflictType: 'both-modified',
-          strategy: ResolutionStrategy.Manual
+          strategy: ResolutionStrategy.Ours
         },
         {
           targetPathPattern: '*.ts',
@@ -106,7 +104,7 @@ describe('ConflictAnalyzer', () => {
       expect(strategy).toBe(ResolutionStrategy.Theirs)
     })
 
-    it('should return Manual strategy when no rule matches', () => {
+    it('should return undefined when no rule matches', () => {
       const file: ConflictedFile = {
         path: 'unknown.xml',
         conflictType: ConflictType.BothModified
@@ -118,10 +116,10 @@ describe('ConflictAnalyzer', () => {
 
       const strategy = analyzer.determineStrategy(file, rules)
 
-      expect(strategy).toBe(ResolutionStrategy.Manual)
+      expect(strategy).toBeUndefined()
     })
 
-    it('should return Manual strategy when rules array is empty', () => {
+    it('should return undefined when rules array is empty', () => {
       const file: ConflictedFile = {
         path: 'test.ts',
         conflictType: ConflictType.BothModified
@@ -130,7 +128,7 @@ describe('ConflictAnalyzer', () => {
 
       const strategy = analyzer.determineStrategy(file, rules)
 
-      expect(strategy).toBe(ResolutionStrategy.Manual)
+      expect(strategy).toBeUndefined()
     })
   })
 })

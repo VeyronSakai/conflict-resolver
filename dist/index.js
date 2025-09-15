@@ -29301,13 +29301,6 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape;
 minimatch.unescape = unescape;
 
-var ResolutionStrategy;
-(function (ResolutionStrategy) {
-    ResolutionStrategy["Ours"] = "ours";
-    ResolutionStrategy["Theirs"] = "theirs";
-    ResolutionStrategy["Manual"] = "manual";
-})(ResolutionStrategy || (ResolutionStrategy = {}));
-
 class ConflictAnalyzer {
     findMatchingRule(file, rules) {
         for (const rule of rules) {
@@ -29325,7 +29318,7 @@ class ConflictAnalyzer {
     }
     determineStrategy(file, rules) {
         const matchingRule = this.findMatchingRule(file, rules);
-        return matchingRule?.strategy ?? ResolutionStrategy.Manual;
+        return matchingRule?.strategy;
     }
 }
 
@@ -29350,7 +29343,7 @@ class ConflictResolver {
         const unresolvedFiles = [];
         for (const file of conflictedFiles) {
             const strategy = this.conflictAnalyzer.determineStrategy(file, rules);
-            if (strategy === ResolutionStrategy.Manual) {
+            if (!strategy) {
                 coreExports.warning(`${file.path} requires manual resolution (conflict type: ${file.conflictType})`);
                 unresolvedFiles.push(file.path);
             }
@@ -32188,6 +32181,12 @@ var loader = {
 };
 var load                = loader.load;
 
+var ResolutionStrategy;
+(function (ResolutionStrategy) {
+    ResolutionStrategy["Ours"] = "ours";
+    ResolutionStrategy["Theirs"] = "theirs";
+})(ResolutionStrategy || (ResolutionStrategy = {}));
+
 class ConfigRepositoryImpl {
     configPath;
     constructor(configPath = '.github/conflict-resolver.yml') {
@@ -32264,10 +32263,6 @@ class GitRepositoryImpl {
         return conflictedFiles;
     }
     async resolveConflict(file, strategy) {
-        if (strategy === ResolutionStrategy.Manual) {
-            coreExports.info(`Skipping ${file.path} - requires manual resolution`);
-            return;
-        }
         switch (file.conflictType) {
             case ConflictType.DeletedByUs:
                 await this.resolveDeletedByUsConflict(file, strategy);
@@ -32328,9 +32323,6 @@ class GitRepositoryImpl {
                 await this.execGitCommand(['add', '--', file.path]);
                 coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
                 break;
-            case ResolutionStrategy.Manual:
-                // Manual resolution is handled at the resolveConflict level
-                break;
         }
     }
     async resolveDeletedByThemConflict(file, strategy) {
@@ -32344,9 +32336,6 @@ class GitRepositoryImpl {
                 // Their side deleted the file, so accept deletion
                 await this.execGitCommand(['rm', '--', file.path]);
                 coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
-                break;
-            case ResolutionStrategy.Manual:
-                // Manual resolution is handled at the resolveConflict level
                 break;
         }
     }
@@ -32376,9 +32365,6 @@ class GitRepositoryImpl {
                 return await this.execGitCommand(['show', `:2:${filePath}`]);
             case ResolutionStrategy.Theirs:
                 return await this.execGitCommand(['show', `:3:${filePath}`]);
-            case ResolutionStrategy.Manual:
-                // Manual resolution shouldn't reach here, but return empty string as fallback
-                return '';
             default:
                 // This should never happen due to TypeScript exhaustiveness checking
                 return '';
@@ -32425,8 +32411,7 @@ class GitRepositoryImpl {
                 '.dll',
                 '.so',
                 '.dylib',
-                '.bin',
-                '.dat'
+                '.bin'
             ];
             const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
             return binaryExtensions.includes(ext);

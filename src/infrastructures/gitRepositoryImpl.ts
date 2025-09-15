@@ -33,11 +33,6 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    if (strategy === ResolutionStrategy.Manual) {
-      core.info(`Skipping ${file.path} - requires manual resolution`)
-      return
-    }
-
     switch (file.conflictType) {
       case ConflictType.DeletedByUs:
         await this.resolveDeletedByUsConflict(file, strategy)
@@ -111,9 +106,6 @@ export class GitRepositoryImpl implements GitRepository {
         await this.execGitCommand(['add', '--', file.path])
         core.info(`Resolved ${file.path} by keeping file (theirs)`)
         break
-      case ResolutionStrategy.Manual:
-        // Manual resolution is handled at the resolveConflict level
-        break
     }
   }
 
@@ -131,9 +123,6 @@ export class GitRepositoryImpl implements GitRepository {
         // Their side deleted the file, so accept deletion
         await this.execGitCommand(['rm', '--', file.path])
         core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
-        break
-      case ResolutionStrategy.Manual:
-        // Manual resolution is handled at the resolveConflict level
         break
     }
   }
@@ -176,9 +165,6 @@ export class GitRepositoryImpl implements GitRepository {
         return await this.execGitCommand(['show', `:2:${filePath}`])
       case ResolutionStrategy.Theirs:
         return await this.execGitCommand(['show', `:3:${filePath}`])
-      case ResolutionStrategy.Manual:
-        // Manual resolution shouldn't reach here, but return empty string as fallback
-        return ''
       default:
         // This should never happen due to TypeScript exhaustiveness checking
         return ''
@@ -230,8 +216,7 @@ export class GitRepositoryImpl implements GitRepository {
         '.dll',
         '.so',
         '.dylib',
-        '.bin',
-        '.dat'
+        '.bin'
       ]
       const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
       return binaryExtensions.includes(ext)
