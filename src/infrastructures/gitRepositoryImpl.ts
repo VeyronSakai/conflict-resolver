@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import * as fs from 'fs'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
 import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
@@ -131,18 +130,7 @@ export class GitRepositoryImpl implements GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void> {
-    // Check if file is binary
-    const isBinary = await this.isBinaryFile(file.path)
-
-    if (isBinary) {
-      // For binary files, use git checkout to properly handle binary content
-      await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
-    } else {
-      // For text files, use the existing string-based approach
-      const content = await this.getFileContent(file.path, strategy)
-      fs.writeFileSync(file.path, content)
-    }
-
+    await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
     await this.execGitCommand(['add', '--', file.path])
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
@@ -154,78 +142,6 @@ export class GitRepositoryImpl implements GitRepository {
     await this.execGitCommand(['checkout', `--${strategy}`, '--', file.path])
     await this.execGitCommand(['add', '--', file.path])
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
-  }
-
-  private async getFileContent(
-    filePath: string,
-    strategy: ResolutionStrategy
-  ): Promise<string> {
-    switch (strategy) {
-      case ResolutionStrategy.Ours:
-        return await this.execGitCommand(['show', `:2:${filePath}`])
-      case ResolutionStrategy.Theirs:
-        return await this.execGitCommand(['show', `:3:${filePath}`])
-      default:
-        // This should never happen due to TypeScript exhaustiveness checking
-        return ''
-    }
-  }
-
-  private async isBinaryFile(filePath: string): Promise<boolean> {
-    try {
-      // Use git diff to check if file is binary
-      // Git will report binary files in the diff output
-      const output = await this.execGitCommand([
-        'diff',
-        '--numstat',
-        'HEAD',
-        '--',
-        filePath
-      ])
-
-      // Binary files show as "-\t-\t" in numstat output
-      if (output.includes('-\t-\t')) {
-        return true
-      }
-
-      // Also check using git's attributes
-      const checkBinaryOutput = await this.execGitCommand([
-        'check-attr',
-        'binary',
-        '--',
-        filePath
-      ])
-
-      if (checkBinaryOutput.includes('binary: set')) {
-        return true
-      }
-
-      // Check common binary file extensions as fallback
-      const binaryExtensions = [
-        '.png',
-        '.jpg',
-        '.jpeg',
-        '.gif',
-        '.bmp',
-        '.ico',
-        '.pdf',
-        '.zip',
-        '.tar',
-        '.gz',
-        '.exe',
-        '.dll',
-        '.so',
-        '.dylib',
-        '.bin'
-      ]
-      const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
-      return binaryExtensions.includes(ext)
-    } catch {
-      // If detection fails, check file extension as fallback
-      const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
-      const binaryExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico']
-      return binaryExtensions.includes(ext)
-    }
   }
 
   private async execGitCommand(args: string[]): Promise<string> {
