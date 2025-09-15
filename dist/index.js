@@ -32291,22 +32291,22 @@ class GitRepositoryImpl {
             '--porcelain',
             filePath
         ]);
-        if (statusOutput.includes('AA')) {
-            return ConflictType.BothAdded;
-        }
-        else if (statusOutput.includes('DU')) {
-            return ConflictType.DeletedByUs;
-        }
-        else if (statusOutput.includes('UD')) {
-            return ConflictType.DeletedByThem;
-        }
-        else if (statusOutput.includes('UU')) {
-            return ConflictType.BothModified;
-        }
-        else {
-            // AU, UA, and DD are not conflicts
-            // If we somehow get here, it's an unexpected status
-            throw new Error(`Unexpected git status for ${filePath}: ${statusOutput.trim()}`);
+        // Git status --porcelain format: XY filename
+        // The first two characters are the status code
+        const statusCode = statusOutput.substring(0, 2);
+        switch (statusCode) {
+            case 'AA':
+                return ConflictType.BothAdded;
+            case 'DU':
+                return ConflictType.DeletedByUs;
+            case 'UD':
+                return ConflictType.DeletedByThem;
+            case 'UU':
+                return ConflictType.BothModified;
+            default:
+                // AU, UA, and DD are not conflicts
+                // If we somehow get here, it's an unexpected status
+                throw new Error(`Unexpected git status for ${filePath}: ${statusOutput.trim()}`);
         }
     }
     async handleDeletedConflict(file, strategy) {
