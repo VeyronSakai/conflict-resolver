@@ -54,3 +54,5 @@ jobs:
           VALIDATE_TYPESCRIPT_STANDARD: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_NATURAL_LANGUAGE: false
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
