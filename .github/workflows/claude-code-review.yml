@@ -38,12 +38,12 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@7ed3b616d54fd445625b77b219342949146bae9e
+        uses: anthropics/claude-code-action@90d189f3abd48655ec3e2c67c552cc23e92d6028
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-          # Direct prompt for automated review (no @claude mention needed)
-          direct_prompt: |
+          # Prompt for automated review (no @claude mention needed)
+          prompt: |
             Please review this pull request and provide feedback on:
             - Code quality and best practices
             - Potential bugs or issues
@@ -56,7 +56,7 @@ jobs:
           use_sticky_comment: true
 
           # Optional: Customize review based on file types
-          # direct_prompt: |
+          # prompt: |
           #   Review this PR focusing on:
           #   - For TypeScript files: Type safety and proper interface usage
           #   - For API endpoints: Security, input validation, and error handling
@@ -64,13 +64,13 @@ jobs:
           #   - For tests: Coverage, edge cases, and test quality
 
           # Optional: Different prompts for different authors
-          # direct_prompt: |
+          # prompt: |
           #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' &&
           #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
           #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
 
-          allowed_tools: |
-            "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
+          claude_args: |
+            --allowed-tools "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
 
           # Optional: Skip review for certain conditions
           # if: |
