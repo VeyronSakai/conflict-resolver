@@ -32251,7 +32251,7 @@ var ConflictType;
     ConflictType["BothAdded"] = "both-added";
     ConflictType["DeletedByBoth"] = "deleted-by-both";
     ConflictType["AddedByUs"] = "added-by-us";
-    ConflictType["AddedByThem"] = "added-by-them"; // UA
+    ConflictType["AddedByThem"] = "added-by-them"; // UA (rename/rename - not supported for auto-resolution)
 })(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
@@ -32274,20 +32274,11 @@ class GitRepositoryImpl {
     }
     async resolveConflict(file, strategy) {
         switch (file.conflictType) {
-            case ConflictType.AddedByThem:
-                await this.resolveAddedByThemConflict(file, strategy);
-                break;
-            case ConflictType.AddedByUs:
-                await this.resolveAddedByUsConflict(file, strategy);
-                break;
             case ConflictType.BothAdded:
                 await this.resolveBothAddedConflict(file, strategy);
                 break;
             case ConflictType.BothModified:
                 await this.resolveBothModifiedConflict(file, strategy);
-                break;
-            case ConflictType.DeletedByBoth:
-                await this.resolveDeletedByBothConflict(file, strategy);
                 break;
             case ConflictType.DeletedByUs:
                 await this.resolveDeletedByUsConflict(file, strategy);
@@ -32360,41 +32351,6 @@ class GitRepositoryImpl {
                 break;
         }
     }
-    async resolveDeletedByBothConflict(file, strategy) {
-        // Both sides deleted the file, so we just need to accept the deletion
-        // Strategy doesn't matter here as both sides agree on deletion
-        // Use git add -u to stage the deletion (file is already deleted from working directory)
-        await this.gitStageDeletedFile(file.path);
-        coreExports.info(`Resolved ${file.path} by accepting deletion from both sides (${strategy})`);
-    }
-    async resolveAddedByUsConflict(file, strategy) {
-        switch (strategy) {
-            case ResolutionStrategy.Ours:
-                // Our side added the file, so keep it
-                await this.gitAddFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping our added file (ours)`);
-                break;
-            case ResolutionStrategy.Theirs:
-                // Their side doesn't have this file, so remove it
-                await this.gitRemoveFile(file.path);
-                coreExports.info(`Resolved ${file.path} by removing our added file (theirs)`);
-                break;
-        }
-    }
-    async resolveAddedByThemConflict(file, strategy) {
-        switch (strategy) {
-            case ResolutionStrategy.Ours:
-                // Our side doesn't have this file, so remove it
-                await this.gitRemoveFile(file.path);
-                coreExports.info(`Resolved ${file.path} by removing their added file (ours)`);
-                break;
-            case ResolutionStrategy.Theirs:
-                // Their side added the file, so keep it
-                await this.gitAddFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping their added file (theirs)`);
-                break;
-        }
-    }
     async resolveBothAddedConflict(file, strategy) {
         await this.gitCheckoutFile(file.path, strategy);
         await this.gitAddFile(file.path);
@@ -32410,12 +32366,6 @@ class GitRepositoryImpl {
     }
     async gitRemoveFile(filePath) {
         await this.execGitCommand(['rm', '--', filePath]);
-    }
-    async gitStageDeletedFile(filePath) {
-        // Use 'git reset' to resolve DD (deleted-by-both) conflicts
-        // This resets the index for the file and resolves the conflict
-        // Reference: https://stackoverflow.com/questions/44882464/git-conflict-both-deleted
-        await this.execGitCommand(['reset', '--', filePath]);
     }
     async gitCheckoutFile(filePath, strategy) {
         await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath]);
