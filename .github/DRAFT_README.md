@@ -172,11 +172,11 @@ The action recognizes the following Git conflict states:
 The following conflict types are **not supported** for automatic resolution and
 require manual intervention:
 
-| Type                | Status Code | Description                                            |
-| ------------------- | ----------- | ------------------------------------------------------ |
-| `deleted-by-both`   | DD          | Original file renamed differently on both branches     |
-| `added-by-us`       | AU          | File renamed on our branch (rename/rename conflict)    |
-| `added-by-them`     | UA          | File renamed on their branch (rename/rename conflict)  |
+| Type              | Status Code | Description                                           |
+| ----------------- | ----------- | ----------------------------------------------------- |
+| `deleted-by-both` | DD          | Original file renamed differently on both branches    |
+| `added-by-us`     | AU          | File renamed on our branch (rename/rename conflict)   |
+| `added-by-them`   | UA          | File renamed on their branch (rename/rename conflict) |
 
 **Why rename/rename conflicts are not supported:**
 
@@ -187,8 +187,8 @@ different names. These conflicts require human judgment to decide:
 - Whether to keep both renamed files
 - How to merge the content of the renamed files
 
-When the action encounters these conflict types, it logs an error and leaves
-the files for manual resolution.
+When the action encounters these conflict types, it logs an error and leaves the
+files for manual resolution.
 
 ## Configuration Rules
 
