@@ -32288,8 +32288,8 @@ class GitRepositoryImpl {
                 await this.resolveDeletedByThemConflict(file, strategy);
                 break;
             default:
-                // Unsupported conflict type - log warning and skip resolution
-                coreExports.warning(`Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`);
+                // Unsupported conflict type - log error and skip resolution
+                coreExports.error(`Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`);
                 break;
         }
     }
@@ -32322,8 +32322,8 @@ class GitRepositoryImpl {
             case 'UU':
                 return ConflictType.BothModified;
             default:
-                // Unknown conflict type - log warning and continue
-                coreExports.warning(`Unknown git status for ${filePath}: ${statusOutput.trim()}. This conflict type is not supported and will require manual resolution.`);
+                // Unknown conflict type - log error and continue
+                coreExports.error(`Unknown git status for ${filePath}: ${statusOutput.trim()}. This conflict type is not supported and will require manual resolution.`);
                 return ConflictType.Unknown;
         }
     }
