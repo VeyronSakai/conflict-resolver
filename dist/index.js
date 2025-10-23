@@ -32251,7 +32251,8 @@ var ConflictType;
     ConflictType["BothAdded"] = "both-added";
     ConflictType["DeletedByBoth"] = "deleted-by-both";
     ConflictType["AddedByUs"] = "added-by-us";
-    ConflictType["AddedByThem"] = "added-by-them"; // UA (rename/rename - not supported for auto-resolution)
+    ConflictType["AddedByThem"] = "added-by-them";
+    ConflictType["Unknown"] = "unknown"; // Unknown conflict type - not supported for auto-resolution
 })(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
@@ -32287,7 +32288,9 @@ class GitRepositoryImpl {
                 await this.resolveDeletedByThemConflict(file, strategy);
                 break;
             default:
-                throw new Error(`Unexpected conflict type for ${file.path}: ${file.conflictType}`);
+                // Unsupported conflict type - log warning and skip resolution
+                coreExports.warning(`Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`);
+                break;
         }
     }
     async stageFile(filePath) {
@@ -32319,8 +32322,9 @@ class GitRepositoryImpl {
             case 'UU':
                 return ConflictType.BothModified;
             default:
-                // If we somehow get here, it's an unexpected status
-                throw new Error(`Unexpected git status for ${filePath}: ${statusOutput.trim()}`);
+                // Unknown conflict type - log warning and continue
+                coreExports.warning(`Unknown git status for ${filePath}: ${statusOutput.trim()}. This conflict type is not supported and will require manual resolution.`);
+                return ConflictType.Unknown;
         }
     }
     async resolveDeletedByUsConflict(file, strategy) {

@@ -46,9 +46,11 @@ export class GitRepositoryImpl implements GitRepository {
         await this.resolveDeletedByThemConflict(file, strategy)
         break
       default:
-        throw new Error(
-          `Unexpected conflict type for ${file.path}: ${file.conflictType}`
+        // Unsupported conflict type - log warning and skip resolution
+        core.warning(
+          `Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`
         )
+        break
     }
   }
 
@@ -84,10 +86,11 @@ export class GitRepositoryImpl implements GitRepository {
       case 'UU':
         return ConflictType.BothModified
       default:
-        // If we somehow get here, it's an unexpected status
-        throw new Error(
-          `Unexpected git status for ${filePath}: ${statusOutput.trim()}`
+        // Unknown conflict type - log warning and continue
+        core.warning(
+          `Unknown git status for ${filePath}: ${statusOutput.trim()}. This conflict type is not supported and will require manual resolution.`
         )
+        return ConflictType.Unknown
     }
   }
 
