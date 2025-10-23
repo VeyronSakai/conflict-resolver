@@ -32412,9 +32412,10 @@ class GitRepositoryImpl {
         await this.execGitCommand(['rm', '--', filePath]);
     }
     async gitStageDeletedFile(filePath) {
-        // Use 'git add -u' to stage deleted files
-        // The -u flag updates already tracked files, including deletions
-        await this.execGitCommand(['add', '-u', '--', filePath]);
+        // Use 'git rm --cached' to remove the file from index only
+        // This is needed for DD (deleted-by-both) conflicts where the file
+        // is already deleted from working directory
+        await this.execGitCommand(['rm', '--cached', '--', filePath]);
     }
     async gitCheckoutFile(filePath, strategy) {
         await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath]);

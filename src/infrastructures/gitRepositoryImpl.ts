@@ -212,9 +212,10 @@ export class GitRepositoryImpl implements GitRepository {
   }
 
   private async gitStageDeletedFile(filePath: string): Promise<void> {
-    // Use 'git add -u' to stage deleted files
-    // The -u flag updates already tracked files, including deletions
-    await this.execGitCommand(['add', '-u', '--', filePath])
+    // Use 'git rm --cached' to remove the file from index only
+    // This is needed for DD (deleted-by-both) conflicts where the file
+    // is already deleted from working directory
+    await this.execGitCommand(['rm', '--cached', '--', filePath])
   }
 
   private async gitCheckoutFile(
