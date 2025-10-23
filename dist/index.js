@@ -32248,7 +32248,8 @@ var ConflictType;
     ConflictType["BothModified"] = "both-modified";
     ConflictType["DeletedByUs"] = "deleted-by-us";
     ConflictType["DeletedByThem"] = "deleted-by-them";
-    ConflictType["BothAdded"] = "both-added"; // AA
+    ConflictType["BothAdded"] = "both-added";
+    ConflictType["DeletedByBoth"] = "deleted-by-both"; // DD
 })(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
@@ -32309,8 +32310,9 @@ class GitRepositoryImpl {
                 return ConflictType.DeletedByThem;
             case 'UU':
                 return ConflictType.BothModified;
+            case 'DD':
+                return ConflictType.DeletedByBoth;
             default:
-                // AU, UA, and DD are not conflicts
                 // If we somehow get here, it's an unexpected status
                 throw new Error(`Unexpected git status for ${filePath}: ${statusOutput.trim()}`);
         }

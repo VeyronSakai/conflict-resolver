@@ -62,6 +62,13 @@ rules:
     strategy: 'theirs'
     conflict_type: 'both-added'
 
+  # Text DeletedByBoth (rename/rename conflict)
+  # When both branches rename the same file, Git creates a DD conflict for the original file
+  # Use ours strategy to resolve the DD conflict (accept deletion from both sides)
+  - paths: '__tests__/test-conflict-files/rename.txt'
+    strategy: 'ours'
+    conflict_type: 'deleted-by-both'
+
   # Note: Files without rules (undefined-rule.txt)
   # will remain unresolved with conflict markers
 
