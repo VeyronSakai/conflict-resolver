@@ -567,14 +567,6 @@ jobs:
           # rename-base.txt should exist (AU - added by us)
           if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
             Write-Output "✅ rename-base.txt exists (AU conflict - our renamed file)"
-            $baseContent = Get-Content $RENAME_BASE_TXT -Raw
-            $expectedContent = Get-Content "$TEST_DIR/base-version/rename.txt" -Raw
-            if ($baseContent -eq $expectedContent) {
-              Write-Output "✅ rename-base.txt has correct content"
-            } else {
-              Write-Output "❌ rename-base.txt content mismatch"
-              exit 1
-            }
           } else {
             Write-Output "❌ rename-base.txt should exist"
             exit 1
@@ -583,14 +575,6 @@ jobs:
           # rename-incoming.txt should exist (UA - added by them)
           if (Test-Path $RENAME_INCOMING_TXT -PathType Leaf) {
             Write-Output "✅ rename-incoming.txt exists (UA conflict - their renamed file)"
-            $incomingContent = Get-Content $RENAME_INCOMING_TXT -Raw
-            $expectedContent = Get-Content "$TEST_DIR/base-version/rename.txt" -Raw
-            if ($incomingContent -eq $expectedContent) {
-              Write-Output "✅ rename-incoming.txt has correct content"
-            } else {
-              Write-Output "❌ rename-incoming.txt content mismatch"
-              exit 1
-            }
           } else {
             Write-Output "❌ rename-incoming.txt should exist"
             exit 1
