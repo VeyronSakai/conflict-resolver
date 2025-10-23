@@ -1,0 +1,2 @@
+This file will be renamed differently on both branches to create a rename/rename conflict.
+The original file will show as DD (deleted-by-both) status.

@@ -78,15 +78,25 @@ jobs:
           # Create base branch with test files
           git switch -C "test-base-$env:RUN_ID"
 
+          # Add rename.txt to create common ancestor for rename/rename conflict
+          # This will create DD, AU, UA conflicts which are NOT supported for auto-resolution
+          Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
+          git add "$TEST_DIR/rename.txt"
+          git commit -m "Add rename.txt as common ancestor"
+
           # Create incoming changes branch
           git switch -C "test-incoming-$env:RUN_ID"
 
           # Copy incoming changes files (for both-modified and both-added)
           Copy-Item "$TEST_DIR/incoming-changes/*" "$TEST_DIR/" -Force
-          
+
           # Remove files that should be deleted on their side (deleted-by-them)
           Remove-Item "$TEST_DIR/deleted-by-them.txt" -Force -ErrorAction SilentlyContinue
           Remove-Item "$TEST_DIR/deleted-by-them.png" -Force -ErrorAction SilentlyContinue
+
+          # Rename rename.txt to create rename/rename conflict (incoming side)
+          # This creates DD, AU, UA conflicts which should remain unresolved
+          git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-incoming.txt"
 
           git add "$TEST_DIR/"
           git commit -m "Incoming changes"
@@ -101,6 +111,10 @@ jobs:
           Remove-Item "$TEST_DIR/deleted-by-us.txt" -Force -ErrorAction SilentlyContinue
           Remove-Item "$TEST_DIR/deleted-by-us.png" -Force -ErrorAction SilentlyContinue
 
+          # Rename rename.txt to create rename/rename conflict (base side)
+          # This creates DD, AU, UA conflicts which should remain unresolved
+          git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
+
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
 
@@ -108,7 +122,7 @@ jobs:
           Write-Output "::notice::Attempting to merge incoming changes into base branch..."
           try {
             git merge "test-incoming-$env:RUN_ID" --no-ff --no-commit
-          } catch { 
+          } catch {
             # Merge conflict is expected
           }
 
@@ -126,10 +140,16 @@ jobs:
           git status --porcelain | Select-String "^UD"
           Write-Output "Both added (AA):"
           git status --porcelain | Select-String "^AA"
+          Write-Output "Deleted by both (DD):"
+          git status --porcelain | Select-String "^DD"
+          Write-Output "Added by us (AU):"
+          git status --porcelain | Select-String "^AU"
+          Write-Output "Added by them (UA):"
+          git status --porcelain | Select-String "^UA"
           Write-Output "::endgroup::"
 
           # Save conflict state
-          if (git status --porcelain | Select-String -Quiet "^(UU|DU|UD|AA)") {
+          if (git status --porcelain | Select-String -Quiet "^(UU|DU|UD|AA|DD|AU|UA)") {
             "has_conflicts=true" | Out-File -Append $env:GITHUB_OUTPUT
             Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
           } else {
@@ -251,7 +271,7 @@ jobs:
             Write-Output "❌ both-added.png should have been resolved"
             exit 1
           }
-          
+
           # === Unresolved files ===
           Write-Output "`n=== Verifying Unresolved files ==="
 
@@ -270,6 +290,14 @@ jobs:
             Write-Output "❌ undefined-rule.txt should remain unresolved"
             exit 1
           }
+
+          # === Rename/Rename conflicts (DD, AU, UA) - NOT supported ===
+          Write-Output "`n=== Verifying Rename/Rename conflicts remain unresolved ==="
+
+          # Note: rename/rename creates DD (original), AU (ours), UA (theirs) conflicts
+          # These conflict types are not supported for auto-resolution
+          # We don't check for specific unresolved files here because DD/AU/UA
+          # are not supported and will cause the action to fail if encountered
 
           # === Verify conflict_type mismatch behavior ===
           Write-Output "`n=== Verifying conflict_type mismatch behavior ==="
@@ -426,7 +454,7 @@ jobs:
           }
           
           Write-Output "`n=== Verifying Both-Added file contents ==="
-          
+
           # Verify both-added.txt has incoming changes content (theirs strategy)
           if (Test-Path $BOTH_ADDED_TXT) {
             $bothAddedContent = Get-Content "$BOTH_ADDED_TXT" -Raw
@@ -441,17 +469,17 @@ jobs:
             Write-Output "❌ both-added.txt should exist"
             exit 1
           }
-          
+
           # Verify both-added.png has incoming changes content (theirs strategy)
           if (Test-Path $BOTH_ADDED_PNG) {
             $bothAddedPngSize = (Get-Item "$BOTH_ADDED_PNG").Length
             $expectedBothAddedPngSize = (Get-Item "$TEST_DIR/incoming-changes/both-added.png").Length
-            
+
             # Check PNG header to ensure it's a valid PNG file
             $pngBytes = [System.IO.File]::ReadAllBytes($BOTH_ADDED_PNG)
             $expectedHeader = @(137, 80, 78, 71, 13, 10, 26, 10)  # PNG signature
             $isValidPng = $true
-            
+
             if ($pngBytes.Length -ge 8) {
               for ($i = 0; $i -lt 8; $i++) {
                 if ($pngBytes[$i] -ne $expectedHeader[$i]) {
@@ -462,7 +490,7 @@ jobs:
             } else {
               $isValidPng = $false
             }
-            
+
             if (-not $isValidPng) {
               Write-Output "❌ both-added.png is not a valid PNG file after resolution"
               $actualHeader = $pngBytes[0..7] -join ', '
@@ -470,7 +498,7 @@ jobs:
               Write-Output "Actual header: $actualHeader"
               exit 1
             }
-            
+
             if ($bothAddedPngSize -eq $expectedBothAddedPngSize) {
               Write-Output "✅ both-added.png has correct incoming changes ($expectedBothAddedPngSize bytes - theirs)"
             } else {
@@ -491,6 +519,9 @@ jobs:
           $TEST_DIR = "__tests__/test-conflict-files"
           $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
           $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
+          $RENAME_TXT = "$TEST_DIR/rename.txt"
+          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
+          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
 
           Write-Output "::group::Content verification for unresolved files"
 
@@ -519,6 +550,33 @@ jobs:
             Write-Output "✅ test.config.yml contains both versions' contents in conflict"
           } else {
             Write-Output "❌ test.config.yml missing expected conflict content"
+            exit 1
+          }
+
+          # === Verify rename/rename conflict files ===
+          Write-Output "`n=== Verifying rename/rename conflict files ==="
+
+          # rename.txt should NOT exist (DD - deleted by both)
+          if (-not (Test-Path $RENAME_TXT -PathType Leaf)) {
+            Write-Output "✅ rename.txt does not exist (DD conflict - deleted by both)"
+          } else {
+            Write-Output "❌ rename.txt should not exist"
+            exit 1
+          }
+
+          # rename-base.txt should exist (AU - added by us)
+          if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
+            Write-Output "✅ rename-base.txt exists (AU conflict - our renamed file)"
+          } else {
+            Write-Output "❌ rename-base.txt should exist"
+            exit 1
+          }
+
+          # rename-incoming.txt should exist (UA - added by them)
+          if (Test-Path $RENAME_INCOMING_TXT -PathType Leaf) {
+            Write-Output "✅ rename-incoming.txt exists (UA conflict - their renamed file)"
+          } else {
+            Write-Output "❌ rename-incoming.txt should exist"
             exit 1
           }
 

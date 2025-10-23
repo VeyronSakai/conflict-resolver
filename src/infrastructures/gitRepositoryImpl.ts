@@ -33,22 +33,24 @@ export class GitRepositoryImpl implements GitRepository {
     strategy: ResolutionStrategy
   ): Promise<void> {
     switch (file.conflictType) {
-      case ConflictType.DeletedByUs:
-        await this.resolveDeletedByUsConflict(file, strategy)
-        break
-      case ConflictType.DeletedByThem:
-        await this.resolveDeletedByThemConflict(file, strategy)
-        break
       case ConflictType.BothAdded:
         await this.resolveBothAddedConflict(file, strategy)
         break
       case ConflictType.BothModified:
         await this.resolveBothModifiedConflict(file, strategy)
         break
+      case ConflictType.DeletedByUs:
+        await this.resolveDeletedByUsConflict(file, strategy)
+        break
+      case ConflictType.DeletedByThem:
+        await this.resolveDeletedByThemConflict(file, strategy)
+        break
       default:
-        throw new Error(
-          `Unexpected conflict type for ${file.path}: ${file.conflictType}`
+        // Unsupported conflict type - log error and skip resolution
+        core.error(
+          `Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`
         )
+        break
     }
   }
 
@@ -71,17 +73,21 @@ export class GitRepositoryImpl implements GitRepository {
     switch (statusCode) {
       case 'AA':
         return ConflictType.BothAdded
+      case 'AU':
+        return ConflictType.AddedByUs
+      case 'DD':
+        return ConflictType.DeletedByBoth
       case 'DU':
         return ConflictType.DeletedByUs
+      case 'UA':
+        return ConflictType.AddedByThem
       case 'UD':
         return ConflictType.DeletedByThem
       case 'UU':
         return ConflictType.BothModified
       default:
-        // AU, UA, and DD are not conflicts
-        // If we somehow get here, it's an unexpected status
         throw new Error(
-          `Unexpected git status for ${filePath}: ${statusOutput.trim()}`
+          `Unknown git status for ${filePath}: ${statusOutput.trim()}`
         )
     }
   }

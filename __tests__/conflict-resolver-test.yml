@@ -62,6 +62,12 @@ rules:
     strategy: 'theirs'
     conflict_type: 'both-added'
 
+  # Note: rename/rename conflicts (DD, AU, UA) are NOT supported for auto-resolution
+  # If you encounter rename/rename conflicts, they will remain unresolved
+  # - DD (deleted-by-both): Original file that was renamed differently on both branches
+  # - AU (added-by-us): File renamed on our branch
+  # - UA (added-by-them): File renamed on their branch
+
   # Note: Files without rules (undefined-rule.txt)
   # will remain unresolved with conflict markers
 
