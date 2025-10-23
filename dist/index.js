@@ -32412,10 +32412,10 @@ class GitRepositoryImpl {
         await this.execGitCommand(['rm', '--', filePath]);
     }
     async gitStageDeletedFile(filePath) {
-        // Use 'git rm --cached' to remove the file from index only
-        // This is needed for DD (deleted-by-both) conflicts where the file
-        // is already deleted from working directory
-        await this.execGitCommand(['rm', '--cached', '--', filePath]);
+        // Use 'git reset' to resolve DD (deleted-by-both) conflicts
+        // This resets the index for the file and resolves the conflict
+        // Reference: https://stackoverflow.com/questions/44882464/git-conflict-both-deleted
+        await this.execGitCommand(['reset', '--', filePath]);
     }
     async gitCheckoutFile(filePath, strategy) {
         await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath]);
