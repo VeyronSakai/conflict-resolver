@@ -86,11 +86,9 @@ export class GitRepositoryImpl implements GitRepository {
       case 'UU':
         return ConflictType.BothModified
       default:
-        // Unknown conflict type - log error and continue
-        core.error(
-          `Unknown git status for ${filePath}: ${statusOutput.trim()}. This conflict type is not supported and will require manual resolution.`
+        throw new Error(
+          `Unknown git status for ${filePath}: ${statusOutput.trim()}`
         )
-        return ConflictType.Unknown
     }
   }
 

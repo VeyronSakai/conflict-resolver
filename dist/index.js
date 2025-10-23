@@ -32322,9 +32322,7 @@ class GitRepositoryImpl {
             case 'UU':
                 return ConflictType.BothModified;
             default:
-                // Unknown conflict type - log error and continue
-                coreExports.error(`Unknown git status for ${filePath}: ${statusOutput.trim()}. This conflict type is not supported and will require manual resolution.`);
-                return ConflictType.Unknown;
+                throw new Error(`Unknown git status for ${filePath}: ${statusOutput.trim()}`);
         }
     }
     async resolveDeletedByUsConflict(file, strategy) {
