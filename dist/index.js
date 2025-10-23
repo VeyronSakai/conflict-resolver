@@ -32363,8 +32363,8 @@ class GitRepositoryImpl {
     async resolveDeletedByBothConflict(file, strategy) {
         // Both sides deleted the file, so we just need to accept the deletion
         // Strategy doesn't matter here as both sides agree on deletion
-        // Use git add instead of git rm because the file is already deleted from working directory
-        await this.gitAddFile(file.path);
+        // Use git add -u to stage the deletion (file is already deleted from working directory)
+        await this.gitStageDeletedFile(file.path);
         coreExports.info(`Resolved ${file.path} by accepting deletion from both sides (${strategy})`);
     }
     async resolveAddedByUsConflict(file, strategy) {
@@ -32410,6 +32410,11 @@ class GitRepositoryImpl {
     }
     async gitRemoveFile(filePath) {
         await this.execGitCommand(['rm', '--', filePath]);
+    }
+    async gitStageDeletedFile(filePath) {
+        // Use 'git add -u' to stage deleted files
+        // The -u flag updates already tracked files, including deletions
+        await this.execGitCommand(['add', '-u', '--', filePath]);
     }
     async gitCheckoutFile(filePath, strategy) {
         await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath]);

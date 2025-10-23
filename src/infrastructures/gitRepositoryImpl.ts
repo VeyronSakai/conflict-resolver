@@ -142,8 +142,8 @@ export class GitRepositoryImpl implements GitRepository {
   ): Promise<void> {
     // Both sides deleted the file, so we just need to accept the deletion
     // Strategy doesn't matter here as both sides agree on deletion
-    // Use git add instead of git rm because the file is already deleted from working directory
-    await this.gitAddFile(file.path)
+    // Use git add -u to stage the deletion (file is already deleted from working directory)
+    await this.gitStageDeletedFile(file.path)
     core.info(
       `Resolved ${file.path} by accepting deletion from both sides (${strategy})`
     )
@@ -209,6 +209,12 @@ export class GitRepositoryImpl implements GitRepository {
 
   private async gitRemoveFile(filePath: string): Promise<void> {
     await this.execGitCommand(['rm', '--', filePath])
+  }
+
+  private async gitStageDeletedFile(filePath: string): Promise<void> {
+    // Use 'git add -u' to stage deleted files
+    // The -u flag updates already tracked files, including deletions
+    await this.execGitCommand(['add', '-u', '--', filePath])
   }
 
   private async gitCheckoutFile(
