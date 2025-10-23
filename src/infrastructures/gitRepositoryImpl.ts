@@ -71,14 +71,19 @@ export class GitRepositoryImpl implements GitRepository {
     switch (statusCode) {
       case 'AA':
         return ConflictType.BothAdded
+      case 'AU':
+        return ConflictType.AddedByUs
+      case 'DD':
+        return ConflictType.DeletedByBoth
       case 'DU':
         return ConflictType.DeletedByUs
+      case 'UA':
+        return ConflictType.AddedByThem
       case 'UD':
         return ConflictType.DeletedByThem
       case 'UU':
         return ConflictType.BothModified
       default:
-        // AU, UA, and DD are not conflicts
         // If we somehow get here, it's an unexpected status
         throw new Error(
           `Unexpected git status for ${filePath}: ${statusOutput.trim()}`
