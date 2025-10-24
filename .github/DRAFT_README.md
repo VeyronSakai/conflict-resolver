@@ -140,9 +140,11 @@ rules:
 - `both-added` (AA): Both sides added the same file
 - `deleted-by-us` (DU): We deleted, they modified
 - `deleted-by-them` (UD): They deleted, we modified
-- `deleted-by-both` (DD): Both sides deleted the file (typically in rename/rename scenarios)
+- `deleted-by-both` (DD): Both sides deleted the file (typically in
+  rename/rename scenarios)
 - `added-by-us` (AU): We added the file (typically in rename/rename scenarios)
-- `added-by-them` (UA): They added the file (typically in rename/rename scenarios)
+- `added-by-them` (UA): They added the file (typically in rename/rename
+  scenarios)
 
 ## Inputs
 
@@ -163,23 +165,28 @@ The action automatically resolves all Git conflict types:
 
 ### Supported Conflict Types
 
-| Type              | Status Code | Description                                                      |
-| ----------------- | ----------- | ---------------------------------------------------------------- |
-| `both-modified`   | UU          | Both sides modified the file                                     |
-| `both-added`      | AA          | Both sides added the same file                                   |
-| `deleted-by-us`   | DU          | We deleted, they modified                                        |
-| `deleted-by-them` | UD          | They deleted, we modified                                        |
+| Type              | Status Code | Description                                                        |
+| ----------------- | ----------- | ------------------------------------------------------------------ |
+| `both-modified`   | UU          | Both sides modified the file                                       |
+| `both-added`      | AA          | Both sides added the same file                                     |
+| `deleted-by-us`   | DU          | We deleted, they modified                                          |
+| `deleted-by-them` | UD          | They deleted, we modified                                          |
 | `deleted-by-both` | DD          | Both sides deleted the file (typically in rename/rename scenarios) |
-| `added-by-us`     | AU          | We added the file (typically in rename/rename scenarios)         |
-| `added-by-them`   | UA          | They added the file (typically in rename/rename scenarios)       |
+| `added-by-us`     | AU          | We added the file (typically in rename/rename scenarios)           |
+| `added-by-them`   | UA          | They added the file (typically in rename/rename scenarios)         |
 
 **Note on rename/rename conflicts:**
 
-Rename/rename conflicts (`deleted-by-both`, `added-by-us`, `added-by-them`) occur when both branches rename the same file to different names. The action can automatically resolve these based on your configured strategy:
+Rename/rename conflicts (`deleted-by-both`, `added-by-us`, `added-by-them`)
+occur when both branches rename the same file to different names. The action can
+automatically resolve these based on your configured strategy:
+
 - `ours`: Keep our renamed file and remove theirs
 - `theirs`: Keep their renamed file and remove ours
 
-However, be aware that automatic resolution of rename conflicts may result in data loss if both renamed files contain important changes. Review the resolution results carefully.
+However, be aware that automatic resolution of rename conflicts may result in
+data loss if both renamed files contain important changes. Review the resolution
+results carefully.
 
 ## Configuration Rules
 
