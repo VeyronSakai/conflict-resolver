@@ -32287,7 +32287,7 @@ class GitRepositoryImpl {
                 await this.resolveDeletedByThemConflict(file, strategy);
                 break;
             case ConflictType.DeletedByBoth:
-                await this.resolveDeletedByBothConflict(file, strategy);
+                await this.resolveDeletedByBothConflict(file);
                 break;
             case ConflictType.AddedByUs:
                 await this.resolveAddedByUsConflict(file, strategy);
@@ -32361,7 +32361,7 @@ class GitRepositoryImpl {
                 break;
         }
     }
-    async resolveDeletedByBothConflict(file, _strategy) {
+    async resolveDeletedByBothConflict(file) {
         // When both sides deleted the file (typically in rename/rename scenarios),
         // we accept the deletion regardless of the strategy
         await this.gitAddFile(file.path);
