@@ -32421,8 +32421,7 @@ class GitRepositoryImpl {
                 stdout: (data) => {
                     output += data.toString();
                 }
-            },
-            silent: true
+            }
         };
         const exitCode = await execExports.exec('git', args, options);
         if (exitCode !== 0) {

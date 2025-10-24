@@ -222,8 +222,7 @@ export class GitRepositoryImpl implements GitRepository {
         stdout: (data: Buffer) => {
           output += data.toString()
         }
-      },
-      silent: true
+      }
     }
 
     const exitCode = await exec.exec('git', args, options)
