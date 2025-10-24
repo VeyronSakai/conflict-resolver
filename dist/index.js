@@ -32366,7 +32366,7 @@ class GitRepositoryImpl {
     async resolveAddedByUsConflict(file, strategy) {
         switch (strategy) {
             case ResolutionStrategy.Ours:
-                await this.gitCheckoutFile(file.path, strategy);
+                // We added this file (typically our rename target), so keep it
                 await this.gitAddFile(file.path);
                 coreExports.info(`Resolved ${file.path} by keeping our added file (ours)`);
                 break;
@@ -32385,7 +32385,7 @@ class GitRepositoryImpl {
                 coreExports.info(`Resolved ${file.path} by removing their added file (ours)`);
                 break;
             case ResolutionStrategy.Theirs:
-                await this.gitCheckoutFile(file.path, strategy);
+                // They added this file (typically their rename target), so keep it
                 await this.gitAddFile(file.path);
                 coreExports.info(`Resolved ${file.path} by keeping their added file (theirs)`);
                 break;

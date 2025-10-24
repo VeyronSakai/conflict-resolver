@@ -148,7 +148,7 @@ export class GitRepositoryImpl implements GitRepository {
   ): Promise<void> {
     switch (strategy) {
       case ResolutionStrategy.Ours:
-        await this.gitCheckoutFile(file.path, strategy)
+        // We added this file (typically our rename target), so keep it
         await this.gitAddFile(file.path)
         core.info(`Resolved ${file.path} by keeping our added file (ours)`)
         break
@@ -171,7 +171,7 @@ export class GitRepositoryImpl implements GitRepository {
         core.info(`Resolved ${file.path} by removing their added file (ours)`)
         break
       case ResolutionStrategy.Theirs:
-        await this.gitCheckoutFile(file.path, strategy)
+        // They added this file (typically their rename target), so keep it
         await this.gitAddFile(file.path)
         core.info(`Resolved ${file.path} by keeping their added file (theirs)`)
         break
