@@ -43,6 +43,7 @@ export class ConflictResolver {
       } else {
         try {
           await this.gitRepository.resolveConflict(file, strategy)
+          await this.gitRepository.stageFile(file.path)
           resolvedFiles.push(file.path)
           core.info(`✓ Resolved ${file.path} using ${strategy} strategy`)
         } catch (error) {
