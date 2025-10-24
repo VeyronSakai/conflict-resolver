@@ -34,7 +34,7 @@ export class ConflictAnalyzer {
       return false
     }
 
-    // DD, AU, UA はサポート対象外
+    // DD, AU, UA is not supported for custom rules
     if (
       conflictType === ConflictType.DeletedByBoth ||
       conflictType === ConflictType.AddedByUs ||
