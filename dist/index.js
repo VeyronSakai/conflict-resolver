@@ -29308,6 +29308,18 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape;
 minimatch.unescape = unescape;
 
+var ConflictType;
+(function (ConflictType) {
+    ConflictType["BothModified"] = "both-modified";
+    ConflictType["DeletedByUs"] = "deleted-by-us";
+    ConflictType["DeletedByThem"] = "deleted-by-them";
+    ConflictType["BothAdded"] = "both-added";
+    ConflictType["DeletedByBoth"] = "deleted-by-both";
+    ConflictType["AddedByUs"] = "added-by-us";
+    ConflictType["AddedByThem"] = "added-by-them";
+    ConflictType["Unknown"] = "unknown"; // Unknown conflict type - not supported for auto-resolution
+})(ConflictType || (ConflictType = {}));
+
 class ConflictAnalyzer {
     determineStrategy(file, rules) {
         const matchingRule = this.findMatchingRule(file, rules);
@@ -29323,6 +29335,12 @@ class ConflictAnalyzer {
     }
     matches(rule, filePath, conflictType) {
         if (!minimatch(filePath, rule.targetPathPattern)) {
+            return false;
+        }
+        // DD, AU, UA is not supported for custom rules
+        if (conflictType === ConflictType.DeletedByBoth ||
+            conflictType === ConflictType.AddedByUs ||
+            conflictType === ConflictType.AddedByThem) {
             return false;
         }
         return !(rule.conflictType && rule.conflictType !== conflictType);
@@ -32242,18 +32260,6 @@ class ConfigRepositoryImpl {
 }
 
 var execExports = requireExec();
-
-var ConflictType;
-(function (ConflictType) {
-    ConflictType["BothModified"] = "both-modified";
-    ConflictType["DeletedByUs"] = "deleted-by-us";
-    ConflictType["DeletedByThem"] = "deleted-by-them";
-    ConflictType["BothAdded"] = "both-added";
-    ConflictType["DeletedByBoth"] = "deleted-by-both";
-    ConflictType["AddedByUs"] = "added-by-us";
-    ConflictType["AddedByThem"] = "added-by-them";
-    ConflictType["Unknown"] = "unknown"; // Unknown conflict type - not supported for auto-resolution
-})(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
     async getConflictedFiles() {
