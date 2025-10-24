@@ -33,6 +33,16 @@ export class ConflictAnalyzer {
     if (!minimatch(filePath, rule.targetPathPattern)) {
       return false
     }
+
+    // DD, AU, UA はサポート対象外
+    if (
+      conflictType === ConflictType.DeletedByBoth ||
+      conflictType === ConflictType.AddedByUs ||
+      conflictType === ConflictType.AddedByThem
+    ) {
+      return false
+    }
+
     return !(rule.conflictType && rule.conflictType !== conflictType)
   }
 }

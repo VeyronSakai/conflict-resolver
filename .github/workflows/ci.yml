@@ -296,8 +296,24 @@ jobs:
 
           # Note: rename/rename creates DD (original), AU (ours), UA (theirs) conflicts
           # These conflict types are not supported for auto-resolution
-          # We don't check for specific unresolved files here because DD/AU/UA
-          # are not supported and will cause the action to fail if encountered
+
+          # Verify AU (added-by-us) conflict is unresolved
+          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_BASE_TXT)) {
+            Write-Output "✅ rename-base.txt unresolved (AU conflict - added by us)"
+          } else {
+            Write-Output "❌ rename-base.txt should remain unresolved (AU conflict type not supported)"
+            exit 1
+          }
+
+          # Verify UA (added-by-them) conflict is unresolved
+          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_INCOMING_TXT)) {
+            Write-Output "✅ rename-incoming.txt unresolved (UA conflict - added by them)"
+          } else {
+            Write-Output "❌ rename-incoming.txt should remain unresolved (UA conflict type not supported)"
+            exit 1
+          }
 
           # === Verify conflict_type mismatch behavior ===
           Write-Output "`n=== Verifying conflict_type mismatch behavior ==="
