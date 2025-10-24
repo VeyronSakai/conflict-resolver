@@ -20,10 +20,8 @@ export class SpyGitRepository implements GitRepository {
     strategy: ResolutionStrategy
   ): Promise<void> {
     this.resolvedFiles.set(file.path, strategy)
-  }
-
-  async stageFile(filePath: string): Promise<void> {
-    this.stagedFiles.add(filePath)
+    // resolveConflict now stages the file internally (like the real implementation)
+    this.stagedFiles.add(file.path)
   }
 
   // Test helper methods

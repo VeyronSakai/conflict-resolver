@@ -45,6 +45,15 @@ export class GitRepositoryImpl implements GitRepository {
       case ConflictType.DeletedByThem:
         await this.resolveDeletedByThemConflict(file, strategy)
         break
+      case ConflictType.DeletedByBoth:
+        await this.resolveDeletedByBothConflict(file)
+        break
+      case ConflictType.AddedByUs:
+        await this.resolveAddedByUsConflict(file, strategy)
+        break
+      case ConflictType.AddedByThem:
+        await this.resolveAddedByThemConflict(file, strategy)
+        break
       default:
         // Unsupported conflict type - log error and skip resolution
         core.error(
@@ -52,10 +61,6 @@ export class GitRepositoryImpl implements GitRepository {
         )
         break
     }
-  }
-
-  async stageFile(filePath: string): Promise<void> {
-    await this.gitAddFile(filePath)
   }
 
   private async getConflictType(filePath: string): Promise<ConflictType> {
@@ -128,6 +133,51 @@ export class GitRepositoryImpl implements GitRepository {
     }
   }
 
+  private async resolveDeletedByBothConflict(
+    file: ConflictedFile
+  ): Promise<void> {
+    // When both sides deleted the file (typically in rename/rename scenarios),
+    // we accept the deletion regardless of the strategy
+    await this.gitAddFile(file.path)
+    core.info(`Resolved ${file.path} by accepting deletion from both sides`)
+  }
+
+  private async resolveAddedByUsConflict(
+    file: ConflictedFile,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    switch (strategy) {
+      case ResolutionStrategy.Ours:
+        // We added this file (typically our rename target), so keep it
+        await this.gitAddFile(file.path)
+        core.info(`Resolved ${file.path} by keeping our added file (ours)`)
+        break
+      case ResolutionStrategy.Theirs:
+        // Their side doesn't have this file, so remove it
+        await this.gitRemoveFile(file.path)
+        core.info(`Resolved ${file.path} by removing our added file (theirs)`)
+        break
+    }
+  }
+
+  private async resolveAddedByThemConflict(
+    file: ConflictedFile,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    switch (strategy) {
+      case ResolutionStrategy.Ours:
+        // We don't have this file, so remove their addition
+        await this.gitRemoveFile(file.path)
+        core.info(`Resolved ${file.path} by removing their added file (ours)`)
+        break
+      case ResolutionStrategy.Theirs:
+        // They added this file (typically their rename target), so keep it
+        await this.gitAddFile(file.path)
+        core.info(`Resolved ${file.path} by keeping their added file (theirs)`)
+        break
+    }
+  }
+
   private async resolveBothAddedConflict(
     file: ConflictedFile,
     strategy: ResolutionStrategy
@@ -168,8 +218,7 @@ export class GitRepositoryImpl implements GitRepository {
         stdout: (data: Buffer) => {
           output += data.toString()
         }
-      },
-      silent: true
+      }
     }
 
     const exitCode = await exec.exec('git', args, options)
