@@ -96,9 +96,6 @@ jobs:
 
           # Rename rename.txt to create rename/rename conflict (incoming side)
           # This creates DD, AU, UA conflicts which should now be resolved
-          # First modify the content before renaming
-          "Incoming branch content" | Out-File -FilePath "$TEST_DIR/rename.txt" -NoNewline -Encoding utf8
-          git add "$TEST_DIR/rename.txt"
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-incoming.txt"
 
           git add "$TEST_DIR/"
@@ -116,9 +113,6 @@ jobs:
 
           # Rename rename.txt to create rename/rename conflict (base side)
           # This creates DD, AU, UA conflicts which should now be resolved
-          # First modify the content before renaming
-          "Base branch content" | Out-File -FilePath "$TEST_DIR/rename.txt" -NoNewline -Encoding utf8
-          git add "$TEST_DIR/rename.txt"
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
 
           git add "$TEST_DIR/"
