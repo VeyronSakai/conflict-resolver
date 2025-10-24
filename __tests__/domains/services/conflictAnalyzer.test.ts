@@ -191,6 +191,35 @@ describe('ConflictAnalyzer', () => {
           expect(strategy).toBe(ResolutionStrategy.Ours)
         })
       })
+
+      it('should return undefined for unsupported conflict types (DD, AU, UA)', () => {
+        // Arrange
+        const unsupportedConflictTypes = [
+          ConflictType.DeletedByBoth, // DD
+          ConflictType.AddedByUs, // AU
+          ConflictType.AddedByThem // UA
+        ]
+
+        unsupportedConflictTypes.forEach((conflictType) => {
+          // Arrange
+          const file: ConflictedFile = {
+            path: 'test.ts',
+            conflictType
+          }
+          const rules: ConflictResolveRule[] = [
+            {
+              targetPathPattern: '*.ts',
+              strategy: ResolutionStrategy.Ours
+            }
+          ]
+
+          // Act
+          const strategy = analyzer.determineStrategy(file, rules)
+
+          // Assert
+          expect(strategy).toBeUndefined()
+        })
+      })
     })
 
     describe('edge cases', () => {
