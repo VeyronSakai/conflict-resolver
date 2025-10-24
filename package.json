@@ -1,7 +1,7 @@
 {
   "name": "conflict-resolver",
   "description": "A GitHub Action to resolve merge conflicts",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Yuki Sakai",
   "type": "module",
   "private": true,
