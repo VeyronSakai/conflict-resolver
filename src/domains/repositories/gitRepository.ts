@@ -7,5 +7,4 @@ export interface GitRepository {
     file: ConflictedFile,
     strategy: ResolutionStrategy
   ): Promise<void>
-  stageFile(filePath: string): Promise<void>
 }
