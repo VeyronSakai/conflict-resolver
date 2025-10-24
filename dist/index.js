@@ -29357,7 +29357,6 @@ class ConflictResolver {
             else {
                 try {
                     await this.gitRepository.resolveConflict(file, strategy);
-                    await this.gitRepository.stageFile(file.path);
                     resolvedFiles.push(file.path);
                     coreExports.info(`✓ Resolved ${file.path} using ${strategy} strategy`);
                 }
@@ -32300,9 +32299,6 @@ class GitRepositoryImpl {
                 coreExports.error(`Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`);
                 break;
         }
-    }
-    async stageFile(filePath) {
-        await this.gitAddFile(filePath);
     }
     async getConflictType(filePath) {
         const statusOutput = await this.execGitCommand([
