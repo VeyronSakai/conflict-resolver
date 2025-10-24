@@ -79,7 +79,7 @@ jobs:
           git switch -C "test-base-$env:RUN_ID"
 
           # Add rename.txt to create common ancestor for rename/rename conflict
-          # This will create DD, AU, UA conflicts which are NOT supported for auto-resolution
+          # This will create DD, AU, UA conflicts which are now supported for auto-resolution
           Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
           git add "$TEST_DIR/rename.txt"
           git commit -m "Add rename.txt as common ancestor"
@@ -95,7 +95,7 @@ jobs:
           Remove-Item "$TEST_DIR/deleted-by-them.png" -Force -ErrorAction SilentlyContinue
 
           # Rename rename.txt to create rename/rename conflict (incoming side)
-          # This creates DD, AU, UA conflicts which should remain unresolved
+          # This creates DD, AU, UA conflicts which should now be resolved
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-incoming.txt"
 
           git add "$TEST_DIR/"
@@ -112,7 +112,7 @@ jobs:
           Remove-Item "$TEST_DIR/deleted-by-us.png" -Force -ErrorAction SilentlyContinue
 
           # Rename rename.txt to create rename/rename conflict (base side)
-          # This creates DD, AU, UA conflicts which should remain unresolved
+          # This creates DD, AU, UA conflicts which should now be resolved
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
 
           git add "$TEST_DIR/"
@@ -291,13 +291,39 @@ jobs:
             exit 1
           }
 
-          # === Rename/Rename conflicts (DD, AU, UA) - NOT supported ===
-          Write-Output "`n=== Verifying Rename/Rename conflicts remain unresolved ==="
+          # === Rename/Rename conflicts (DD, AU, UA) - Now supported ===
+          Write-Output "`n=== Verifying Rename/Rename conflicts are resolved ==="
 
           # Note: rename/rename creates DD (original), AU (ours), UA (theirs) conflicts
-          # These conflict types are not supported for auto-resolution
-          # We don't check for specific unresolved files here because DD/AU/UA
-          # are not supported and will cause the action to fail if encountered
+          # These conflict types are now supported for auto-resolution
+
+          $RENAME_TXT = "$TEST_DIR/rename.txt"
+          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
+          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
+
+          # Check DD (deleted-by-both) - original file should be resolved and deleted
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_TXT)) {
+            Write-Output "✅ rename.txt resolved (deleted-by-both)"
+          } else {
+            Write-Output "❌ rename.txt should have been resolved"
+            exit 1
+          }
+
+          # Check AU (added-by-us) - our renamed file should be resolved with ours strategy
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_BASE_TXT)) {
+            Write-Output "✅ rename-base.txt resolved (added-by-us with ours strategy)"
+          } else {
+            Write-Output "❌ rename-base.txt should have been resolved"
+            exit 1
+          }
+
+          # Check UA (added-by-them) - their renamed file should be resolved with ours strategy
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_INCOMING_TXT)) {
+            Write-Output "✅ rename-incoming.txt resolved (added-by-them with ours strategy)"
+          } else {
+            Write-Output "❌ rename-incoming.txt should have been resolved"
+            exit 1
+          }
 
           # === Verify conflict_type mismatch behavior ===
           Write-Output "`n=== Verifying conflict_type mismatch behavior ==="
@@ -519,9 +545,6 @@ jobs:
           $TEST_DIR = "__tests__/test-conflict-files"
           $TEST_CONFIG_YML = "$TEST_DIR/test.config.yml"
           $TEST_TXT = "$TEST_DIR/undefined-rule.txt"
-          $RENAME_TXT = "$TEST_DIR/rename.txt"
-          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
-          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
 
           Write-Output "::group::Content verification for unresolved files"
 
@@ -553,30 +576,60 @@ jobs:
             exit 1
           }
 
-          # === Verify rename/rename conflict files ===
-          Write-Output "`n=== Verifying rename/rename conflict files ==="
+          Write-Output "::endgroup::"
 
-          # rename.txt should NOT exist (DD - deleted by both)
+      - name: Verify rename/rename conflict resolution
+        shell: pwsh
+        run: |
+          # Define test file paths
+          $TEST_DIR = "__tests__/test-conflict-files"
+          $RENAME_TXT = "$TEST_DIR/rename.txt"
+          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
+          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
+
+          Write-Output "::group::Rename/rename conflict resolution verification"
+
+          # === Verify DD (deleted-by-both) resolution ===
+          Write-Output "=== Verifying DD (deleted-by-both) resolution ==="
+
+          # rename.txt should NOT exist (deleted by both - resolved by removing)
           if (-not (Test-Path $RENAME_TXT -PathType Leaf)) {
-            Write-Output "✅ rename.txt does not exist (DD conflict - deleted by both)"
+            Write-Output "✅ rename.txt does not exist (DD conflict resolved - deleted)"
           } else {
-            Write-Output "❌ rename.txt should not exist"
+            Write-Output "❌ rename.txt should not exist after DD resolution"
             exit 1
           }
 
-          # rename-base.txt should exist (AU - added by us)
+          # === Verify AU (added-by-us) resolution ===
+          Write-Output "`n=== Verifying AU (added-by-us) resolution ==="
+
+          # rename-base.txt should exist (AU - kept with ours strategy)
           if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
-            Write-Output "✅ rename-base.txt exists (AU conflict - our renamed file)"
+            $renameBaseContent = Get-Content "$RENAME_BASE_TXT" -Raw
+            $expectedContent = Get-Content "$TEST_DIR/base-version/rename.txt" -Raw
+            if ($renameBaseContent -eq $expectedContent) {
+              Write-Output "✅ rename-base.txt exists with correct content (AU conflict resolved with ours strategy)"
+            } else {
+              Write-Output "❌ rename-base.txt has incorrect content"
+              Write-Output "Expected content:"
+              Get-Content "$TEST_DIR/base-version/rename.txt"
+              Write-Output "Actual content:"
+              Get-Content "$RENAME_BASE_TXT"
+              exit 1
+            }
           } else {
-            Write-Output "❌ rename-base.txt should exist"
+            Write-Output "❌ rename-base.txt should exist after AU resolution with ours strategy"
             exit 1
           }
 
-          # rename-incoming.txt should exist (UA - added by them)
-          if (Test-Path $RENAME_INCOMING_TXT -PathType Leaf) {
-            Write-Output "✅ rename-incoming.txt exists (UA conflict - their renamed file)"
+          # === Verify UA (added-by-them) resolution ===
+          Write-Output "`n=== Verifying UA (added-by-them) resolution ==="
+
+          # rename-incoming.txt should NOT exist (UA - removed with ours strategy)
+          if (-not (Test-Path $RENAME_INCOMING_TXT -PathType Leaf)) {
+            Write-Output "✅ rename-incoming.txt does not exist (UA conflict resolved with ours strategy - removed)"
           } else {
-            Write-Output "❌ rename-incoming.txt should exist"
+            Write-Output "❌ rename-incoming.txt should not exist after UA resolution with ours strategy"
             exit 1
           }
 

@@ -157,5 +157,200 @@ describe('ConflictResolver', () => {
       expect(resolvedFiles.size).toBe(2)
       expect(resolvedFiles.has('manual.ts')).toBe(false)
     })
+
+    it('should resolve DeletedByBoth conflicts', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: 'oldfile.txt',
+          strategy: ResolutionStrategy.Ours
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'oldfile.txt', conflictType: ConflictType.DeletedByBoth }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual(['oldfile.txt'])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.get('oldfile.txt')).toBe(ResolutionStrategy.Ours)
+    })
+
+    it('should resolve AddedByUs conflicts with ours strategy', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: 'newfile-ours.txt',
+          strategy: ResolutionStrategy.Ours
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'newfile-ours.txt', conflictType: ConflictType.AddedByUs }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual(['newfile-ours.txt'])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.get('newfile-ours.txt')).toBe(
+        ResolutionStrategy.Ours
+      )
+    })
+
+    it('should resolve AddedByUs conflicts with theirs strategy', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: 'newfile-ours.txt',
+          strategy: ResolutionStrategy.Theirs
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'newfile-ours.txt', conflictType: ConflictType.AddedByUs }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual(['newfile-ours.txt'])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.get('newfile-ours.txt')).toBe(
+        ResolutionStrategy.Theirs
+      )
+    })
+
+    it('should resolve AddedByThem conflicts with ours strategy', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: 'newfile-theirs.txt',
+          strategy: ResolutionStrategy.Ours
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'newfile-theirs.txt', conflictType: ConflictType.AddedByThem }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual(['newfile-theirs.txt'])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.get('newfile-theirs.txt')).toBe(
+        ResolutionStrategy.Ours
+      )
+    })
+
+    it('should resolve AddedByThem conflicts with theirs strategy', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: 'newfile-theirs.txt',
+          strategy: ResolutionStrategy.Theirs
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'newfile-theirs.txt', conflictType: ConflictType.AddedByThem }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual(['newfile-theirs.txt'])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.get('newfile-theirs.txt')).toBe(
+        ResolutionStrategy.Theirs
+      )
+    })
+
+    it('should resolve rename/rename conflicts scenario', async () => {
+      // Arrange
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: '*',
+          strategy: ResolutionStrategy.Ours
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: 'oldfile.txt', conflictType: ConflictType.DeletedByBoth },
+        { path: 'newfile-ours.txt', conflictType: ConflictType.AddedByUs },
+        { path: 'newfile-theirs.txt', conflictType: ConflictType.AddedByThem }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual([
+        'oldfile.txt',
+        'newfile-ours.txt',
+        'newfile-theirs.txt'
+      ])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.size).toBe(3)
+      expect(resolvedFiles.get('oldfile.txt')).toBe(ResolutionStrategy.Ours)
+      expect(resolvedFiles.get('newfile-ours.txt')).toBe(
+        ResolutionStrategy.Ours
+      )
+      expect(resolvedFiles.get('newfile-theirs.txt')).toBe(
+        ResolutionStrategy.Ours
+      )
+    })
   })
 })

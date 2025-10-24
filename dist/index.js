@@ -32251,8 +32251,7 @@ var ConflictType;
     ConflictType["BothAdded"] = "both-added";
     ConflictType["DeletedByBoth"] = "deleted-by-both";
     ConflictType["AddedByUs"] = "added-by-us";
-    ConflictType["AddedByThem"] = "added-by-them";
-    ConflictType["Unknown"] = "unknown"; // Unknown conflict type - not supported for auto-resolution
+    ConflictType["AddedByThem"] = "added-by-them"; // UA (typically occurs in rename/rename conflicts)
 })(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
@@ -32286,6 +32285,15 @@ class GitRepositoryImpl {
                 break;
             case ConflictType.DeletedByThem:
                 await this.resolveDeletedByThemConflict(file, strategy);
+                break;
+            case ConflictType.DeletedByBoth:
+                await this.resolveDeletedByBothConflict(file, strategy);
+                break;
+            case ConflictType.AddedByUs:
+                await this.resolveAddedByUsConflict(file, strategy);
+                break;
+            case ConflictType.AddedByThem:
+                await this.resolveAddedByThemConflict(file, strategy);
                 break;
             default:
                 // Unsupported conflict type - log error and skip resolution
@@ -32350,6 +32358,40 @@ class GitRepositoryImpl {
                 // Their side deleted the file, so accept deletion
                 await this.gitRemoveFile(file.path);
                 coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
+                break;
+        }
+    }
+    async resolveDeletedByBothConflict(file, _strategy) {
+        // When both sides deleted the file (typically in rename/rename scenarios),
+        // we accept the deletion regardless of the strategy
+        await this.gitAddFile(file.path);
+        coreExports.info(`Resolved ${file.path} by accepting deletion from both sides`);
+    }
+    async resolveAddedByUsConflict(file, strategy) {
+        switch (strategy) {
+            case ResolutionStrategy.Ours:
+                // We added this file (typically our rename target), so keep it
+                await this.gitAddFile(file.path);
+                coreExports.info(`Resolved ${file.path} by keeping our added file (ours)`);
+                break;
+            case ResolutionStrategy.Theirs:
+                // Their side doesn't have this file, so remove it
+                await this.gitRemoveFile(file.path);
+                coreExports.info(`Resolved ${file.path} by removing our added file (theirs)`);
+                break;
+        }
+    }
+    async resolveAddedByThemConflict(file, strategy) {
+        switch (strategy) {
+            case ResolutionStrategy.Ours:
+                // We don't have this file, so remove their addition
+                await this.gitRemoveFile(file.path);
+                coreExports.info(`Resolved ${file.path} by removing their added file (ours)`);
+                break;
+            case ResolutionStrategy.Theirs:
+                // They added this file (typically their rename target), so keep it
+                await this.gitAddFile(file.path);
+                coreExports.info(`Resolved ${file.path} by keeping their added file (theirs)`);
                 break;
         }
     }
