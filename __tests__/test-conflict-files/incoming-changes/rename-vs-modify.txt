@@ -1,0 +1,4 @@
+This file tests rename vs modify conflict.
+MODIFIED BY INCOMING BRANCH.
+Incoming branch will modify this file.
+This creates UD (deleted-by-them) on the original and AU (added-by-us) on the renamed file.

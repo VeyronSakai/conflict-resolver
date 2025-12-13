@@ -1,0 +1,2 @@
+This file tests rename vs delete conflict.
+INCOMING BRANCH VERSION (normally this will be deleted).
