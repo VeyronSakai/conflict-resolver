@@ -78,11 +78,13 @@ jobs:
           # Create base branch with test files
           git switch -C "test-base-$env:RUN_ID"
 
-          # Add rename.txt to create common ancestor for rename/rename conflict
-          # This will create DD, AU, UA conflicts which are NOT supported for auto-resolution
+          # Add rename files to create common ancestor for rename conflicts
+          # rename/rename will create DD, AU, UA conflicts which are NOT supported for auto-resolution
           Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
-          git add "$TEST_DIR/rename.txt"
-          git commit -m "Add rename.txt as common ancestor"
+          Copy-Item "$TEST_DIR/base-version/rename-vs-modify.txt" "$TEST_DIR/rename-vs-modify.txt" -Force
+          Copy-Item "$TEST_DIR/base-version/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete.txt" -Force
+          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-modify.txt" "$TEST_DIR/rename-vs-delete.txt"
+          git commit -m "Add rename ancestor files"
 
           # Create incoming changes branch
           git switch -C "test-incoming-$env:RUN_ID"
@@ -93,6 +95,9 @@ jobs:
           # Remove files that should be deleted on their side (deleted-by-them)
           Remove-Item "$TEST_DIR/deleted-by-them.txt" -Force -ErrorAction SilentlyContinue
           Remove-Item "$TEST_DIR/deleted-by-them.png" -Force -ErrorAction SilentlyContinue
+
+          # rename vs delete (incoming side)
+          Remove-Item "$TEST_DIR/rename-vs-delete.txt" -Force -ErrorAction SilentlyContinue
 
           # Rename rename.txt to create rename/rename conflict (incoming side)
           # This creates DD, AU, UA conflicts which should remain unresolved
@@ -114,6 +119,10 @@ jobs:
           # Rename rename.txt to create rename/rename conflict (base side)
           # This creates DD, AU, UA conflicts which should remain unresolved
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
+
+          # Rename rename-vs-* files on base side
+          git mv "$TEST_DIR/rename-vs-modify.txt" "$TEST_DIR/rename-vs-modify-base.txt"
+          git mv "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-base.txt"
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
