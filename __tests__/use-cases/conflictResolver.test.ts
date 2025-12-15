@@ -157,5 +157,54 @@ describe('ConflictResolver', () => {
       expect(resolvedFiles.size).toBe(2)
       expect(resolvedFiles.has('manual.ts')).toBe(false)
     })
+
+    it('should keep rename/delete conflict unresolved when staging fails', async () => {
+      // Arrange
+      const path = '__tests__/test-conflict-files/rename-vs-delete-base.txt'
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: '**/rename-vs-delete-base.txt',
+          strategy: ResolutionStrategy.Theirs,
+          conflictType: ConflictType.DeletedByThem
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [{ path, conflictType: ConflictType.DeletedByThem }]
+
+      const deleted = new Set<string>()
+      let resolveCalled = false
+      let stageCalled = false
+
+      const gitRepository = {
+        getConflictedFiles: async () => conflicts,
+        resolveConflict: async (file: { path: string }, strategy: ResolutionStrategy) => {
+          resolveCalled = true
+          if (strategy === ResolutionStrategy.Theirs) {
+            deleted.add(file.path)
+          }
+        },
+        stageFile: async (filePath: string) => {
+          stageCalled = true
+          if (deleted.has(filePath)) {
+            throw new Error("fatal: pathspec did not match any files")
+          }
+        }
+      }
+
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        gitRepository as any
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(resolveCalled).toBe(true)
+      expect(stageCalled).toBe(true)
+      expect(result.resolvedFiles).toEqual([])
+      expect(result.unresolvedFiles).toEqual([path])
+    })
   })
 })
