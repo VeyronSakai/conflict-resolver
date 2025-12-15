@@ -214,5 +214,54 @@ describe('ConflictResolver', () => {
       const resolvedFiles = spyGitRepository.getResolvedFiles()
       expect(resolvedFiles.get(path)).toBe(ResolutionStrategy.Ours)
     })
+
+    it('should auto-resolve rename/rename conflicts (DD, AU, UA) with ours strategy', async () => {
+      // Arrange
+      const renameTxt = '__tests__/test-conflict-files/rename.txt'
+      const renameBaseTxt = '__tests__/test-conflict-files/rename-base.txt'
+      const renameIncomingTxt = '__tests__/test-conflict-files/rename-incoming.txt'
+
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: '**/rename.txt',
+          strategy: ResolutionStrategy.Ours,
+          conflictType: ConflictType.DeletedByBoth
+        },
+        {
+          targetPathPattern: '**/rename-base.txt',
+          strategy: ResolutionStrategy.Ours,
+          conflictType: ConflictType.AddedByUs
+        },
+        {
+          targetPathPattern: '**/rename-incoming.txt',
+          strategy: ResolutionStrategy.Ours,
+          conflictType: ConflictType.AddedByThem
+        }
+      ]
+
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: renameTxt, conflictType: ConflictType.DeletedByBoth },
+        { path: renameBaseTxt, conflictType: ConflictType.AddedByUs },
+        { path: renameIncomingTxt, conflictType: ConflictType.AddedByThem }
+      ]
+
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual([
+        renameTxt,
+        renameBaseTxt,
+        renameIncomingTxt
+      ])
+      expect(result.unresolvedFiles).toEqual([])
+    })
   })
 })

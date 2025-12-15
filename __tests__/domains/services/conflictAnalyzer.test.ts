@@ -192,16 +192,15 @@ describe('ConflictAnalyzer', () => {
         })
       })
 
-      it('should return undefined for unsupported conflict types (DD, AU, UA)', () => {
+      it('should support rename/rename conflict types (DD, AU, UA) when rule matches', () => {
         // Arrange
-        const unsupportedConflictTypes = [
+        const renameRenameConflictTypes = [
           ConflictType.DeletedByBoth, // DD
           ConflictType.AddedByUs, // AU
           ConflictType.AddedByThem // UA
         ]
 
-        unsupportedConflictTypes.forEach((conflictType) => {
-          // Arrange
+        renameRenameConflictTypes.forEach((conflictType) => {
           const file: ConflictedFile = {
             path: 'test.ts',
             conflictType
@@ -209,6 +208,7 @@ describe('ConflictAnalyzer', () => {
           const rules: ConflictResolveRule[] = [
             {
               targetPathPattern: '*.ts',
+              conflictType,
               strategy: ResolutionStrategy.Ours
             }
           ]
@@ -217,7 +217,7 @@ describe('ConflictAnalyzer', () => {
           const strategy = analyzer.determineStrategy(file, rules)
 
           // Assert
-          expect(strategy).toBeUndefined()
+          expect(strategy).toBe(ResolutionStrategy.Ours)
         })
       })
     })
