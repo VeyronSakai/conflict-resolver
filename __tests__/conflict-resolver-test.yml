@@ -24,6 +24,17 @@ rules:
 
   # === Rules for additional conflict types ===
 
+  # Rename vs Delete (rename/delete) - attempt auto resolution (expected to error)
+  # Base branch renames the file, incoming branch deletes it.
+  # Conflict file path becomes rename-vs-delete-base.txt with UD (deleted-by-them)
+  - paths: '__tests__/test-conflict-files/rename-vs-delete-base.txt'
+    strategy: 'theirs'
+    conflict_type: 'deleted-by-them'
+
+  - paths: '__tests__/test-conflict-files/rename-vs-delete-base-2.txt'
+    strategy: 'ours'
+    conflict_type: 'deleted-by-them'
+
   # DeletedByUs - file deleted on our side but modified on their side
   # Use theirs strategy to restore the file with their changes
   - paths: '__tests__/test-conflict-files/deleted-by-us.txt'

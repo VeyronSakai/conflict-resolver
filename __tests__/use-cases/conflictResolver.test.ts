@@ -157,5 +157,62 @@ describe('ConflictResolver', () => {
       expect(resolvedFiles.size).toBe(2)
       expect(resolvedFiles.has('manual.ts')).toBe(false)
     })
+
+    it('should resolve rename/delete conflict when rule matches', async () => {
+      // Arrange
+      const path = '__tests__/test-conflict-files/rename-vs-delete-base.txt'
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: '**/rename-vs-delete-base.txt',
+          strategy: ResolutionStrategy.Theirs,
+          conflictType: ConflictType.DeletedByThem
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [{ path, conflictType: ConflictType.DeletedByThem }]
+
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual([path])
+      expect(result.unresolvedFiles).toEqual([])
+    })
+
+    it('should resolve rename/delete conflict with ours strategy when rule matches', async () => {
+      // Arrange
+      const path = '__tests__/test-conflict-files/rename-vs-delete-base-2.txt'
+      const rules: ConflictResolveRule[] = [
+        {
+          targetPathPattern: '**/rename-vs-delete-base-2.txt',
+          strategy: ResolutionStrategy.Ours,
+          conflictType: ConflictType.DeletedByThem
+        }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [{ path, conflictType: ConflictType.DeletedByThem }]
+
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual([path])
+      expect(result.unresolvedFiles).toEqual([])
+
+      const resolvedFiles = spyGitRepository.getResolvedFiles()
+      expect(resolvedFiles.get(path)).toBe(ResolutionStrategy.Ours)
+    })
   })
 })
