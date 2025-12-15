@@ -34,15 +34,6 @@ export class ConflictAnalyzer {
       return false
     }
 
-    // DD, AU, UA is not supported for custom rules
-    if (
-      conflictType === ConflictType.DeletedByBoth ||
-      conflictType === ConflictType.AddedByUs ||
-      conflictType === ConflictType.AddedByThem
-    ) {
-      return false
-    }
-
     return !(rule.conflictType && rule.conflictType !== conflictType)
   }
 }

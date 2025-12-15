@@ -46,6 +46,15 @@ export class GitRepositoryImpl implements GitRepository {
       case ConflictType.DeletedByThem:
         await this.resolveDeletedByThemConflict(file, strategy)
         break
+      case ConflictType.DeletedByBoth:
+        await this.resolveDeletedByBothConflict(file)
+        break
+      case ConflictType.AddedByUs:
+        await this.resolveAddedByUsConflict(file, strategy)
+        break
+      case ConflictType.AddedByThem:
+        await this.resolveAddedByThemConflict(file, strategy)
+        break
       default:
         // Unsupported conflict type - log error and skip resolution
         core.error(
@@ -147,6 +156,45 @@ export class GitRepositoryImpl implements GitRepository {
     await this.gitCheckoutFile(file.path, strategy)
     await this.gitAddFile(file.path)
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
+  }
+
+  private async resolveDeletedByBothConflict(file: ConflictedFile): Promise<void> {
+    // Both sides deleted/renamed away from the original path.
+    // For deleted-by-both (DD), we keep deletion and stage it via git rm.
+    await this.gitRemoveFile(file.path)
+    core.info(`Resolved ${file.path} by keeping deletion (deleted-by-both)`)
+  }
+
+  private async resolveAddedByUsConflict(
+    file: ConflictedFile,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    switch (strategy) {
+      case ResolutionStrategy.Ours:
+        await this.gitAddFile(file.path)
+        core.info(`Resolved ${file.path} by keeping file (added-by-us, ours)`)
+        break
+      case ResolutionStrategy.Theirs:
+        await this.gitRemoveFile(file.path)
+        core.info(`Resolved ${file.path} by removing file (added-by-us, theirs)`)
+        break
+    }
+  }
+
+  private async resolveAddedByThemConflict(
+    file: ConflictedFile,
+    strategy: ResolutionStrategy
+  ): Promise<void> {
+    switch (strategy) {
+      case ResolutionStrategy.Ours:
+        await this.gitRemoveFile(file.path)
+        core.info(`Resolved ${file.path} by removing file (added-by-them, ours)`)
+        break
+      case ResolutionStrategy.Theirs:
+        await this.gitAddFile(file.path)
+        core.info(`Resolved ${file.path} by keeping file (added-by-them, theirs)`)
+        break
+    }
   }
 
   private async gitAddFile(filePath: string): Promise<void> {
