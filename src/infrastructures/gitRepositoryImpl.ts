@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
@@ -55,7 +56,9 @@ export class GitRepositoryImpl implements GitRepository {
   }
 
   async stageFile(filePath: string): Promise<void> {
-    await this.gitAddFile(filePath)
+    if (fs.existsSync(filePath)) {
+      await this.gitAddFile(filePath)
+    }
   }
 
   private async getConflictType(filePath: string): Promise<ConflictType> {
