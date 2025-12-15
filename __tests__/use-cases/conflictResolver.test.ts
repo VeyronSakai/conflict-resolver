@@ -177,7 +177,10 @@ describe('ConflictResolver', () => {
 
       const gitRepository = {
         getConflictedFiles: async () => conflicts,
-        resolveConflict: async (file: { path: string }, strategy: ResolutionStrategy) => {
+        resolveConflict: async (
+          file: { path: string },
+          strategy: ResolutionStrategy
+        ) => {
           resolveCalled = true
           if (strategy === ResolutionStrategy.Theirs) {
             deleted.add(file.path)
@@ -186,7 +189,7 @@ describe('ConflictResolver', () => {
         stageFile: async (filePath: string) => {
           stageCalled = true
           if (deleted.has(filePath)) {
-            throw new Error("fatal: pathspec did not match any files")
+            throw new Error('fatal: pathspec did not match any files')
           }
         }
       }
