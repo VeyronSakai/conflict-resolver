@@ -1,0 +1,1 @@
+This file is used for rename/delete conflict testing (ours strategy).

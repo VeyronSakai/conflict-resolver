@@ -82,7 +82,8 @@ jobs:
           # rename/rename will create DD, AU, UA conflicts which are NOT supported for auto-resolution
           Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
           Copy-Item "$TEST_DIR/base-version/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete.txt" -Force
-          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-delete.txt"
+          Copy-Item "$TEST_DIR/base-version/rename-vs-delete-ours.txt" "$TEST_DIR/rename-vs-delete-ours.txt" -Force
+          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-ours.txt"
           git commit -m "Add rename ancestor files"
 
           # Create incoming changes branch
@@ -97,6 +98,7 @@ jobs:
 
           # rename vs delete (incoming side)
           Remove-Item "$TEST_DIR/rename-vs-delete.txt" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$TEST_DIR/rename-vs-delete-ours.txt" -Force -ErrorAction SilentlyContinue
 
           # Rename rename.txt to create rename/rename conflict (incoming side)
           # This creates DD, AU, UA conflicts which should remain unresolved
@@ -119,8 +121,9 @@ jobs:
           # This creates DD, AU, UA conflicts which should remain unresolved
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
 
-          # Rename rename-vs-delete file on base side
+          # Rename rename-vs-delete files on base side
           git mv "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-base.txt"
+          git mv "$TEST_DIR/rename-vs-delete-ours.txt" "$TEST_DIR/rename-vs-delete-ours-base.txt"
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
@@ -200,6 +203,7 @@ jobs:
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
           $RENAME_VS_DELETE_BASE_TXT = "$TEST_DIR/rename-vs-delete-base.txt"
+          $RENAME_VS_DELETE_OURS_BASE_TXT = "$TEST_DIR/rename-vs-delete-ours-base.txt"
 
           Write-Output "::group::Verification Results"
           
@@ -312,6 +316,19 @@ jobs:
             exit 1
           }
 
+          # Rename vs Delete (ours) should be resolved
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_OURS_BASE_TXT)) {
+            Write-Output "✅ rename-vs-delete-ours-base.txt resolved (ours strategy)"
+          } else {
+            Write-Output "❌ rename-vs-delete-ours-base.txt should have been resolved"
+            exit 1
+          }
+
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_OURS_BASE_TXT)) {
+            Write-Output "❌ rename-vs-delete-ours-base.txt should not be unresolved"
+            exit 1
+          }
+
           $renameVsDeleteStatus = git status --porcelain -- $RENAME_VS_DELETE_BASE_TXT
           if ($renameVsDeleteStatus -match "^D") {
             Write-Output "✅ rename-vs-delete-base.txt shows staged deletion (attempted theirs resolution)"
@@ -384,6 +401,7 @@ jobs:
           $DELETED_BY_US_PNG = "$TEST_DIR/deleted-by-us.png"
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
+          $RENAME_VS_DELETE_OURS_BASE_TXT = "$TEST_DIR/rename-vs-delete-ours-base.txt"
 
           Write-Output "::group::Content verification for resolved files"
 
@@ -555,6 +573,21 @@ jobs:
             exit 1
           }
 
+          # Verify rename-vs-delete-ours-base.txt kept with our content (ours strategy)
+          if (Test-Path $RENAME_VS_DELETE_OURS_BASE_TXT) {
+            $renameVsDeleteOursContent = Get-Content "$RENAME_VS_DELETE_OURS_BASE_TXT" -Raw
+            $expectedRenameVsDeleteOursContent = Get-Content "$TEST_DIR/base-version/rename-vs-delete-ours.txt" -Raw
+            if ($renameVsDeleteOursContent -eq $expectedRenameVsDeleteOursContent) {
+              Write-Output "✅ rename-vs-delete-ours-base.txt has correct base version content (ours)"
+            } else {
+              Write-Output "❌ rename-vs-delete-ours-base.txt does not have expected base version content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ rename-vs-delete-ours-base.txt should exist"
+            exit 1
+          }
+
           Write-Output "::endgroup::"
 
       - name: Verify unresolved file contents
@@ -568,6 +601,7 @@ jobs:
           $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
           $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
           $RENAME_VS_DELETE_BASE_TXT = "$TEST_DIR/rename-vs-delete-base.txt"
+          $RENAME_VS_DELETE_OURS_BASE_TXT = "$TEST_DIR/rename-vs-delete-ours-base.txt"
 
           Write-Output "::group::Content verification for unresolved files"
 
@@ -631,6 +665,14 @@ jobs:
             Write-Output "✅ rename-vs-delete-base.txt does not exist (staged deletion after resolution attempt)"
           } else {
             Write-Output "❌ rename-vs-delete-base.txt should not exist"
+            exit 1
+          }
+
+          # rename-vs-delete-ours-base.txt should exist (ours strategy)
+          if (Test-Path $RENAME_VS_DELETE_OURS_BASE_TXT -PathType Leaf) {
+            Write-Output "✅ rename-vs-delete-ours-base.txt exists (ours strategy)"
+          } else {
+            Write-Output "❌ rename-vs-delete-ours-base.txt should exist"
             exit 1
           }
 
