@@ -158,7 +158,9 @@ export class GitRepositoryImpl implements GitRepository {
     core.info(`Resolved ${file.path} using ${strategy} strategy`)
   }
 
-  private async resolveDeletedByBothConflict(file: ConflictedFile): Promise<void> {
+  private async resolveDeletedByBothConflict(
+    file: ConflictedFile
+  ): Promise<void> {
     // Both sides deleted/renamed away from the original path.
     // For deleted-by-both (DD), we keep deletion and stage it via git rm.
     await this.gitRemoveFile(file.path)
@@ -176,7 +178,9 @@ export class GitRepositoryImpl implements GitRepository {
         break
       case ResolutionStrategy.Theirs:
         await this.gitRemoveFile(file.path)
-        core.info(`Resolved ${file.path} by removing file (added-by-us, theirs)`)
+        core.info(
+          `Resolved ${file.path} by removing file (added-by-us, theirs)`
+        )
         break
     }
   }
@@ -188,11 +192,15 @@ export class GitRepositoryImpl implements GitRepository {
     switch (strategy) {
       case ResolutionStrategy.Ours:
         await this.gitRemoveFile(file.path)
-        core.info(`Resolved ${file.path} by removing file (added-by-them, ours)`)
+        core.info(
+          `Resolved ${file.path} by removing file (added-by-them, ours)`
+        )
         break
       case ResolutionStrategy.Theirs:
         await this.gitAddFile(file.path)
-        core.info(`Resolved ${file.path} by keeping file (added-by-them, theirs)`)
+        core.info(
+          `Resolved ${file.path} by keeping file (added-by-them, theirs)`
+        )
         break
     }
   }
