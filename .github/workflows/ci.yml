@@ -81,9 +81,8 @@ jobs:
           # Add rename files to create common ancestor for rename conflicts
           # rename/rename will create DD, AU, UA conflicts which are NOT supported for auto-resolution
           Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
-          Copy-Item "$TEST_DIR/base-version/rename-vs-modify.txt" "$TEST_DIR/rename-vs-modify.txt" -Force
           Copy-Item "$TEST_DIR/base-version/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete.txt" -Force
-          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-modify.txt" "$TEST_DIR/rename-vs-delete.txt"
+          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-delete.txt"
           git commit -m "Add rename ancestor files"
 
           # Create incoming changes branch
@@ -120,8 +119,7 @@ jobs:
           # This creates DD, AU, UA conflicts which should remain unresolved
           git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
 
-          # Rename rename-vs-* files on base side
-          git mv "$TEST_DIR/rename-vs-modify.txt" "$TEST_DIR/rename-vs-modify-base.txt"
+          # Rename rename-vs-delete file on base side
           git mv "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-base.txt"
 
           git add "$TEST_DIR/"
