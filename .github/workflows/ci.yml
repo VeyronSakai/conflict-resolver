@@ -123,7 +123,7 @@ jobs:
 
           # Rename rename-vs-delete files on base side
           git mv "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-base.txt"
-          git mv "$TEST_DIR/rename-vs-delete-ours.txt" "$TEST_DIR/rename-vs-delete-ours-base.txt"
+          git mv "$TEST_DIR/rename-vs-delete-ours.txt" "$TEST_DIR/rename-vs-delete-base-2.txt"
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
@@ -203,7 +203,7 @@ jobs:
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
           $RENAME_VS_DELETE_BASE_TXT = "$TEST_DIR/rename-vs-delete-base.txt"
-          $RENAME_VS_DELETE_OURS_BASE_TXT = "$TEST_DIR/rename-vs-delete-ours-base.txt"
+          $RENAME_VS_DELETE_BASE2_TXT = "$TEST_DIR/rename-vs-delete-base-2.txt"
 
           Write-Output "::group::Verification Results"
           
@@ -317,15 +317,15 @@ jobs:
           }
 
           # Rename vs Delete (ours) should be resolved
-          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_OURS_BASE_TXT)) {
-            Write-Output "✅ rename-vs-delete-ours-base.txt resolved (ours strategy)"
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE2_TXT)) {
+            Write-Output "✅ rename-vs-delete-base-2.txt resolved (ours strategy)"
           } else {
-            Write-Output "❌ rename-vs-delete-ours-base.txt should have been resolved"
+            Write-Output "❌ rename-vs-delete-base-2.txt should have been resolved"
             exit 1
           }
 
-          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_OURS_BASE_TXT)) {
-            Write-Output "❌ rename-vs-delete-ours-base.txt should not be unresolved"
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE2_TXT)) {
+            Write-Output "❌ rename-vs-delete-base-2.txt should not be unresolved"
             exit 1
           }
 
@@ -401,7 +401,7 @@ jobs:
           $DELETED_BY_US_PNG = "$TEST_DIR/deleted-by-us.png"
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
-          $RENAME_VS_DELETE_OURS_BASE_TXT = "$TEST_DIR/rename-vs-delete-ours-base.txt"
+          $RENAME_VS_DELETE_BASE2_TXT = "$TEST_DIR/rename-vs-delete-base-2.txt"
 
           Write-Output "::group::Content verification for resolved files"
 
@@ -573,18 +573,18 @@ jobs:
             exit 1
           }
 
-          # Verify rename-vs-delete-ours-base.txt kept with our content (ours strategy)
-          if (Test-Path $RENAME_VS_DELETE_OURS_BASE_TXT) {
-            $renameVsDeleteOursContent = Get-Content "$RENAME_VS_DELETE_OURS_BASE_TXT" -Raw
+          # Verify rename-vs-delete-base-2.txt kept with our content (ours strategy)
+          if (Test-Path $RENAME_VS_DELETE_BASE2_TXT) {
+            $renameVsDeleteOursContent = Get-Content "$RENAME_VS_DELETE_BASE2_TXT" -Raw
             $expectedRenameVsDeleteOursContent = Get-Content "$TEST_DIR/base-version/rename-vs-delete-ours.txt" -Raw
             if ($renameVsDeleteOursContent -eq $expectedRenameVsDeleteOursContent) {
-              Write-Output "✅ rename-vs-delete-ours-base.txt has correct base version content (ours)"
+              Write-Output "✅ rename-vs-delete-base-2.txt has correct base version content (ours)"
             } else {
-              Write-Output "❌ rename-vs-delete-ours-base.txt does not have expected base version content"
+              Write-Output "❌ rename-vs-delete-base-2.txt does not have expected base version content"
               exit 1
             }
           } else {
-            Write-Output "❌ rename-vs-delete-ours-base.txt should exist"
+            Write-Output "❌ rename-vs-delete-base-2.txt should exist"
             exit 1
           }
 
@@ -601,7 +601,7 @@ jobs:
           $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
           $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
           $RENAME_VS_DELETE_BASE_TXT = "$TEST_DIR/rename-vs-delete-base.txt"
-          $RENAME_VS_DELETE_OURS_BASE_TXT = "$TEST_DIR/rename-vs-delete-ours-base.txt"
+          $RENAME_VS_DELETE_BASE2_TXT = "$TEST_DIR/rename-vs-delete-base-2.txt"
 
           Write-Output "::group::Content verification for unresolved files"
 
@@ -668,11 +668,11 @@ jobs:
             exit 1
           }
 
-          # rename-vs-delete-ours-base.txt should exist (ours strategy)
-          if (Test-Path $RENAME_VS_DELETE_OURS_BASE_TXT -PathType Leaf) {
-            Write-Output "✅ rename-vs-delete-ours-base.txt exists (ours strategy)"
+          # rename-vs-delete-base-2.txt should exist (ours strategy)
+          if (Test-Path $RENAME_VS_DELETE_BASE2_TXT -PathType Leaf) {
+            Write-Output "✅ rename-vs-delete-base-2.txt exists (ours strategy)"
           } else {
-            Write-Output "❌ rename-vs-delete-ours-base.txt should exist"
+            Write-Output "❌ rename-vs-delete-base-2.txt should exist"
             exit 1
           }
 

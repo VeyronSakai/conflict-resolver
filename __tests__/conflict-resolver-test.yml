@@ -31,7 +31,7 @@ rules:
     strategy: 'theirs'
     conflict_type: 'deleted-by-them'
 
-  - paths: '__tests__/test-conflict-files/rename-vs-delete-ours-base.txt'
+  - paths: '__tests__/test-conflict-files/rename-vs-delete-base-2.txt'
     strategy: 'ours'
     conflict_type: 'deleted-by-them'
 

@@ -187,11 +187,10 @@ describe('ConflictResolver', () => {
 
     it('should resolve rename/delete conflict with ours strategy when rule matches', async () => {
       // Arrange
-      const path =
-        '__tests__/test-conflict-files/rename-vs-delete-ours-base.txt'
+      const path = '__tests__/test-conflict-files/rename-vs-delete-base-2.txt'
       const rules: ConflictResolveRule[] = [
         {
-          targetPathPattern: '**/rename-vs-delete-ours-base.txt',
+          targetPathPattern: '**/rename-vs-delete-base-2.txt',
           strategy: ResolutionStrategy.Ours,
           conflictType: ConflictType.DeletedByThem
         }
