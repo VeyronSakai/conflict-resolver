@@ -303,16 +303,16 @@ jobs:
             exit 1
           }
 
-          # Rename vs Delete: resolution attempted but expected to error (unimplemented)
-          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
-            Write-Output "✅ rename-vs-delete-base.txt unresolved (expected due to resolution error)"
+          # Rename vs Delete (theirs) should be resolved
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
+            Write-Output "✅ rename-vs-delete-base.txt resolved (theirs strategy)"
           } else {
-            Write-Output "❌ rename-vs-delete-base.txt should remain unresolved"
+            Write-Output "❌ rename-vs-delete-base.txt should have been resolved"
             exit 1
           }
 
-          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
-            Write-Output "❌ rename-vs-delete-base.txt should not be resolved"
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
+            Write-Output "❌ rename-vs-delete-base.txt should not be unresolved"
             exit 1
           }
 
@@ -331,9 +331,9 @@ jobs:
 
           $renameVsDeleteStatus = git status --porcelain -- $RENAME_VS_DELETE_BASE_TXT
           if ($renameVsDeleteStatus -match "^D") {
-            Write-Output "✅ rename-vs-delete-base.txt shows staged deletion (attempted theirs resolution)"
+            Write-Output "✅ rename-vs-delete-base.txt shows staged deletion (resolved by theirs strategy)"
           } else {
-            Write-Output "❌ Expected staged deletion (D) for rename-vs-delete-base.txt after attempting theirs strategy, got: $renameVsDeleteStatus"
+            Write-Output "❌ Expected staged deletion (D) for rename-vs-delete-base.txt after resolving theirs strategy, got: $renameVsDeleteStatus"
             exit 1
           }
 
