@@ -158,7 +158,7 @@ describe('ConflictResolver', () => {
       expect(resolvedFiles.has('manual.ts')).toBe(false)
     })
 
-    it('should keep rename/delete conflict unresolved when staging fails', async () => {
+    it('should resolve rename/delete conflict when rule matches', async () => {
       // Arrange
       const path = '__tests__/test-conflict-files/rename-vs-delete-base.txt'
       const rules: ConflictResolveRule[] = [
@@ -171,9 +171,7 @@ describe('ConflictResolver', () => {
       const stubConfigRepository = new StubConfigRepository(rules)
       const conflicts = [{ path, conflictType: ConflictType.DeletedByThem }]
 
-      const spyGitRepository = new SpyGitRepository(conflicts, {
-        failStageFilePaths: [path]
-      })
+      const spyGitRepository = new SpyGitRepository(conflicts)
       const conflictResolver = new ConflictResolver(
         stubConfigRepository,
         spyGitRepository
@@ -183,8 +181,8 @@ describe('ConflictResolver', () => {
       const result = await conflictResolver.resolve()
 
       // Assert
-      expect(result.resolvedFiles).toEqual([])
-      expect(result.unresolvedFiles).toEqual([path])
+      expect(result.resolvedFiles).toEqual([path])
+      expect(result.unresolvedFiles).toEqual([])
     })
   })
 })

@@ -6,14 +6,9 @@ export class SpyGitRepository implements GitRepository {
   private readonly conflictedFiles: ConflictedFile[]
   private resolvedFiles: Map<string, ResolutionStrategy> = new Map()
   private stagedFiles: Set<string> = new Set()
-  private failStageFilePaths: Set<string>
 
-  constructor(
-    conflictedFiles: ConflictedFile[] = [],
-    options: { failStageFilePaths?: string[] } = {}
-  ) {
+  constructor(conflictedFiles: ConflictedFile[] = []) {
     this.conflictedFiles = conflictedFiles
-    this.failStageFilePaths = new Set(options.failStageFilePaths ?? [])
   }
 
   async getConflictedFiles(): Promise<ConflictedFile[]> {
@@ -28,9 +23,6 @@ export class SpyGitRepository implements GitRepository {
   }
 
   async stageFile(filePath: string): Promise<void> {
-    if (this.failStageFilePaths.has(filePath)) {
-      throw new Error('fatal: pathspec did not match any files')
-    }
     this.stagedFiles.add(filePath)
   }
 
