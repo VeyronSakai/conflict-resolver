@@ -157,5 +157,29 @@ describe('ConflictResolver', () => {
       expect(resolvedFiles.size).toBe(2)
       expect(resolvedFiles.has('manual.ts')).toBe(false)
     })
+
+    it('should resolve rename vs modify conflicts (added-by-us)', async () => {
+      // Arrange
+      const renameVsModifyPath = '__tests__/test-conflict-files/rename-vs-modify-base.txt'
+      const rules: ConflictResolveRule[] = [
+        { targetPathPattern: '**/rename-vs-modify-base.txt', strategy: ResolutionStrategy.Ours }
+      ]
+      const stubConfigRepository = new StubConfigRepository(rules)
+      const conflicts = [
+        { path: renameVsModifyPath, conflictType: ConflictType.AddedByUs }
+      ]
+      const spyGitRepository = new SpyGitRepository(conflicts)
+      const conflictResolver = new ConflictResolver(
+        stubConfigRepository,
+        spyGitRepository
+      )
+
+      // Act
+      const result = await conflictResolver.resolve()
+
+      // Assert
+      expect(result.resolvedFiles).toEqual([renameVsModifyPath])
+      expect(result.unresolvedFiles).toEqual([])
+    })
   })
 })

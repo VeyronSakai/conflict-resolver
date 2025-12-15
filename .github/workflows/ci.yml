@@ -201,6 +201,7 @@ jobs:
           $DELETED_BY_US_PNG = "$TEST_DIR/deleted-by-us.png"
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
+          $RENAME_VS_MODIFY_BASE_TXT = "$TEST_DIR/rename-vs-modify-base.txt"
 
           Write-Output "::group::Verification Results"
           
@@ -278,6 +279,21 @@ jobs:
             Write-Output "✅ both-added.png resolved (theirs strategy, both-added)"
           } else {
             Write-Output "❌ both-added.png should have been resolved"
+            exit 1
+          }
+
+          # === Rename vs Modify conflicts (expected to be resolved) ===
+          Write-Output "`n=== Verifying Rename vs Modify conflicts ==="
+
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_MODIFY_BASE_TXT)) {
+            Write-Output "✅ rename-vs-modify-base.txt resolved (ours strategy, added-by-us)"
+          } else {
+            Write-Output "❌ rename-vs-modify-base.txt should have been resolved"
+            exit 1
+          }
+
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_MODIFY_BASE_TXT)) {
+            Write-Output "❌ rename-vs-modify-base.txt should not be unresolved"
             exit 1
           }
 
@@ -364,6 +380,7 @@ jobs:
           $DELETED_BY_US_PNG = "$TEST_DIR/deleted-by-us.png"
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
+          $RENAME_VS_MODIFY_BASE_TXT = "$TEST_DIR/rename-vs-modify-base.txt"
 
           Write-Output "::group::Content verification for resolved files"
 
@@ -532,6 +549,23 @@ jobs:
             }
           } else {
             Write-Output "❌ both-added.png should exist"
+            exit 1
+          }
+
+          Write-Output "`n=== Verifying Rename vs Modify file contents ==="
+
+          # Verify rename-vs-modify-base.txt kept with our content (ours strategy)
+          if (Test-Path $RENAME_VS_MODIFY_BASE_TXT) {
+            $renameVsModifyContent = Get-Content "$RENAME_VS_MODIFY_BASE_TXT" -Raw
+            $expectedRenameVsModifyContent = Get-Content "$TEST_DIR/base-version/rename-vs-modify.txt" -Raw
+            if ($renameVsModifyContent -eq $expectedRenameVsModifyContent) {
+              Write-Output "✅ rename-vs-modify-base.txt has correct base version content (ours)"
+            } else {
+              Write-Output "❌ rename-vs-modify-base.txt does not have expected base version content"
+              exit 1
+            }
+          } else {
+            Write-Output "❌ rename-vs-modify-base.txt should exist"
             exit 1
           }
 
