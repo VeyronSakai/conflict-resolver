@@ -171,16 +171,9 @@ describe('ConflictResolver', () => {
       const stubConfigRepository = new StubConfigRepository(rules)
       const conflicts = [{ path, conflictType: ConflictType.DeletedByThem }]
 
-      class FailingStageSpyGitRepository extends SpyGitRepository {
-        override async stageFile(filePath: string): Promise<void> {
-          if (filePath === path) {
-            throw new Error('fatal: pathspec did not match any files')
-          }
-          return super.stageFile(filePath)
-        }
-      }
-
-      const spyGitRepository = new FailingStageSpyGitRepository(conflicts)
+      const spyGitRepository = new SpyGitRepository(conflicts, {
+        failStageFilePaths: [path]
+      })
       const conflictResolver = new ConflictResolver(
         stubConfigRepository,
         spyGitRepository
