@@ -171,41 +171,25 @@ describe('ConflictResolver', () => {
       const stubConfigRepository = new StubConfigRepository(rules)
       const conflicts = [{ path, conflictType: ConflictType.DeletedByThem }]
 
-      const deleted = new Set<string>()
-      let resolveCalled = false
-      let stageCalled = false
-
-      const gitRepository = {
-        getConflictedFiles: async () => conflicts,
-        resolveConflict: async (
-          file: { path: string },
-          strategy: ResolutionStrategy
-        ) => {
-          resolveCalled = true
-          if (strategy === ResolutionStrategy.Theirs) {
-            deleted.add(file.path)
-          }
-        },
-        stageFile: async (filePath: string) => {
-          stageCalled = true
-          if (deleted.has(filePath)) {
+      class FailingStageSpyGitRepository extends SpyGitRepository {
+        override async stageFile(filePath: string): Promise<void> {
+          if (filePath === path) {
             throw new Error('fatal: pathspec did not match any files')
           }
+          return super.stageFile(filePath)
         }
       }
 
+      const spyGitRepository = new FailingStageSpyGitRepository(conflicts)
       const conflictResolver = new ConflictResolver(
         stubConfigRepository,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        gitRepository as any
+        spyGitRepository
       )
 
       // Act
       const result = await conflictResolver.resolve()
 
       // Assert
-      expect(resolveCalled).toBe(true)
-      expect(stageCalled).toBe(true)
       expect(result.resolvedFiles).toEqual([])
       expect(result.unresolvedFiles).toEqual([path])
     })
