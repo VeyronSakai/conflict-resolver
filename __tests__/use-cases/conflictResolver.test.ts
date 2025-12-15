@@ -219,7 +219,8 @@ describe('ConflictResolver', () => {
       // Arrange
       const renameTxt = '__tests__/test-conflict-files/rename.txt'
       const renameBaseTxt = '__tests__/test-conflict-files/rename-base.txt'
-      const renameIncomingTxt = '__tests__/test-conflict-files/rename-incoming.txt'
+      const renameIncomingTxt =
+        '__tests__/test-conflict-files/rename-incoming.txt'
 
       const rules: ConflictResolveRule[] = [
         {
