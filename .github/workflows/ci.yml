@@ -628,3 +628,45 @@ jobs:
 
           Write-Output "::endgroup::"
 
+      - name: Write rename-vs-delete error config
+        shell: pwsh
+        run: |
+          $CONFIG_PATH = "__tests__/conflict-resolver-rename-delete-error.yml"
+
+          @"
+          rules:
+            - paths: '__tests__/test-conflict-files/rename-vs-delete-base.txt'
+              strategy: 'theirs'
+              conflict_type: 'deleted-by-them'
+          "@ | Out-File -FilePath $CONFIG_PATH -Encoding utf8
+
+      - name: Test Local Action (rename-vs-delete; expect error log)
+        id: test-action-rename-delete
+        uses: ./
+        with:
+          config-path: "__tests__/conflict-resolver-rename-delete-error.yml"
+
+      - name: Assert rename-vs-delete attempted and errored
+        shell: pwsh
+        env:
+          RESOLVED_FILES: ${{ steps.test-action-rename-delete.outputs.resolved-files }}
+          UNRESOLVED_FILES: ${{ steps.test-action-rename-delete.outputs.unresolved-files }}
+        run: |
+          $TARGET = "__tests__/test-conflict-files/rename-vs-delete-base.txt"
+
+          if ($env:UNRESOLVED_FILES -notmatch [regex]::Escape($TARGET)) {
+            Write-Output "❌ Expected $TARGET to be unresolved (resolution attempt should error)."
+            exit 1
+          }
+
+          if ($env:RESOLVED_FILES -match [regex]::Escape($TARGET)) {
+            Write-Output "❌ Expected $TARGET to not be resolved."
+            exit 1
+          }
+
+          $status = git status --porcelain -- $TARGET
+          if ($status -notmatch "^D") {
+            Write-Output "❌ Expected staged deletion (D) for $TARGET after attempting theirs strategy, got: $status"
+            exit 1
+          }
+
