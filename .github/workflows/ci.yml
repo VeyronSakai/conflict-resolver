@@ -337,28 +337,28 @@ jobs:
             exit 1
           }
 
-          # === Rename/Rename conflicts (DD, AU, UA) - NOT supported ===
-          Write-Output "`n=== Verifying Rename/Rename conflicts remain unresolved ==="
+          # === Rename/Rename conflicts (DD, AU, UA) - expected to be auto-resolved ===
+          Write-Output "`n=== Verifying Rename/Rename conflicts are auto-resolved ==="
 
           # Note: rename/rename creates DD (original), AU (ours), UA (theirs) conflicts
-          # These conflict types are not supported for auto-resolution
 
-          # Verify AU (added-by-us) conflict is unresolved
+          $RENAME_TXT = "$TEST_DIR/rename.txt"
           $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
-          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_BASE_TXT)) {
-            Write-Output "✅ rename-base.txt unresolved (AU conflict - added by us)"
-          } else {
-            Write-Output "❌ rename-base.txt should remain unresolved (AU conflict type not supported)"
-            exit 1
-          }
-
-          # Verify UA (added-by-them) conflict is unresolved
           $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
-          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_INCOMING_TXT)) {
-            Write-Output "✅ rename-incoming.txt unresolved (UA conflict - added by them)"
-          } else {
-            Write-Output "❌ rename-incoming.txt should remain unresolved (UA conflict type not supported)"
-            exit 1
+
+          # Expect all rename/rename conflict paths to be resolved
+          foreach ($file in @($RENAME_TXT, $RENAME_BASE_TXT, $RENAME_INCOMING_TXT)) {
+            if ($env:RESOLVED_FILES -match [regex]::Escape($file)) {
+              Write-Output "✅ $file resolved (rename/rename)"
+            } else {
+              Write-Output "❌ $file should have been resolved (rename/rename)"
+              exit 1
+            }
+
+            if ($env:UNRESOLVED_FILES -match [regex]::Escape($file)) {
+              Write-Output "❌ $file should not be unresolved (rename/rename)"
+              exit 1
+            }
           }
 
           # === Verify conflict_type mismatch behavior ===
@@ -402,6 +402,9 @@ jobs:
           $DELETED_BY_THEM_PNG = "$TEST_DIR/deleted-by-them.png"
           $BOTH_ADDED_PNG = "$TEST_DIR/both-added.png"
           $RENAME_VS_DELETE_BASE2_TXT = "$TEST_DIR/rename-vs-delete-base-2.txt"
+          $RENAME_TXT = "$TEST_DIR/rename.txt"
+          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
+          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
 
           Write-Output "::group::Content verification for resolved files"
 
@@ -588,6 +591,33 @@ jobs:
             exit 1
           }
 
+          # === Verify rename/rename resolved state ===
+          Write-Output "`n=== Verifying rename/rename resolved state ==="
+
+          # Expect ours rename kept
+          if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
+            Write-Output "✅ rename-base.txt exists (kept by ours strategy)"
+          } else {
+            Write-Output "❌ rename-base.txt should exist"
+            exit 1
+          }
+
+          # Expect theirs rename discarded
+          if (-not (Test-Path $RENAME_INCOMING_TXT -PathType Leaf)) {
+            Write-Output "✅ rename-incoming.txt does not exist (discarded by ours strategy)"
+          } else {
+            Write-Output "❌ rename-incoming.txt should not exist"
+            exit 1
+          }
+
+          # Original path should remain deleted
+          if (-not (Test-Path $RENAME_TXT -PathType Leaf)) {
+            Write-Output "✅ rename.txt does not exist (kept deleted)"
+          } else {
+            Write-Output "❌ rename.txt should not exist"
+            exit 1
+          }
+
           Write-Output "::endgroup::"
 
       - name: Verify unresolved file contents
@@ -633,36 +663,9 @@ jobs:
             exit 1
           }
 
-          # === Verify rename/rename conflict files ===
-          Write-Output "`n=== Verifying rename/rename conflict files ==="
-
-          # rename.txt should NOT exist (DD - deleted by both)
-          if (-not (Test-Path $RENAME_TXT -PathType Leaf)) {
-            Write-Output "✅ rename.txt does not exist (DD conflict - deleted by both)"
-          } else {
-            Write-Output "❌ rename.txt should not exist"
-            exit 1
-          }
-
-          # rename-base.txt should exist (AU - added by us)
-          if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
-            Write-Output "✅ rename-base.txt exists (AU conflict - our renamed file)"
-          } else {
-            Write-Output "❌ rename-base.txt should exist"
-            exit 1
-          }
-
-          # rename-incoming.txt should exist (UA - added by them)
-          if (Test-Path $RENAME_INCOMING_TXT -PathType Leaf) {
-            Write-Output "✅ rename-incoming.txt exists (UA conflict - their renamed file)"
-          } else {
-            Write-Output "❌ rename-incoming.txt should exist"
-            exit 1
-          }
-
-          # rename-vs-delete-base.txt should NOT exist (theirs resolution attempt stages deletion)
+          # rename-vs-delete-base.txt should NOT exist (theirs resolution stages deletion)
           if (-not (Test-Path $RENAME_VS_DELETE_BASE_TXT -PathType Leaf)) {
-            Write-Output "✅ rename-vs-delete-base.txt does not exist (staged deletion after resolution attempt)"
+            Write-Output "✅ rename-vs-delete-base.txt does not exist (staged deletion)"
           } else {
             Write-Output "❌ rename-vs-delete-base.txt should not exist"
             exit 1
