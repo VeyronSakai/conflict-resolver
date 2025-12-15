@@ -160,9 +160,13 @@ describe('ConflictResolver', () => {
 
     it('should resolve rename vs modify conflicts (added-by-us)', async () => {
       // Arrange
-      const renameVsModifyPath = '__tests__/test-conflict-files/rename-vs-modify-base.txt'
+      const renameVsModifyPath =
+        '__tests__/test-conflict-files/rename-vs-modify-base.txt'
       const rules: ConflictResolveRule[] = [
-        { targetPathPattern: '**/rename-vs-modify-base.txt', strategy: ResolutionStrategy.Ours }
+        {
+          targetPathPattern: '**/rename-vs-modify-base.txt',
+          strategy: ResolutionStrategy.Ours
+        }
       ]
       const stubConfigRepository = new StubConfigRepository(rules)
       const conflicts = [
