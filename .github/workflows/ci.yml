@@ -82,8 +82,8 @@ jobs:
           # rename/rename will create DD, AU, UA conflicts which are NOT supported for auto-resolution
           Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
           Copy-Item "$TEST_DIR/base-version/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete.txt" -Force
-          Copy-Item "$TEST_DIR/base-version/rename-vs-delete-ours.txt" "$TEST_DIR/rename-vs-delete-ours.txt" -Force
-          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-ours.txt"
+          Copy-Item "$TEST_DIR/base-version/rename-vs-delete-2.txt" "$TEST_DIR/rename-vs-delete-2.txt" -Force
+          git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-2.txt"
           git commit -m "Add rename ancestor files"
 
           # Create incoming changes branch
@@ -98,7 +98,7 @@ jobs:
 
           # rename vs delete (incoming side)
           Remove-Item "$TEST_DIR/rename-vs-delete.txt" -Force -ErrorAction SilentlyContinue
-          Remove-Item "$TEST_DIR/rename-vs-delete-ours.txt" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$TEST_DIR/rename-vs-delete-2.txt" -Force -ErrorAction SilentlyContinue
 
           # Rename rename.txt to create rename/rename conflict (incoming side)
           # This creates DD, AU, UA conflicts which should remain unresolved
@@ -123,7 +123,7 @@ jobs:
 
           # Rename rename-vs-delete files on base side
           git mv "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-base.txt"
-          git mv "$TEST_DIR/rename-vs-delete-ours.txt" "$TEST_DIR/rename-vs-delete-base-2.txt"
+          git mv "$TEST_DIR/rename-vs-delete-2.txt" "$TEST_DIR/rename-vs-delete-base-2.txt"
 
           git add "$TEST_DIR/"
           git commit -m "Base version changes"
@@ -576,7 +576,7 @@ jobs:
           # Verify rename-vs-delete-base-2.txt kept with our content (ours strategy)
           if (Test-Path $RENAME_VS_DELETE_BASE2_TXT) {
             $renameVsDeleteOursContent = Get-Content "$RENAME_VS_DELETE_BASE2_TXT" -Raw
-            $expectedRenameVsDeleteOursContent = Get-Content "$TEST_DIR/base-version/rename-vs-delete-ours.txt" -Raw
+            $expectedRenameVsDeleteOursContent = Get-Content "$TEST_DIR/base-version/rename-vs-delete-2.txt" -Raw
             if ($renameVsDeleteOursContent -eq $expectedRenameVsDeleteOursContent) {
               Write-Output "✅ rename-vs-delete-base-2.txt has correct base version content (ours)"
             } else {
