@@ -299,9 +299,9 @@ jobs:
             exit 1
           }
 
-          # Rename vs Delete should remain unresolved (no rule)
+          # Rename vs Delete: resolution attempted but expected to error (unimplemented)
           if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
-            Write-Output "✅ rename-vs-delete-base.txt unresolved (rename/delete conflict)"
+            Write-Output "✅ rename-vs-delete-base.txt unresolved (expected due to resolution error)"
           } else {
             Write-Output "❌ rename-vs-delete-base.txt should remain unresolved"
             exit 1
@@ -309,6 +309,14 @@ jobs:
 
           if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
             Write-Output "❌ rename-vs-delete-base.txt should not be resolved"
+            exit 1
+          }
+
+          $renameVsDeleteStatus = git status --porcelain -- $RENAME_VS_DELETE_BASE_TXT
+          if ($renameVsDeleteStatus -match "^D") {
+            Write-Output "✅ rename-vs-delete-base.txt shows staged deletion (attempted theirs resolution)"
+          } else {
+            Write-Output "❌ Expected staged deletion (D) for rename-vs-delete-base.txt after attempting theirs strategy, got: $renameVsDeleteStatus"
             exit 1
           }
 
@@ -618,55 +626,14 @@ jobs:
             exit 1
           }
 
-          # rename-vs-delete-base.txt should exist (rename/delete conflict leaves ours version)
-          if (Test-Path $RENAME_VS_DELETE_BASE_TXT -PathType Leaf) {
-            Write-Output "✅ rename-vs-delete-base.txt exists (rename/delete conflict)"
+          # rename-vs-delete-base.txt should NOT exist (theirs resolution attempt stages deletion)
+          if (-not (Test-Path $RENAME_VS_DELETE_BASE_TXT -PathType Leaf)) {
+            Write-Output "✅ rename-vs-delete-base.txt does not exist (staged deletion after resolution attempt)"
           } else {
-            Write-Output "❌ rename-vs-delete-base.txt should exist"
+            Write-Output "❌ rename-vs-delete-base.txt should not exist"
             exit 1
           }
 
           Write-Output "::endgroup::"
 
-      - name: Write rename-vs-delete error config
-        shell: pwsh
-        run: |
-          $CONFIG_PATH = "__tests__/conflict-resolver-rename-delete-error.yml"
-
-          @"
-          rules:
-            - paths: '__tests__/test-conflict-files/rename-vs-delete-base.txt'
-              strategy: 'theirs'
-              conflict_type: 'deleted-by-them'
-          "@ | Out-File -FilePath $CONFIG_PATH -Encoding utf8
-
-      - name: Test Local Action (rename-vs-delete; expect error log)
-        id: test-action-rename-delete
-        uses: ./
-        with:
-          config-path: "__tests__/conflict-resolver-rename-delete-error.yml"
-
-      - name: Assert rename-vs-delete attempted and errored
-        shell: pwsh
-        env:
-          RESOLVED_FILES: ${{ steps.test-action-rename-delete.outputs.resolved-files }}
-          UNRESOLVED_FILES: ${{ steps.test-action-rename-delete.outputs.unresolved-files }}
-        run: |
-          $TARGET = "__tests__/test-conflict-files/rename-vs-delete-base.txt"
-
-          if ($env:UNRESOLVED_FILES -notmatch [regex]::Escape($TARGET)) {
-            Write-Output "❌ Expected $TARGET to be unresolved (resolution attempt should error)."
-            exit 1
-          }
-
-          if ($env:RESOLVED_FILES -match [regex]::Escape($TARGET)) {
-            Write-Output "❌ Expected $TARGET to not be resolved."
-            exit 1
-          }
-
-          $status = git status --porcelain -- $TARGET
-          if ($status -notmatch "^D") {
-            Write-Output "❌ Expected staged deletion (D) for $TARGET after attempting theirs strategy, got: $status"
-            exit 1
-          }
 
