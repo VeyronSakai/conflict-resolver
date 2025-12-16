@@ -140,6 +140,11 @@ rules:
 - `both-added` (AA): Both sides added the same file
 - `deleted-by-us` (DU): We deleted, they modified
 - `deleted-by-them` (UD): They deleted, we modified
+- `deleted-by-both` (DD): Both sides deleted the path (often appears as the
+  original path in rename/rename)
+- `added-by-us` (AU): Added/renamed on our side (often appears in rename/rename)
+- `added-by-them` (UA): Added/renamed on their side (often appears in
+  rename/rename)
 
 ## Inputs
 
@@ -160,35 +165,25 @@ The action recognizes the following Git conflict states:
 
 ### Supported Conflict Types
 
-| Type              | Status Code | Description                    |
-| ----------------- | ----------- | ------------------------------ |
-| `both-modified`   | UU          | Both sides modified the file   |
-| `both-added`      | AA          | Both sides added the same file |
-| `deleted-by-us`   | DU          | We deleted, they modified      |
-| `deleted-by-them` | UD          | They deleted, we modified      |
+| Type              | Status Code | Description                                          |
+| ----------------- | ----------- | ---------------------------------------------------- |
+| `both-modified`   | UU          | Both sides modified the file                         |
+| `both-added`      | AA          | Both sides added the same file                       |
+| `deleted-by-us`   | DU          | We deleted, they modified                            |
+| `deleted-by-them` | UD          | They deleted, we modified                            |
+| `deleted-by-both` | DD          | Both sides deleted the path                          |
+| `added-by-us`     | AU          | Added/renamed on our side (often in rename/rename)   |
+| `added-by-them`   | UA          | Added/renamed on their side (often in rename/rename) |
 
-### Unsupported Conflict Types
+### Notes on rename/rename
 
-The following conflict types are **not supported** for automatic resolution and
-require manual intervention:
+A rename/rename conflict typically shows up as a combination of:
 
-| Type              | Status Code | Description                                           |
-| ----------------- | ----------- | ----------------------------------------------------- |
-| `deleted-by-both` | DD          | Original file renamed differently on both branches    |
-| `added-by-us`     | AU          | File renamed on our branch (rename/rename conflict)   |
-| `added-by-them`   | UA          | File renamed on their branch (rename/rename conflict) |
+- `deleted-by-both` (DD) on the original path
+- `added-by-us` (AU) and `added-by-them` (UA) on the two renamed paths
 
-**Why rename/rename conflicts are not supported:**
-
-Rename/rename conflicts occur when both branches rename the same file to
-different names. These conflicts require human judgment to decide:
-
-- Which renamed file to keep
-- Whether to keep both renamed files
-- How to merge the content of the renamed files
-
-When the action encounters these conflict types, it logs an error and leaves the
-files for manual resolution.
+This action can resolve these by applying your configured `ours`/`theirs`
+strategy to AU/UA, and staging the deletion for DD.
 
 ## Configuration Rules
 
