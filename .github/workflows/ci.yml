@@ -131,7 +131,7 @@ jobs:
           # Attempt to merge incoming changes into base branch to create conflicts
           Write-Output "::notice::Attempting to merge incoming changes into base branch..."
           try {
-            git merge "test-incoming-$env:RUN_ID" --no-ff --no-commit
+            git merge "test-incoming-$env:RUN_ID" --no-ff --no-commit -X no-renames
           } catch {
             # Merge conflict is expected
           }
@@ -159,7 +159,7 @@ jobs:
           Write-Output "::endgroup::"
 
           # Save conflict state
-          if (git status --porcelain | Select-String -Quiet "^(UU|DU|UD|AA|DD|AU|UA)") {
+          if (git status --porcelain --no-renames | Select-String -Quiet "^(UU|DU|UD|AA|DD|AU|UA)") {
             "has_conflicts=true" | Out-File -Append $env:GITHUB_OUTPUT
             Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
           } else {
