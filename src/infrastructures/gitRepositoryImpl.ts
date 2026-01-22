@@ -74,6 +74,7 @@ export class GitRepositoryImpl implements GitRepository {
     const statusOutput = await this.execGitCommand([
       'status',
       '--porcelain',
+      '--no-renames',
       '--',
       filePath
     ])
