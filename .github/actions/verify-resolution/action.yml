@@ -48,7 +48,7 @@ runs:
         $RENAME_VS_DELETE_BASE2_TXT = "$TEST_DIR/rename-vs-delete-base-2.txt"
 
         Write-Output "::group::Verification Results"
-        
+
         # === Both-Modified conflicts ===
         Write-Output "=== Verifying Both-Modified conflicts ==="
 
@@ -74,51 +74,51 @@ runs:
           Write-Output "❌ test.png should have been resolved"
           exit 1
         }
-        
+
         # === Deleted-By-Us conflicts ===
         Write-Output "`n=== Verifying Deleted-By-Us conflicts ==="
-        
+
         if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_US_TXT)) {
           Write-Output "✅ deleted-by-us.txt resolved (theirs strategy, deleted-by-us)"
         } else {
           Write-Output "❌ deleted-by-us.txt should have been resolved"
           exit 1
         }
-        
+
         if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_US_PNG)) {
           Write-Output "✅ deleted-by-us.png resolved (theirs strategy, deleted-by-us)"
         } else {
           Write-Output "❌ deleted-by-us.png should have been resolved"
           exit 1
         }
-        
+
         # === Deleted-By-Them conflicts ===
         Write-Output "`n=== Verifying Deleted-By-Them conflicts ==="
-        
+
         if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_THEM_TXT)) {
           Write-Output "✅ deleted-by-them.txt resolved (ours strategy, deleted-by-them)"
         } else {
           Write-Output "❌ deleted-by-them.txt should have been resolved"
           exit 1
         }
-        
+
         if ($env:RESOLVED_FILES -match [regex]::Escape($DELETED_BY_THEM_PNG)) {
           Write-Output "✅ deleted-by-them.png resolved (ours strategy, deleted-by-them)"
         } else {
           Write-Output "❌ deleted-by-them.png should have been resolved"
           exit 1
         }
-        
+
         # === Both-Added conflicts ===
         Write-Output "`n=== Verifying Both-Added conflicts ==="
-        
+
         if ($env:RESOLVED_FILES -match [regex]::Escape($BOTH_ADDED_TXT)) {
           Write-Output "✅ both-added.txt resolved (theirs strategy, both-added)"
         } else {
           Write-Output "❌ both-added.txt should have been resolved"
           exit 1
         }
-        
+
         if ($env:RESOLVED_FILES -match [regex]::Escape($BOTH_ADDED_PNG)) {
           Write-Output "✅ both-added.png resolved (theirs strategy, both-added)"
         } else {
@@ -247,7 +247,7 @@ runs:
         # First, check if files exist
         Write-Output "Checking if resolved files exist:"
         Get-ChildItem "$TEST_DIR/"
-        
+
         Write-Output "`n=== Verifying Both-Modified file contents ==="
 
         # Verify test.json has incoming changes content (theirs strategy)
@@ -289,9 +289,9 @@ runs:
           Get-ChildItem "$TEST_PNG"
           exit 1
         }
-        
+
         Write-Output "`n=== Verifying Deleted-By-Us file contents ==="
-        
+
         # Verify deleted-by-us.txt was restored with incoming changes (theirs strategy)
         if (Test-Path $DELETED_BY_US_TXT) {
           $deletedByUsContent = Get-Content "$DELETED_BY_US_TXT" -Raw
@@ -306,7 +306,7 @@ runs:
           Write-Output "❌ deleted-by-us.txt should exist (restored by theirs strategy)"
           exit 1
         }
-        
+
         # Verify deleted-by-us.png was restored with incoming changes (theirs strategy)
         if (Test-Path $DELETED_BY_US_PNG) {
           $deletedByUsPngSize = (Get-Item "$DELETED_BY_US_PNG").Length
@@ -321,9 +321,9 @@ runs:
           Write-Output "❌ deleted-by-us.png should exist (restored by theirs strategy)"
           exit 1
         }
-        
+
         Write-Output "`n=== Verifying Deleted-By-Them file contents ==="
-        
+
         # Verify deleted-by-them.txt kept with our content (ours strategy)
         if (Test-Path $DELETED_BY_THEM_TXT) {
           $deletedByThemContent = Get-Content "$DELETED_BY_THEM_TXT" -Raw
@@ -338,7 +338,7 @@ runs:
           Write-Output "❌ deleted-by-them.txt should exist (kept by ours strategy)"
           exit 1
         }
-        
+
         # Verify deleted-by-them.png kept with our content (ours strategy)
         if (Test-Path $DELETED_BY_THEM_PNG) {
           $deletedByThemPngSize = (Get-Item "$DELETED_BY_THEM_PNG").Length
@@ -353,7 +353,7 @@ runs:
           Write-Output "❌ deleted-by-them.png should exist (kept by ours strategy)"
           exit 1
         }
-        
+
         Write-Output "`n=== Verifying Both-Added file contents ==="
 
         # Verify both-added.txt has incoming changes content (theirs strategy)

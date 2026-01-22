@@ -15,8 +15,8 @@ inputs:
     default: '.github/conflict-resolver.yml'
   no-renames:
     description: >
-      If true, disable rename detection in git status.
-      This treats renames as separate add/delete operations.
+      If true, disable rename detection in git status. This treats renames as
+      separate add/delete operations.
     required: false
     default: 'false'
 

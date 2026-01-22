@@ -32532,6 +32532,10 @@ var ConflictType;
 })(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
+    noRenames;
+    constructor(options = {}) {
+        this.noRenames = options.noRenames ?? false;
+    }
     async getConflictedFiles() {
         const output = await this.execGitCommand([
             'diff',
@@ -32584,13 +32588,12 @@ class GitRepositoryImpl {
         }
     }
     async getConflictType(filePath) {
-        const statusOutput = await this.execGitCommand([
-            'status',
-            '--porcelain',
-            '--no-renames',
-            '--',
-            filePath
-        ]);
+        const args = ['status', '--porcelain'];
+        if (this.noRenames) {
+            args.push('--no-renames');
+        }
+        args.push('--', filePath);
+        const statusOutput = await this.execGitCommand(args);
         // Git status --porcelain format: XY filename
         // The first two characters are the status code
         const statusCode = statusOutput.substring(0, 2);
@@ -32716,9 +32719,10 @@ class GitRepositoryImpl {
 async function run() {
     // Dependency Injection Container
     const configPath = coreExports.getInput('config-path') || '.github/conflict-resolver.yml';
+    const noRenames = coreExports.getInput('no-renames') === 'true';
     // Create infrastructure implementations
     const configRepository = new ConfigRepositoryImpl(configPath);
-    const gitRepository = new GitRepositoryImpl();
+    const gitRepository = new GitRepositoryImpl({ noRenames });
     // Create use-case with injected dependencies
     const conflictResolver = new ConflictResolver(configRepository, gitRepository);
     // Create and run presentation layer
