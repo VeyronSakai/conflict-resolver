@@ -13,10 +13,11 @@ export async function run(): Promise<void> {
   // Dependency Injection Container
   const configPath =
     core.getInput('config-path') || '.github/conflict-resolver.yml'
+  const noRenames = core.getInput('no-renames') === 'true'
 
   // Create infrastructure implementations
   const configRepository = new ConfigRepositoryImpl(configPath)
-  const gitRepository = new GitRepositoryImpl()
+  const gitRepository = new GitRepositoryImpl({ noRenames })
 
   // Create use-case with injected dependencies
   const conflictResolver = new ConflictResolver(configRepository, gitRepository)
