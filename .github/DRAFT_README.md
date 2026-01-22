@@ -140,15 +140,18 @@ rules:
 - `both-added` (AA): Both sides added the same file
 - `deleted-by-us` (DU): We deleted, they modified
 - `deleted-by-them` (UD): They deleted, we modified
-- `deleted-by-both` (DD): Both sides deleted the file
-- `added-by-us` (AU): We added, they have not merged yet
-- `added-by-them` (UA): They added, we have not merged yet
+- `deleted-by-both` (DD): Both sides deleted the path (often appears as the
+  original path in rename/rename)
+- `added-by-us` (AU): Added/renamed on our side (often appears in rename/rename)
+- `added-by-them` (UA): Added/renamed on their side (often appears in
+  rename/rename)
 
 ## Inputs
 
-| Name          | Description                                        | Required | Default                         |
-| ------------- | -------------------------------------------------- | -------- | ------------------------------- |
-| `config-path` | Path to the conflict resolution configuration file | No       | `.github/conflict-resolver.yml` |
+| Name          | Description                                                                                             | Required | Default                         |
+| ------------- | ------------------------------------------------------------------------------------------------------- | -------- | ------------------------------- |
+| `config-path` | Path to the conflict resolution configuration file                                                      | No       | `.github/conflict-resolver.yml` |
+| `no-renames`  | If true, disable rename detection in git status. This treats renames as separate add/delete operations. | No       | `false`                         |
 
 ## Outputs
 
@@ -163,15 +166,25 @@ The action recognizes the following Git conflict states:
 
 ### Supported Conflict Types
 
-| Type              | Status Code | Description                        |
-| ----------------- | ----------- | ---------------------------------- |
-| `both-modified`   | UU          | Both sides modified the file       |
-| `both-added`      | AA          | Both sides added the same file     |
-| `deleted-by-us`   | DU          | We deleted, they modified          |
-| `deleted-by-them` | UD          | They deleted, we modified          |
-| `deleted-by-both` | DD          | Both sides deleted the file        |
-| `added-by-us`     | AU          | We added, they have not merged yet |
-| `added-by-them`   | UA          | They added, we have not merged yet |
+| Type              | Status Code | Description                                          |
+| ----------------- | ----------- | ---------------------------------------------------- |
+| `both-modified`   | UU          | Both sides modified the file                         |
+| `both-added`      | AA          | Both sides added the same file                       |
+| `deleted-by-us`   | DU          | We deleted, they modified                            |
+| `deleted-by-them` | UD          | They deleted, we modified                            |
+| `deleted-by-both` | DD          | Both sides deleted the path                          |
+| `added-by-us`     | AU          | Added/renamed on our side (often in rename/rename)   |
+| `added-by-them`   | UA          | Added/renamed on their side (often in rename/rename) |
+
+### Notes on rename/rename
+
+A rename/rename conflict typically shows up as a combination of:
+
+- `deleted-by-both` (DD) on the original path
+- `added-by-us` (AU) and `added-by-them` (UA) on the two renamed paths
+
+This action can resolve these by applying your configured `ours`/`theirs`
+strategy to AU/UA, and staging the deletion for DD.
 
 ## Configuration Rules
 
