@@ -163,15 +163,15 @@ The action recognizes the following Git conflict states:
 
 ### Supported Conflict Types
 
-| Type              | Status Code | Description                             |
-| ----------------- | ----------- | --------------------------------------- |
-| `both-modified`   | UU          | Both sides modified the file            |
-| `both-added`      | AA          | Both sides added the same file          |
-| `deleted-by-us`   | DU          | We deleted, they modified               |
-| `deleted-by-them` | UD          | They deleted, we modified               |
-| `deleted-by-both` | DD          | Both sides deleted the file             |
-| `added-by-us`     | AU          | We added, they have not merged yet      |
-| `added-by-them`   | UA          | They added, we have not merged yet      |
+| Type              | Status Code | Description                        |
+| ----------------- | ----------- | ---------------------------------- |
+| `both-modified`   | UU          | Both sides modified the file       |
+| `both-added`      | AA          | Both sides added the same file     |
+| `deleted-by-us`   | DU          | We deleted, they modified          |
+| `deleted-by-them` | UD          | They deleted, we modified          |
+| `deleted-by-both` | DD          | Both sides deleted the file        |
+| `added-by-us`     | AU          | We added, they have not merged yet |
+| `added-by-them`   | UA          | They added, we have not merged yet |
 
 ## Configuration Rules
 
