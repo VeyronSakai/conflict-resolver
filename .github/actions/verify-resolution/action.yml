@@ -30,6 +30,7 @@ runs:
       env:
         RESOLVED_FILES: ${{ inputs.resolved-files }}
         UNRESOLVED_FILES: ${{ inputs.unresolved-files }}
+        NO_RENAMES: ${{ inputs.no-renames }}
       run: |
         # Define test file paths for verification
         $TEST_DIR = "__tests__/test-conflict-files"
@@ -145,38 +146,46 @@ runs:
           exit 1
         }
 
-        # Rename vs Delete (theirs) should be resolved
-        if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
-          Write-Output "✅ rename-vs-delete-base.txt resolved (theirs strategy)"
+        # Rename vs Delete tests - only run when rename detection is enabled
+        if ($env:NO_RENAMES -ne 'true') {
+          Write-Output "`n=== Verifying Rename vs Delete conflicts ==="
+
+          # Rename vs Delete (theirs) should be resolved
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
+            Write-Output "✅ rename-vs-delete-base.txt resolved (theirs strategy)"
+          } else {
+            Write-Output "❌ rename-vs-delete-base.txt should have been resolved"
+            exit 1
+          }
+
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
+            Write-Output "❌ rename-vs-delete-base.txt should not be unresolved"
+            exit 1
+          }
+
+          # Rename vs Delete (ours) should be resolved
+          if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE2_TXT)) {
+            Write-Output "✅ rename-vs-delete-base-2.txt resolved (ours strategy)"
+          } else {
+            Write-Output "❌ rename-vs-delete-base-2.txt should have been resolved"
+            exit 1
+          }
+
+          if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE2_TXT)) {
+            Write-Output "❌ rename-vs-delete-base-2.txt should not be unresolved"
+            exit 1
+          }
+
+          $renameVsDeleteStatus = git status --porcelain -- $RENAME_VS_DELETE_BASE_TXT
+          if ($renameVsDeleteStatus -match "^D") {
+            Write-Output "✅ rename-vs-delete-base.txt shows staged deletion (resolved by theirs strategy)"
+          } else {
+            Write-Output "❌ Expected staged deletion (D) for rename-vs-delete-base.txt after resolving theirs strategy, got: $renameVsDeleteStatus"
+            exit 1
+          }
         } else {
-          Write-Output "❌ rename-vs-delete-base.txt should have been resolved"
-          exit 1
-        }
-
-        if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE_TXT)) {
-          Write-Output "❌ rename-vs-delete-base.txt should not be unresolved"
-          exit 1
-        }
-
-        # Rename vs Delete (ours) should be resolved
-        if ($env:RESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE2_TXT)) {
-          Write-Output "✅ rename-vs-delete-base-2.txt resolved (ours strategy)"
-        } else {
-          Write-Output "❌ rename-vs-delete-base-2.txt should have been resolved"
-          exit 1
-        }
-
-        if ($env:UNRESOLVED_FILES -match [regex]::Escape($RENAME_VS_DELETE_BASE2_TXT)) {
-          Write-Output "❌ rename-vs-delete-base-2.txt should not be unresolved"
-          exit 1
-        }
-
-        $renameVsDeleteStatus = git status --porcelain -- $RENAME_VS_DELETE_BASE_TXT
-        if ($renameVsDeleteStatus -match "^D") {
-          Write-Output "✅ rename-vs-delete-base.txt shows staged deletion (resolved by theirs strategy)"
-        } else {
-          Write-Output "❌ Expected staged deletion (D) for rename-vs-delete-base.txt after resolving theirs strategy, got: $renameVsDeleteStatus"
-          exit 1
+          Write-Output "`n=== Skipping Rename vs Delete tests (no-renames mode) ==="
+          Write-Output "ℹ️ In no-renames mode, rename-vs-delete conflicts are not detected"
         }
 
         # === Rename/Rename conflicts (DD, AU, UA) - expected to be auto-resolved ===
@@ -225,6 +234,8 @@ runs:
 
     - name: Verify resolved file contents
       shell: pwsh
+      env:
+        NO_RENAMES: ${{ inputs.no-renames }}
       run: |
         # Define test file paths
         $TEST_DIR = "__tests__/test-conflict-files"
@@ -412,18 +423,23 @@ runs:
         }
 
         # Verify rename-vs-delete-base-2.txt kept with our content (ours strategy)
-        if (Test-Path $RENAME_VS_DELETE_BASE2_TXT) {
-          $renameVsDeleteOursContent = Get-Content "$RENAME_VS_DELETE_BASE2_TXT" -Raw
-          $expectedRenameVsDeleteOursContent = Get-Content "$TEST_DIR/base-version/rename-vs-delete-2.txt" -Raw
-          if ($renameVsDeleteOursContent -eq $expectedRenameVsDeleteOursContent) {
-            Write-Output "✅ rename-vs-delete-base-2.txt has correct base version content (ours)"
+        # Only run when rename detection is enabled
+        if ($env:NO_RENAMES -ne 'true') {
+          if (Test-Path $RENAME_VS_DELETE_BASE2_TXT) {
+            $renameVsDeleteOursContent = Get-Content "$RENAME_VS_DELETE_BASE2_TXT" -Raw
+            $expectedRenameVsDeleteOursContent = Get-Content "$TEST_DIR/base-version/rename-vs-delete-2.txt" -Raw
+            if ($renameVsDeleteOursContent -eq $expectedRenameVsDeleteOursContent) {
+              Write-Output "✅ rename-vs-delete-base-2.txt has correct base version content (ours)"
+            } else {
+              Write-Output "❌ rename-vs-delete-base-2.txt does not have expected base version content"
+              exit 1
+            }
           } else {
-            Write-Output "❌ rename-vs-delete-base-2.txt does not have expected base version content"
+            Write-Output "❌ rename-vs-delete-base-2.txt should exist"
             exit 1
           }
         } else {
-          Write-Output "❌ rename-vs-delete-base-2.txt should exist"
-          exit 1
+          Write-Output "`n=== Skipping rename-vs-delete verification (no-renames mode) ==="
         }
 
         # === Verify rename/rename resolved state ===
@@ -457,6 +473,8 @@ runs:
 
     - name: Verify unresolved file contents
       shell: pwsh
+      env:
+        NO_RENAMES: ${{ inputs.no-renames }}
       run: |
         # Define test file paths
         $TEST_DIR = "__tests__/test-conflict-files"
@@ -495,20 +513,25 @@ runs:
           exit 1
         }
 
-        # rename-vs-delete-base.txt should NOT exist (theirs resolution stages deletion)
-        if (-not (Test-Path $RENAME_VS_DELETE_BASE_TXT -PathType Leaf)) {
-          Write-Output "✅ rename-vs-delete-base.txt does not exist (staged deletion)"
-        } else {
-          Write-Output "❌ rename-vs-delete-base.txt should not exist"
-          exit 1
-        }
+        # rename-vs-delete verification - only run when rename detection is enabled
+        if ($env:NO_RENAMES -ne 'true') {
+          # rename-vs-delete-base.txt should NOT exist (theirs resolution stages deletion)
+          if (-not (Test-Path $RENAME_VS_DELETE_BASE_TXT -PathType Leaf)) {
+            Write-Output "✅ rename-vs-delete-base.txt does not exist (staged deletion)"
+          } else {
+            Write-Output "❌ rename-vs-delete-base.txt should not exist"
+            exit 1
+          }
 
-        # rename-vs-delete-base-2.txt should exist (ours strategy)
-        if (Test-Path $RENAME_VS_DELETE_BASE2_TXT -PathType Leaf) {
-          Write-Output "✅ rename-vs-delete-base-2.txt exists (ours strategy)"
+          # rename-vs-delete-base-2.txt should exist (ours strategy)
+          if (Test-Path $RENAME_VS_DELETE_BASE2_TXT -PathType Leaf) {
+            Write-Output "✅ rename-vs-delete-base-2.txt exists (ours strategy)"
+          } else {
+            Write-Output "❌ rename-vs-delete-base-2.txt should exist"
+            exit 1
+          }
         } else {
-          Write-Output "❌ rename-vs-delete-base-2.txt should exist"
-          exit 1
+          Write-Output "ℹ️ Skipping rename-vs-delete file existence checks (no-renames mode)"
         }
 
         Write-Output "::endgroup::"
