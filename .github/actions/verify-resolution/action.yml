@@ -189,25 +189,31 @@ runs:
         }
 
         # === Rename/Rename conflicts (DD, AU, UA) - expected to be auto-resolved ===
-        Write-Output "`n=== Verifying Rename/Rename conflicts are auto-resolved ==="
+        # Only run when rename detection is enabled
+        if ($env:NO_RENAMES -ne 'true') {
+          Write-Output "`n=== Verifying Rename/Rename conflicts are auto-resolved ==="
 
-        $RENAME_TXT = "$TEST_DIR/rename.txt"
-        $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
-        $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
+          $RENAME_TXT = "$TEST_DIR/rename.txt"
+          $RENAME_BASE_TXT = "$TEST_DIR/rename-base.txt"
+          $RENAME_INCOMING_TXT = "$TEST_DIR/rename-incoming.txt"
 
-        # Expect all rename/rename conflict paths to be resolved
-        foreach ($file in @($RENAME_TXT, $RENAME_BASE_TXT, $RENAME_INCOMING_TXT)) {
-          if ($env:RESOLVED_FILES -match [regex]::Escape($file)) {
-            Write-Output "✅ $file resolved (rename/rename)"
-          } else {
-            Write-Output "❌ $file should have been resolved (rename/rename)"
-            exit 1
+          # Expect all rename/rename conflict paths to be resolved
+          foreach ($file in @($RENAME_TXT, $RENAME_BASE_TXT, $RENAME_INCOMING_TXT)) {
+            if ($env:RESOLVED_FILES -match [regex]::Escape($file)) {
+              Write-Output "✅ $file resolved (rename/rename)"
+            } else {
+              Write-Output "❌ $file should have been resolved (rename/rename)"
+              exit 1
+            }
+
+            if ($env:UNRESOLVED_FILES -match [regex]::Escape($file)) {
+              Write-Output "❌ $file should not be unresolved (rename/rename)"
+              exit 1
+            }
           }
-
-          if ($env:UNRESOLVED_FILES -match [regex]::Escape($file)) {
-            Write-Output "❌ $file should not be unresolved (rename/rename)"
-            exit 1
-          }
+        } else {
+          Write-Output "`n=== Skipping Rename/Rename tests (no-renames mode) ==="
+          Write-Output "ℹ️ In no-renames mode, rename/rename conflicts are not detected as such"
         }
 
         # === Verify conflict_type mismatch behavior ===
@@ -443,30 +449,35 @@ runs:
         }
 
         # === Verify rename/rename resolved state ===
-        Write-Output "`n=== Verifying rename/rename resolved state ==="
+        # Only run when rename detection is enabled
+        if ($env:NO_RENAMES -ne 'true') {
+          Write-Output "`n=== Verifying rename/rename resolved state ==="
 
-        # Expect ours rename kept
-        if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
-          Write-Output "✅ rename-base.txt exists (kept by ours strategy)"
-        } else {
-          Write-Output "❌ rename-base.txt should exist"
-          exit 1
-        }
+          # Expect ours rename kept
+          if (Test-Path $RENAME_BASE_TXT -PathType Leaf) {
+            Write-Output "✅ rename-base.txt exists (kept by ours strategy)"
+          } else {
+            Write-Output "❌ rename-base.txt should exist"
+            exit 1
+          }
 
-        # Expect theirs rename discarded
-        if (-not (Test-Path $RENAME_INCOMING_TXT -PathType Leaf)) {
-          Write-Output "✅ rename-incoming.txt does not exist (discarded by ours strategy)"
-        } else {
-          Write-Output "❌ rename-incoming.txt should not exist"
-          exit 1
-        }
+          # Expect theirs rename discarded
+          if (-not (Test-Path $RENAME_INCOMING_TXT -PathType Leaf)) {
+            Write-Output "✅ rename-incoming.txt does not exist (discarded by ours strategy)"
+          } else {
+            Write-Output "❌ rename-incoming.txt should not exist"
+            exit 1
+          }
 
-        # Original path should remain deleted
-        if (-not (Test-Path $RENAME_TXT -PathType Leaf)) {
-          Write-Output "✅ rename.txt does not exist (kept deleted)"
+          # Original path should remain deleted
+          if (-not (Test-Path $RENAME_TXT -PathType Leaf)) {
+            Write-Output "✅ rename.txt does not exist (kept deleted)"
+          } else {
+            Write-Output "❌ rename.txt should not exist"
+            exit 1
+          }
         } else {
-          Write-Output "❌ rename.txt should not exist"
-          exit 1
+          Write-Output "`n=== Skipping rename/rename state verification (no-renames mode) ==="
         }
 
         Write-Output "::endgroup::"
