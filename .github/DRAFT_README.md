@@ -148,10 +148,10 @@ rules:
 
 ## Inputs
 
-| Name          | Description                                                                                                    | Required | Default                         |
-| ------------- | -------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------- |
-| `config-path` | Path to the conflict resolution configuration file                                                             | No       | `.github/conflict-resolver.yml` |
-| `no-renames`  | If true, disable rename detection in git status. This treats renames as separate add/delete operations.       | No       | `false`                         |
+| Name          | Description                                                                                             | Required | Default                         |
+| ------------- | ------------------------------------------------------------------------------------------------------- | -------- | ------------------------------- |
+| `config-path` | Path to the conflict resolution configuration file                                                      | No       | `.github/conflict-resolver.yml` |
+| `no-renames`  | If true, disable rename detection in git status. This treats renames as separate add/delete operations. | No       | `false`                         |
 
 ## Outputs
 
