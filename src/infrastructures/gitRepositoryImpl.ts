@@ -6,7 +6,17 @@ import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
+export interface GitRepositoryOptions {
+  noRenames?: boolean
+}
+
 export class GitRepositoryImpl implements GitRepository {
+  private readonly noRenames: boolean
+
+  constructor(options: GitRepositoryOptions = {}) {
+    this.noRenames = options.noRenames ?? false
+  }
+
   async getConflictedFiles(): Promise<ConflictedFile[]> {
     const output = await this.execGitCommand([
       'diff',
@@ -71,12 +81,13 @@ export class GitRepositoryImpl implements GitRepository {
   }
 
   private async getConflictType(filePath: string): Promise<ConflictType> {
-    const statusOutput = await this.execGitCommand([
-      'status',
-      '--porcelain',
-      '--',
-      filePath
-    ])
+    const args = ['status', '--porcelain']
+    if (this.noRenames) {
+      args.push('--no-renames')
+    }
+    args.push('--', filePath)
+
+    const statusOutput = await this.execGitCommand(args)
 
     // Git status --porcelain format: XY filename
     // The first two characters are the status code

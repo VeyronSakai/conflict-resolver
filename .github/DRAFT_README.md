@@ -140,6 +140,9 @@ rules:
 - `both-added` (AA): Both sides added the same file
 - `deleted-by-us` (DU): We deleted, they modified
 - `deleted-by-them` (UD): They deleted, we modified
+- `deleted-by-both` (DD): Both sides deleted the file
+- `added-by-us` (AU): We added, they have not merged yet
+- `added-by-them` (UA): They added, we have not merged yet
 
 ## Inputs
 
@@ -160,35 +163,15 @@ The action recognizes the following Git conflict states:
 
 ### Supported Conflict Types
 
-| Type              | Status Code | Description                    |
-| ----------------- | ----------- | ------------------------------ |
-| `both-modified`   | UU          | Both sides modified the file   |
-| `both-added`      | AA          | Both sides added the same file |
-| `deleted-by-us`   | DU          | We deleted, they modified      |
-| `deleted-by-them` | UD          | They deleted, we modified      |
-
-### Unsupported Conflict Types
-
-The following conflict types are **not supported** for automatic resolution and
-require manual intervention:
-
-| Type              | Status Code | Description                                           |
-| ----------------- | ----------- | ----------------------------------------------------- |
-| `deleted-by-both` | DD          | Original file renamed differently on both branches    |
-| `added-by-us`     | AU          | File renamed on our branch (rename/rename conflict)   |
-| `added-by-them`   | UA          | File renamed on their branch (rename/rename conflict) |
-
-**Why rename/rename conflicts are not supported:**
-
-Rename/rename conflicts occur when both branches rename the same file to
-different names. These conflicts require human judgment to decide:
-
-- Which renamed file to keep
-- Whether to keep both renamed files
-- How to merge the content of the renamed files
-
-When the action encounters these conflict types, it logs an error and leaves the
-files for manual resolution.
+| Type              | Status Code | Description                        |
+| ----------------- | ----------- | ---------------------------------- |
+| `both-modified`   | UU          | Both sides modified the file       |
+| `both-added`      | AA          | Both sides added the same file     |
+| `deleted-by-us`   | DU          | We deleted, they modified          |
+| `deleted-by-them` | UD          | They deleted, we modified          |
+| `deleted-by-both` | DD          | Both sides deleted the file        |
+| `added-by-us`     | AU          | We added, they have not merged yet |
+| `added-by-them`   | UA          | They added, we have not merged yet |
 
 ## Configuration Rules
 

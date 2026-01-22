@@ -1,0 +1,136 @@
+name: Create Test Conflicts
+description: Create test branches and merge conflicts for integration testing
+
+inputs:
+  branch-suffix:
+    description: Suffix for branch names (e.g., run ID)
+    required: true
+  no-renames:
+    description: Whether to use --no-renames option for merge
+    required: false
+    default: 'false'
+
+outputs:
+  has-conflicts:
+    description: Whether conflicts were detected
+    value: ${{ steps.create-conflicts.outputs.has_conflicts }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Git
+      shell: pwsh
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+
+    - name: Create test branches and conflicts
+      id: create-conflicts
+      shell: pwsh
+      env:
+        BRANCH_SUFFIX: ${{ inputs.branch-suffix }}
+        NO_RENAMES: ${{ inputs.no-renames }}
+      run: |
+        # Define test directory
+        $TEST_DIR = "__tests__/test-conflict-files"
+
+        # Create base branch with test files
+        git switch -C "test-base-$env:BRANCH_SUFFIX"
+
+        # Add rename files to create common ancestor for rename conflicts
+        Copy-Item "$TEST_DIR/base-version/rename.txt" "$TEST_DIR/rename.txt" -Force
+        Copy-Item "$TEST_DIR/base-version/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete.txt" -Force
+        Copy-Item "$TEST_DIR/base-version/rename-vs-delete-2.txt" "$TEST_DIR/rename-vs-delete-2.txt" -Force
+        git add "$TEST_DIR/rename.txt" "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-2.txt"
+        git commit -m "Add rename ancestor files"
+
+        # Create incoming changes branch
+        git switch -C "test-incoming-$env:BRANCH_SUFFIX"
+
+        # Copy incoming changes files (for both-modified and both-added)
+        Copy-Item "$TEST_DIR/incoming-changes/*" "$TEST_DIR/" -Force
+
+        # Remove files that should be deleted on their side (deleted-by-them)
+        Remove-Item "$TEST_DIR/deleted-by-them.txt" -Force -ErrorAction SilentlyContinue
+        Remove-Item "$TEST_DIR/deleted-by-them.png" -Force -ErrorAction SilentlyContinue
+
+        # rename vs delete (incoming side)
+        Remove-Item "$TEST_DIR/rename-vs-delete.txt" -Force -ErrorAction SilentlyContinue
+        Remove-Item "$TEST_DIR/rename-vs-delete-2.txt" -Force -ErrorAction SilentlyContinue
+
+        # Rename rename.txt to create rename/rename conflict (incoming side)
+        git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-incoming.txt"
+
+        git add "$TEST_DIR/"
+        git commit -m "Incoming changes"
+
+        # Switch back to base branch and add base version changes
+        git switch "test-base-$env:BRANCH_SUFFIX"
+
+        # Copy base version files (for both-modified and both-added)
+        Copy-Item "$TEST_DIR/base-version/*" "$TEST_DIR/" -Force
+
+        # Remove files that should be deleted on our side (deleted-by-us)
+        Remove-Item "$TEST_DIR/deleted-by-us.txt" -Force -ErrorAction SilentlyContinue
+        Remove-Item "$TEST_DIR/deleted-by-us.png" -Force -ErrorAction SilentlyContinue
+
+        # Rename rename.txt to create rename/rename conflict (base side)
+        git mv "$TEST_DIR/rename.txt" "$TEST_DIR/rename-base.txt"
+
+        # Rename rename-vs-delete files on base side
+        git mv "$TEST_DIR/rename-vs-delete.txt" "$TEST_DIR/rename-vs-delete-base.txt"
+        git mv "$TEST_DIR/rename-vs-delete-2.txt" "$TEST_DIR/rename-vs-delete-base-2.txt"
+
+        git add "$TEST_DIR/"
+        git commit -m "Base version changes"
+
+        # Attempt to merge incoming changes into base branch to create conflicts
+        Write-Output "::notice::Attempting to merge incoming changes into base branch..."
+        $mergeArgs = @("merge", "test-incoming-$env:BRANCH_SUFFIX", "--no-ff", "--no-commit")
+        if ($env:NO_RENAMES -eq 'true') {
+          $mergeArgs += "-X"
+          $mergeArgs += "no-renames"
+          Write-Output "::notice::Using -X no-renames option"
+        }
+        try {
+          & git @mergeArgs
+        } catch {
+          # Merge conflict is expected
+        }
+
+        # Check conflict status
+        Write-Output "::group::Git status after merge attempt"
+        git status
+        Write-Output "::endgroup::"
+
+        # Determine status args based on no-renames option
+        $statusArgs = @("status", "--porcelain")
+        if ($env:NO_RENAMES -eq 'true') {
+          $statusArgs += "--no-renames"
+        }
+
+        Write-Output "::group::Conflicted files by type"
+        Write-Output "Both modified (UU):"
+        & git @statusArgs | Select-String "^UU"
+        Write-Output "Deleted by us (DU):"
+        & git @statusArgs | Select-String "^DU"
+        Write-Output "Deleted by them (UD):"
+        & git @statusArgs | Select-String "^UD"
+        Write-Output "Both added (AA):"
+        & git @statusArgs | Select-String "^AA"
+        Write-Output "Deleted by both (DD):"
+        & git @statusArgs | Select-String "^DD"
+        Write-Output "Added by us (AU):"
+        & git @statusArgs | Select-String "^AU"
+        Write-Output "Added by them (UA):"
+        & git @statusArgs | Select-String "^UA"
+        Write-Output "::endgroup::"
+
+        # Save conflict state
+        if (& git @statusArgs | Select-String -Quiet "^(UU|DU|UD|AA|DD|AU|UA)") {
+          "has_conflicts=true" | Out-File -Append $env:GITHUB_OUTPUT
+          Write-Output "::notice::Conflicts detected. Ready to test conflict resolver."
+        } else {
+          "has_conflicts=false" | Out-File -Append $env:GITHUB_OUTPUT
+          Write-Output "::warning::No conflicts detected."
+        }
