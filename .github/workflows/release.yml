@@ -113,7 +113,7 @@ jobs:
       VERSION: ${{ needs.update-draft.outputs.tag_name }}
       SOURCE_BRANCH: github-actions/update-files/${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: true
       - name: Update package.json
@@ -147,7 +147,7 @@ jobs:
           message: 'Update README.md'
           add: 'README.md'
           new_branch: ${{ env.SOURCE_BRANCH }}
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
         id: create-github-app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -181,7 +181,7 @@ jobs:
     env:
       VERSION: ${{ needs.update-draft.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: main
           persist-credentials: true
@@ -218,7 +218,7 @@ jobs:
             Write-Error "Unable to parse version: $env:VERSION"
             exit 1
           }
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ env.VERSION }}
           persist-credentials: true
