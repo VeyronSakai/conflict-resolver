@@ -127,7 +127,7 @@ jobs:
           $packageJson.version = $version
           $packageJson | ConvertTo-Json -Depth 100 | Set-Content -Path $env:PACKAGE_JSON_PATH
       - name: Commit package.json
-        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5
+        uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321
         id: commit-package-json
         with:
           author_name: ${{ env.GITHUB_BOT_NAME }}
@@ -139,7 +139,7 @@ jobs:
         run: |
           Copy-Item -Path ".github/DRAFT_README.md" -Destination "README.md" -Force
       - name: Commit README.md
-        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5
+        uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321
         id: commit-readme
         with:
           author_name: ${{ env.GITHUB_BOT_NAME }}
