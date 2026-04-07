@@ -45,7 +45,7 @@ export class GitRepositoryImpl implements GitRepository {
 
   async resolveConflicts(
     files: ReadonlyArray<{ file: ConflictedFile; strategy: ResolutionStrategy }>
-  ): Promise<void> {
+  ): Promise<string[]> {
     const checkoutOurs: string[] = []
     const checkoutTheirs: string[] = []
     const addFiles: string[] = []
@@ -101,23 +101,52 @@ export class GitRepositoryImpl implements GitRepository {
       }
     }
 
-    // Execute batched git commands (at most 4 instead of N*2-3)
-    if (checkoutOurs.length > 0) {
-      await this.execGitCommand(['checkout', '--ours', '--', ...checkoutOurs])
+    const failedPaths = new Set<string>()
+
+    // Execute batched git commands, retry per-file on batch failure
+    await this.execBatchOrPerFile(
+      ['checkout', '--ours'],
+      checkoutOurs,
+      failedPaths
+    )
+    await this.execBatchOrPerFile(
+      ['checkout', '--theirs'],
+      checkoutTheirs,
+      failedPaths
+    )
+    await this.execBatchOrPerFile(
+      ['add'],
+      addFiles.filter((f) => !failedPaths.has(f)),
+      failedPaths
+    )
+    await this.execBatchOrPerFile(
+      ['rm'],
+      rmFiles.filter((f) => !failedPaths.has(f)),
+      failedPaths
+    )
+
+    return [...failedPaths]
+  }
+
+  private async execBatchOrPerFile(
+    command: string[],
+    files: string[],
+    failedPaths: Set<string>
+  ): Promise<void> {
+    if (files.length === 0) {
+      return
     }
-    if (checkoutTheirs.length > 0) {
-      await this.execGitCommand([
-        'checkout',
-        '--theirs',
-        '--',
-        ...checkoutTheirs
-      ])
-    }
-    if (addFiles.length > 0) {
-      await this.execGitCommand(['add', '--', ...addFiles])
-    }
-    if (rmFiles.length > 0) {
-      await this.execGitCommand(['rm', '--', ...rmFiles])
+
+    try {
+      await this.execGitCommand([...command, '--', ...files])
+    } catch {
+      for (const file of files) {
+        try {
+          await this.execGitCommand([...command, '--', file])
+        } catch {
+          failedPaths.add(file)
+        }
+      }
     }
   }
 

@@ -53,16 +53,15 @@ export class ConflictResolver {
     }
 
     if (toResolve.length > 0) {
-      try {
-        await this.gitRepository.resolveConflicts(toResolve)
-        for (const { file, strategy } of toResolve) {
+      const failedPaths = await this.gitRepository.resolveConflicts(toResolve)
+      const failedSet = new Set(failedPaths)
+      for (const { file, strategy } of toResolve) {
+        if (failedSet.has(file.path)) {
+          core.error(`Failed to resolve ${file.path}`)
+          unresolvedFiles.push(file.path)
+        } else {
           resolvedFiles.push(file.path)
           core.info(`✓ Resolved ${file.path} using ${strategy} strategy`)
-        }
-      } catch (error) {
-        core.error(`Failed to resolve conflicts: ${error}`)
-        for (const { file } of toResolve) {
-          unresolvedFiles.push(file.path)
         }
       }
     }

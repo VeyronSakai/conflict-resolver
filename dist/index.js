@@ -33684,17 +33684,16 @@ class ConflictResolver {
             }
         }
         if (toResolve.length > 0) {
-            try {
-                await this.gitRepository.resolveConflicts(toResolve);
-                for (const { file, strategy } of toResolve) {
+            const failedPaths = await this.gitRepository.resolveConflicts(toResolve);
+            const failedSet = new Set(failedPaths);
+            for (const { file, strategy } of toResolve) {
+                if (failedSet.has(file.path)) {
+                    coreExports.error(`Failed to resolve ${file.path}`);
+                    unresolvedFiles.push(file.path);
+                }
+                else {
                     resolvedFiles.push(file.path);
                     coreExports.info(`✓ Resolved ${file.path} using ${strategy} strategy`);
-                }
-            }
-            catch (error) {
-                coreExports.error(`Failed to resolve conflicts: ${error}`);
-                for (const { file } of toResolve) {
-                    unresolvedFiles.push(file.path);
                 }
             }
         }
@@ -36677,23 +36676,30 @@ class GitRepositoryImpl {
                     break;
             }
         }
-        // Execute batched git commands (at most 4 instead of N*2-3)
-        if (checkoutOurs.length > 0) {
-            await this.execGitCommand(['checkout', '--ours', '--', ...checkoutOurs]);
+        const failedPaths = new Set();
+        // Execute batched git commands, retry per-file on batch failure
+        await this.execBatchOrPerFile(['checkout', '--ours'], checkoutOurs, failedPaths);
+        await this.execBatchOrPerFile(['checkout', '--theirs'], checkoutTheirs, failedPaths);
+        await this.execBatchOrPerFile(['add'], addFiles.filter((f) => !failedPaths.has(f)), failedPaths);
+        await this.execBatchOrPerFile(['rm'], rmFiles.filter((f) => !failedPaths.has(f)), failedPaths);
+        return [...failedPaths];
+    }
+    async execBatchOrPerFile(command, files, failedPaths) {
+        if (files.length === 0) {
+            return;
         }
-        if (checkoutTheirs.length > 0) {
-            await this.execGitCommand([
-                'checkout',
-                '--theirs',
-                '--',
-                ...checkoutTheirs
-            ]);
+        try {
+            await this.execGitCommand([...command, '--', ...files]);
         }
-        if (addFiles.length > 0) {
-            await this.execGitCommand(['add', '--', ...addFiles]);
-        }
-        if (rmFiles.length > 0) {
-            await this.execGitCommand(['rm', '--', ...rmFiles]);
+        catch {
+            for (const file of files) {
+                try {
+                    await this.execGitCommand([...command, '--', file]);
+                }
+                catch {
+                    failedPaths.add(file);
+                }
+            }
         }
     }
     parseConflictType(statusCode) {

@@ -17,11 +17,12 @@ export class SpyGitRepository implements GitRepository {
 
   async resolveConflicts(
     files: ReadonlyArray<{ file: ConflictedFile; strategy: ResolutionStrategy }>
-  ): Promise<void> {
+  ): Promise<string[]> {
     for (const { file, strategy } of files) {
       this.resolvedFiles.set(file.path, strategy)
       this.stagedFiles.add(file.path)
     }
+    return []
   }
 
   // Test helper methods
