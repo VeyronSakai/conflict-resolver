@@ -36597,24 +36597,20 @@ class GitRepositoryImpl {
         this.noRenames = options.noRenames ?? false;
     }
     async getConflictedFiles() {
-        const args = ['status', '--porcelain', '-z'];
+        const args = ['status', '--porcelain'];
         if (this.noRenames) {
             args.push('--no-renames');
         }
         const output = await this.execGitCommand(args);
-        if (!output) {
+        if (!output.trim()) {
             return [];
         }
         const conflictedFiles = [];
-        // -z uses NUL as delimiter and does not quote paths
-        for (const entry of output.split('\0')) {
-            if (entry.length < 3) {
-                continue;
-            }
-            const statusCode = entry.substring(0, 2);
+        for (const line of output.trim().split('\n')) {
+            const statusCode = line.substring(0, 2);
             const conflictType = this.parseConflictType(statusCode);
             if (conflictType !== undefined) {
-                conflictedFiles.push({ path: entry.substring(3), conflictType });
+                conflictedFiles.push({ path: line.substring(3), conflictType });
             }
         }
         return conflictedFiles;
