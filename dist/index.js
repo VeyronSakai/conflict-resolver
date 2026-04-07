@@ -1,12 +1,12 @@
 import require$$0 from 'os';
 import require$$0$1 from 'crypto';
-import * as fs from 'fs';
-import fs__default from 'fs';
-import require$$1$6 from 'path';
+import * as require$$1 from 'fs';
+import require$$1__default from 'fs';
+import require$$1$7 from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
 import 'net';
-import require$$1 from 'tls';
+import require$$1$1 from 'tls';
 import require$$4 from 'events';
 import require$$5$4 from 'assert';
 import require$$6 from 'util';
@@ -20,14 +20,14 @@ import require$$7 from 'node:querystring';
 import require$$8 from 'node:events';
 import require$$0$7 from 'node:diagnostics_channel';
 import require$$5 from 'node:tls';
-import require$$1$2 from 'node:zlib';
+import require$$1$3 from 'node:zlib';
 import require$$5$1 from 'node:perf_hooks';
 import require$$8$1 from 'node:util/types';
-import require$$1$1 from 'node:worker_threads';
-import require$$1$3 from 'node:url';
+import require$$1$2 from 'node:worker_threads';
+import require$$1$4 from 'node:url';
 import require$$5$2 from 'node:async_hooks';
-import require$$1$4 from 'node:console';
-import require$$1$5 from 'node:dns';
+import require$$1$5 from 'node:console';
+import require$$1$6 from 'node:dns';
 import require$$5$3 from 'string_decoder';
 import require$$2$2 from 'child_process';
 import require$$6$1 from 'timers';
@@ -268,7 +268,7 @@ function requireFileCommand () {
 	// We use any as a valid input type
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	const crypto = __importStar(require$$0$1);
-	const fs = __importStar(fs__default);
+	const fs = __importStar(require$$1__default);
 	const os = __importStar(require$$0);
 	const utils_1 = requireUtils$1();
 	function issueFileCommand(command, message) {
@@ -415,7 +415,7 @@ var hasRequiredTunnel$1;
 function requireTunnel$1 () {
 	if (hasRequiredTunnel$1) return tunnel$1;
 	hasRequiredTunnel$1 = 1;
-	var tls = require$$1;
+	var tls = require$$1$1;
 	var http = require$$2;
 	var https = require$$3;
 	var events = require$$4;
@@ -5058,7 +5058,7 @@ function requireWebidl () {
 	hasRequiredWebidl = 1;
 
 	const { types, inspect } = require$$0$6;
-	const { markAsUncloneable } = require$$1$1;
+	const { markAsUncloneable } = require$$1$2;
 	const { toUSVString } = requireUtil$7();
 
 	/** @type {import('../../../types/webidl').Webidl} */
@@ -5761,7 +5761,7 @@ function requireUtil$6 () {
 	hasRequiredUtil$6 = 1;
 
 	const { Transform } = require$$0$4;
-	const zlib = require$$1$2;
+	const zlib = require$$1$3;
 	const { redirectStatusSet, referrerPolicySet: referrerPolicyTokens, badPortsSet } = requireConstants$2();
 	const { getGlobalOrigin } = requireGlobal$1();
 	const { collectASequenceOfCodePoints, collectAnHTTPQuotedString, removeChars, parseMIMEType } = requireDataUrl();
@@ -12674,7 +12674,7 @@ function requireProxyAgent () {
 	hasRequiredProxyAgent = 1;
 
 	const { kProxy, kClose, kDestroy, kDispatch, kInterceptors } = requireSymbols$4();
-	const { URL } = require$$1$3;
+	const { URL } = require$$1$4;
 	const Agent = requireAgent();
 	const Pool = requirePool();
 	const DispatcherBase = requireDispatcherBase();
@@ -15895,7 +15895,7 @@ function requirePendingInterceptorsFormatter () {
 	hasRequiredPendingInterceptorsFormatter = 1;
 
 	const { Transform } = require$$0$4;
-	const { Console } = require$$1$4;
+	const { Console } = require$$1$5;
 
 	const PERSISTENT = process.versions.icu ? '✅' : 'Y ';
 	const NOT_PERSISTENT = process.versions.icu ? '❌' : 'N ';
@@ -16395,7 +16395,7 @@ function requireDns () {
 	if (hasRequiredDns) return dns;
 	hasRequiredDns = 1;
 	const { isIP } = require$$0$5;
-	const { lookup } = require$$1$5;
+	const { lookup } = require$$1$6;
 	const DecoratorHandler = requireDecoratorHandler();
 	const { InvalidArgumentError, InformationalError } = requireErrors();
 	const maxInt = Math.pow(2, 31) - 1;
@@ -19197,7 +19197,7 @@ function requireFetch () {
 	} = requireResponse();
 	const { HeadersList } = requireHeaders();
 	const { Request, cloneRequest } = requireRequest();
-	const zlib = require$$1$2;
+	const zlib = require$$1$3;
 	const {
 	  bytesMatch,
 	  makePolicyContainer,
@@ -24468,7 +24468,7 @@ function requireEvents () {
 	const { webidl } = requireWebidl();
 	const { kEnumerableProperty } = requireUtil$7();
 	const { kConstruct } = requireSymbols$4();
-	const { MessagePort } = require$$1$1;
+	const { MessagePort } = require$$1$2;
 
 	/**
 	 * @see https://html.spec.whatwg.org/multipage/comms.html#messageevent
@@ -25706,7 +25706,7 @@ function requirePermessageDeflate () {
 	if (hasRequiredPermessageDeflate) return permessageDeflate;
 	hasRequiredPermessageDeflate = 1;
 
-	const { createInflateRaw, Z_DEFAULT_WINDOWBITS } = require$$1$2;
+	const { createInflateRaw, Z_DEFAULT_WINDOWBITS } = require$$1$3;
 	const { isValidClientWindowBits } = requireUtil$1();
 	const { MessageSizeExceededError } = requireErrors();
 
@@ -29021,7 +29021,7 @@ function requireSummary () {
 		Object.defineProperty(exports$1, "__esModule", { value: true });
 		exports$1.summary = exports$1.markdownSummary = exports$1.SUMMARY_DOCS_URL = exports$1.SUMMARY_ENV_VAR = void 0;
 		const os_1 = require$$0;
-		const fs_1 = fs__default;
+		const fs_1 = require$$1__default;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports$1.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
 		exports$1.SUMMARY_DOCS_URL = 'https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary';
@@ -29339,7 +29339,7 @@ function requirePathUtils () {
 	pathUtils.toPosixPath = toPosixPath;
 	pathUtils.toWin32Path = toWin32Path;
 	pathUtils.toPlatformPath = toPlatformPath;
-	const path = __importStar(require$$1$6);
+	const path = __importStar(require$$1$7);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -29442,8 +29442,8 @@ function requireIoUtil () {
 		exports$1.isRooted = isRooted;
 		exports$1.tryGetExecutablePath = tryGetExecutablePath;
 		exports$1.getCmdPath = getCmdPath;
-		const fs = __importStar(fs__default);
-		const path = __importStar(require$$1$6);
+		const fs = __importStar(require$$1__default);
+		const path = __importStar(require$$1$7);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports$1.chmod = _a.chmod, exports$1.copyFile = _a.copyFile, exports$1.lstat = _a.lstat, exports$1.mkdir = _a.mkdir, exports$1.open = _a.open, exports$1.readdir = _a.readdir, exports$1.rename = _a.rename, exports$1.rm = _a.rm, exports$1.rmdir = _a.rmdir, exports$1.stat = _a.stat, exports$1.symlink = _a.symlink, exports$1.unlink = _a.unlink;
@@ -29673,7 +29673,7 @@ function requireIo () {
 	io.which = which;
 	io.findInPath = findInPath;
 	const assert_1 = require$$5$4;
-	const path = __importStar(require$$1$6);
+	const path = __importStar(require$$1$7);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -29990,7 +29990,7 @@ function requireToolrunner () {
 	const os = __importStar(require$$0);
 	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$2);
-	const path = __importStar(require$$1$6);
+	const path = __importStar(require$$1$7);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
 	const timers_1 = require$$6$1;
@@ -30880,7 +30880,7 @@ function requireCore () {
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$1();
 		const os = __importStar(require$$0);
-		const path = __importStar(require$$1$6);
+		const path = __importStar(require$$1$7);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -33672,6 +33672,7 @@ class ConflictResolver {
         coreExports.info(`Found ${conflictedFiles.length} conflicted files`);
         const resolvedFiles = [];
         const unresolvedFiles = [];
+        const toResolve = [];
         for (const file of conflictedFiles) {
             const strategy = this.conflictAnalyzer.determineStrategy(file, rules);
             if (!strategy) {
@@ -33679,15 +33680,20 @@ class ConflictResolver {
                 unresolvedFiles.push(file.path);
             }
             else {
-                try {
-                    await this.gitRepository.resolveConflict(file, strategy);
-                    await this.gitRepository.stageFile(file.path);
+                toResolve.push({ file, strategy });
+            }
+        }
+        if (toResolve.length > 0) {
+            const failedPaths = await this.gitRepository.resolveConflicts(toResolve);
+            const failedSet = new Set(failedPaths);
+            for (const { file, strategy } of toResolve) {
+                if (failedSet.has(file.path)) {
+                    coreExports.error(`Failed to resolve ${file.path}`);
+                    unresolvedFiles.push(file.path);
+                }
+                else {
                     resolvedFiles.push(file.path);
                     coreExports.info(`✓ Resolved ${file.path} using ${strategy} strategy`);
-                }
-                catch (error) {
-                    coreExports.error(`Failed to resolve ${file.path}: ${error}`);
-                    unresolvedFiles.push(file.path);
                 }
             }
         }
@@ -36530,11 +36536,11 @@ class ConfigRepositoryImpl {
         this.configPath = configPath;
     }
     async loadRules() {
-        if (!fs.existsSync(this.configPath)) {
+        if (!require$$1.existsSync(this.configPath)) {
             throw new Error(`Config file not found at ${this.configPath}`);
         }
         try {
-            const configContent = fs.readFileSync(this.configPath, 'utf8');
+            const configContent = require$$1.readFileSync(this.configPath, 'utf8');
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
@@ -36591,66 +36597,108 @@ class GitRepositoryImpl {
         this.noRenames = options.noRenames ?? false;
     }
     async getConflictedFiles() {
-        const output = await this.execGitCommand([
-            'diff',
-            '--name-only',
-            '--diff-filter=U'
-        ]);
-        if (!output.trim()) {
-            return [];
-        }
-        const filePaths = output.trim().split('\n');
-        const conflictedFiles = [];
-        for (const filePath of filePaths) {
-            const conflictType = await this.getConflictType(filePath);
-            conflictedFiles.push({ path: filePath, conflictType });
-        }
-        return conflictedFiles;
-    }
-    async resolveConflict(file, strategy) {
-        switch (file.conflictType) {
-            case ConflictType.BothAdded:
-                await this.resolveBothAddedConflict(file, strategy);
-                break;
-            case ConflictType.BothModified:
-                await this.resolveBothModifiedConflict(file, strategy);
-                break;
-            case ConflictType.DeletedByUs:
-                await this.resolveDeletedByUsConflict(file, strategy);
-                break;
-            case ConflictType.DeletedByThem:
-                await this.resolveDeletedByThemConflict(file, strategy);
-                break;
-            case ConflictType.DeletedByBoth:
-                await this.resolveDeletedByBothConflict(file);
-                break;
-            case ConflictType.AddedByUs:
-                await this.resolveAddedByUsConflict(file, strategy);
-                break;
-            case ConflictType.AddedByThem:
-                await this.resolveAddedByThemConflict(file, strategy);
-                break;
-            default:
-                // Unsupported conflict type - log error and skip resolution
-                coreExports.error(`Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`);
-                break;
-        }
-    }
-    async stageFile(filePath) {
-        if (fs.existsSync(filePath)) {
-            await this.gitAddFile(filePath);
-        }
-    }
-    async getConflictType(filePath) {
         const args = ['status', '--porcelain'];
         if (this.noRenames) {
             args.push('--no-renames');
         }
-        args.push('--', filePath);
-        const statusOutput = await this.execGitCommand(args);
-        // Git status --porcelain format: XY filename
-        // The first two characters are the status code
-        const statusCode = statusOutput.substring(0, 2);
+        const output = await this.execGitCommand(args);
+        if (!output.trim()) {
+            return [];
+        }
+        const conflictedFiles = [];
+        for (const line of output.trim().split('\n')) {
+            const statusCode = line.substring(0, 2);
+            const conflictType = this.parseConflictType(statusCode);
+            if (conflictType !== undefined) {
+                conflictedFiles.push({ path: line.substring(3), conflictType });
+            }
+        }
+        return conflictedFiles;
+    }
+    async resolveConflicts(files) {
+        const checkoutOurs = [];
+        const checkoutTheirs = [];
+        const addFiles = [];
+        const rmFiles = [];
+        for (const { file, strategy } of files) {
+            switch (file.conflictType) {
+                case ConflictType.BothAdded:
+                case ConflictType.BothModified:
+                    if (strategy === ResolutionStrategy.Ours) {
+                        checkoutOurs.push(file.path);
+                    }
+                    else {
+                        checkoutTheirs.push(file.path);
+                    }
+                    addFiles.push(file.path);
+                    break;
+                case ConflictType.DeletedByUs:
+                    if (strategy === ResolutionStrategy.Ours) {
+                        rmFiles.push(file.path);
+                    }
+                    else {
+                        addFiles.push(file.path);
+                    }
+                    break;
+                case ConflictType.DeletedByThem:
+                    if (strategy === ResolutionStrategy.Ours) {
+                        addFiles.push(file.path);
+                    }
+                    else {
+                        rmFiles.push(file.path);
+                    }
+                    break;
+                case ConflictType.DeletedByBoth:
+                    rmFiles.push(file.path);
+                    break;
+                case ConflictType.AddedByUs:
+                    if (strategy === ResolutionStrategy.Ours) {
+                        addFiles.push(file.path);
+                    }
+                    else {
+                        rmFiles.push(file.path);
+                    }
+                    break;
+                case ConflictType.AddedByThem:
+                    if (strategy === ResolutionStrategy.Ours) {
+                        rmFiles.push(file.path);
+                    }
+                    else {
+                        addFiles.push(file.path);
+                    }
+                    break;
+                default:
+                    coreExports.error(`Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`);
+                    break;
+            }
+        }
+        const failedPaths = new Set();
+        // Execute batched git commands, retry per-file on batch failure
+        await this.execBatchOrPerFile(['checkout', '--ours'], checkoutOurs, failedPaths);
+        await this.execBatchOrPerFile(['checkout', '--theirs'], checkoutTheirs, failedPaths);
+        await this.execBatchOrPerFile(['add'], addFiles.filter((f) => !failedPaths.has(f)), failedPaths);
+        await this.execBatchOrPerFile(['rm'], rmFiles.filter((f) => !failedPaths.has(f)), failedPaths);
+        return [...failedPaths];
+    }
+    async execBatchOrPerFile(command, files, failedPaths) {
+        if (files.length === 0) {
+            return;
+        }
+        try {
+            await this.execGitCommand([...command, '--', ...files]);
+        }
+        catch {
+            for (const file of files) {
+                try {
+                    await this.execGitCommand([...command, '--', file]);
+                }
+                catch {
+                    failedPaths.add(file);
+                }
+            }
+        }
+    }
+    parseConflictType(statusCode) {
         switch (statusCode) {
             case 'AA':
                 return ConflictType.BothAdded;
@@ -36667,85 +36715,8 @@ class GitRepositoryImpl {
             case 'UU':
                 return ConflictType.BothModified;
             default:
-                throw new Error(`Unknown git status for ${filePath}: ${statusOutput.trim()}`);
+                return undefined;
         }
-    }
-    async resolveDeletedByUsConflict(file, strategy) {
-        switch (strategy) {
-            case ResolutionStrategy.Ours:
-                // Our side deleted the file, so keep it deleted
-                await this.gitRemoveFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping deletion (ours)`);
-                break;
-            case ResolutionStrategy.Theirs:
-                // Their side kept the file, so restore it
-                await this.gitAddFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping file (theirs)`);
-                break;
-        }
-    }
-    async resolveDeletedByThemConflict(file, strategy) {
-        switch (strategy) {
-            case ResolutionStrategy.Ours:
-                // Our side kept the file, so keep it
-                await this.gitAddFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping file (ours)`);
-                break;
-            case ResolutionStrategy.Theirs:
-                // Their side deleted the file, so accept deletion
-                await this.gitRemoveFile(file.path);
-                coreExports.info(`Resolved ${file.path} by accepting deletion (theirs)`);
-                break;
-        }
-    }
-    async resolveBothAddedConflict(file, strategy) {
-        await this.gitCheckoutFile(file.path, strategy);
-        await this.gitAddFile(file.path);
-        coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
-    }
-    async resolveBothModifiedConflict(file, strategy) {
-        await this.gitCheckoutFile(file.path, strategy);
-        await this.gitAddFile(file.path);
-        coreExports.info(`Resolved ${file.path} using ${strategy} strategy`);
-    }
-    async resolveDeletedByBothConflict(file) {
-        // Both sides deleted/renamed away from the original path.
-        // For deleted-by-both (DD), we keep deletion and stage it via git rm.
-        await this.gitRemoveFile(file.path);
-        coreExports.info(`Resolved ${file.path} by keeping deletion (deleted-by-both)`);
-    }
-    async resolveAddedByUsConflict(file, strategy) {
-        switch (strategy) {
-            case ResolutionStrategy.Ours:
-                await this.gitAddFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping file (added-by-us, ours)`);
-                break;
-            case ResolutionStrategy.Theirs:
-                await this.gitRemoveFile(file.path);
-                coreExports.info(`Resolved ${file.path} by removing file (added-by-us, theirs)`);
-                break;
-        }
-    }
-    async resolveAddedByThemConflict(file, strategy) {
-        switch (strategy) {
-            case ResolutionStrategy.Ours:
-                await this.gitRemoveFile(file.path);
-                coreExports.info(`Resolved ${file.path} by removing file (added-by-them, ours)`);
-                break;
-            case ResolutionStrategy.Theirs:
-                await this.gitAddFile(file.path);
-                coreExports.info(`Resolved ${file.path} by keeping file (added-by-them, theirs)`);
-                break;
-        }
-    }
-    async gitAddFile(filePath) {
-        await this.execGitCommand(['add', '--', filePath]);
-    }
-    async gitRemoveFile(filePath) {
-        await this.execGitCommand(['rm', '--', filePath]);
-    }
-    async gitCheckoutFile(filePath, strategy) {
-        await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath]);
     }
     async execGitCommand(args) {
         let output = '';

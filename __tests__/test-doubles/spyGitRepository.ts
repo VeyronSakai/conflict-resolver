@@ -15,15 +15,14 @@ export class SpyGitRepository implements GitRepository {
     return this.conflictedFiles
   }
 
-  async resolveConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    this.resolvedFiles.set(file.path, strategy)
-  }
-
-  async stageFile(filePath: string): Promise<void> {
-    this.stagedFiles.add(filePath)
+  async resolveConflicts(
+    files: ReadonlyArray<{ file: ConflictedFile; strategy: ResolutionStrategy }>
+  ): Promise<string[]> {
+    for (const { file, strategy } of files) {
+      this.resolvedFiles.set(file.path, strategy)
+      this.stagedFiles.add(file.path)
+    }
+    return []
   }
 
   // Test helper methods

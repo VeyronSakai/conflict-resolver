@@ -3,9 +3,8 @@ import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js
 
 export interface GitRepository {
   getConflictedFiles(): Promise<ConflictedFile[]>
-  resolveConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void>
-  stageFile(filePath: string): Promise<void>
+  /** Resolves conflicts in batch. Returns paths that failed to resolve. */
+  resolveConflicts(
+    files: ReadonlyArray<{ file: ConflictedFile; strategy: ResolutionStrategy }>
+  ): Promise<string[]>
 }
