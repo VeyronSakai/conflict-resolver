@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
@@ -18,81 +17,107 @@ export class GitRepositoryImpl implements GitRepository {
   }
 
   async getConflictedFiles(): Promise<ConflictedFile[]> {
-    const output = await this.execGitCommand([
-      'diff',
-      '--name-only',
-      '--diff-filter=U'
-    ])
+    const args = ['status', '--porcelain']
+    if (this.noRenames) {
+      args.push('--no-renames')
+    }
+    const output = await this.execGitCommand(args)
 
     if (!output.trim()) {
       return []
     }
 
-    const filePaths = output.trim().split('\n')
     const conflictedFiles: ConflictedFile[] = []
-
-    for (const filePath of filePaths) {
-      const conflictType = await this.getConflictType(filePath)
-      conflictedFiles.push({ path: filePath, conflictType })
+    for (const line of output.trim().split('\n')) {
+      const statusCode = line.substring(0, 2)
+      const conflictType = this.parseConflictType(statusCode)
+      if (conflictType !== undefined) {
+        conflictedFiles.push({ path: line.substring(3), conflictType })
+      }
     }
 
     return conflictedFiles
   }
 
-  async resolveConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
+  async resolveConflicts(
+    files: ReadonlyArray<{ file: ConflictedFile; strategy: ResolutionStrategy }>
   ): Promise<void> {
-    switch (file.conflictType) {
-      case ConflictType.BothAdded:
-        await this.resolveBothAddedConflict(file, strategy)
-        break
-      case ConflictType.BothModified:
-        await this.resolveBothModifiedConflict(file, strategy)
-        break
-      case ConflictType.DeletedByUs:
-        await this.resolveDeletedByUsConflict(file, strategy)
-        break
-      case ConflictType.DeletedByThem:
-        await this.resolveDeletedByThemConflict(file, strategy)
-        break
-      case ConflictType.DeletedByBoth:
-        await this.resolveDeletedByBothConflict(file)
-        break
-      case ConflictType.AddedByUs:
-        await this.resolveAddedByUsConflict(file, strategy)
-        break
-      case ConflictType.AddedByThem:
-        await this.resolveAddedByThemConflict(file, strategy)
-        break
-      default:
-        // Unsupported conflict type - log error and skip resolution
-        core.error(
-          `Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`
-        )
-        break
+    const checkoutOurs: string[] = []
+    const checkoutTheirs: string[] = []
+    const addFiles: string[] = []
+    const rmFiles: string[] = []
+
+    for (const { file, strategy } of files) {
+      switch (file.conflictType) {
+        case ConflictType.BothAdded:
+        case ConflictType.BothModified:
+          if (strategy === ResolutionStrategy.Ours) {
+            checkoutOurs.push(file.path)
+          } else {
+            checkoutTheirs.push(file.path)
+          }
+          addFiles.push(file.path)
+          break
+        case ConflictType.DeletedByUs:
+          if (strategy === ResolutionStrategy.Ours) {
+            rmFiles.push(file.path)
+          } else {
+            addFiles.push(file.path)
+          }
+          break
+        case ConflictType.DeletedByThem:
+          if (strategy === ResolutionStrategy.Ours) {
+            addFiles.push(file.path)
+          } else {
+            rmFiles.push(file.path)
+          }
+          break
+        case ConflictType.DeletedByBoth:
+          rmFiles.push(file.path)
+          break
+        case ConflictType.AddedByUs:
+          if (strategy === ResolutionStrategy.Ours) {
+            addFiles.push(file.path)
+          } else {
+            rmFiles.push(file.path)
+          }
+          break
+        case ConflictType.AddedByThem:
+          if (strategy === ResolutionStrategy.Ours) {
+            rmFiles.push(file.path)
+          } else {
+            addFiles.push(file.path)
+          }
+          break
+        default:
+          core.error(
+            `Conflict type '${file.conflictType}' for ${file.path} is not supported for auto-resolution. Manual resolution required.`
+          )
+          break
+      }
+    }
+
+    // Execute batched git commands (at most 4 instead of N*2-3)
+    if (checkoutOurs.length > 0) {
+      await this.execGitCommand(['checkout', '--ours', '--', ...checkoutOurs])
+    }
+    if (checkoutTheirs.length > 0) {
+      await this.execGitCommand([
+        'checkout',
+        '--theirs',
+        '--',
+        ...checkoutTheirs
+      ])
+    }
+    if (addFiles.length > 0) {
+      await this.execGitCommand(['add', '--', ...addFiles])
+    }
+    if (rmFiles.length > 0) {
+      await this.execGitCommand(['rm', '--', ...rmFiles])
     }
   }
 
-  async stageFile(filePath: string): Promise<void> {
-    if (fs.existsSync(filePath)) {
-      await this.gitAddFile(filePath)
-    }
-  }
-
-  private async getConflictType(filePath: string): Promise<ConflictType> {
-    const args = ['status', '--porcelain']
-    if (this.noRenames) {
-      args.push('--no-renames')
-    }
-    args.push('--', filePath)
-
-    const statusOutput = await this.execGitCommand(args)
-
-    // Git status --porcelain format: XY filename
-    // The first two characters are the status code
-    const statusCode = statusOutput.substring(0, 2)
-
+  private parseConflictType(statusCode: string): ConflictType | undefined {
     switch (statusCode) {
       case 'AA':
         return ConflictType.BothAdded
@@ -109,126 +134,8 @@ export class GitRepositoryImpl implements GitRepository {
       case 'UU':
         return ConflictType.BothModified
       default:
-        throw new Error(
-          `Unknown git status for ${filePath}: ${statusOutput.trim()}`
-        )
+        return undefined
     }
-  }
-
-  private async resolveDeletedByUsConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    switch (strategy) {
-      case ResolutionStrategy.Ours:
-        // Our side deleted the file, so keep it deleted
-        await this.gitRemoveFile(file.path)
-        core.info(`Resolved ${file.path} by keeping deletion (ours)`)
-        break
-      case ResolutionStrategy.Theirs:
-        // Their side kept the file, so restore it
-        await this.gitAddFile(file.path)
-        core.info(`Resolved ${file.path} by keeping file (theirs)`)
-        break
-    }
-  }
-
-  private async resolveDeletedByThemConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    switch (strategy) {
-      case ResolutionStrategy.Ours:
-        // Our side kept the file, so keep it
-        await this.gitAddFile(file.path)
-        core.info(`Resolved ${file.path} by keeping file (ours)`)
-        break
-      case ResolutionStrategy.Theirs:
-        // Their side deleted the file, so accept deletion
-        await this.gitRemoveFile(file.path)
-        core.info(`Resolved ${file.path} by accepting deletion (theirs)`)
-        break
-    }
-  }
-
-  private async resolveBothAddedConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    await this.gitCheckoutFile(file.path, strategy)
-    await this.gitAddFile(file.path)
-    core.info(`Resolved ${file.path} using ${strategy} strategy`)
-  }
-
-  private async resolveBothModifiedConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    await this.gitCheckoutFile(file.path, strategy)
-    await this.gitAddFile(file.path)
-    core.info(`Resolved ${file.path} using ${strategy} strategy`)
-  }
-
-  private async resolveDeletedByBothConflict(
-    file: ConflictedFile
-  ): Promise<void> {
-    // Both sides deleted/renamed away from the original path.
-    // For deleted-by-both (DD), we keep deletion and stage it via git rm.
-    await this.gitRemoveFile(file.path)
-    core.info(`Resolved ${file.path} by keeping deletion (deleted-by-both)`)
-  }
-
-  private async resolveAddedByUsConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    switch (strategy) {
-      case ResolutionStrategy.Ours:
-        await this.gitAddFile(file.path)
-        core.info(`Resolved ${file.path} by keeping file (added-by-us, ours)`)
-        break
-      case ResolutionStrategy.Theirs:
-        await this.gitRemoveFile(file.path)
-        core.info(
-          `Resolved ${file.path} by removing file (added-by-us, theirs)`
-        )
-        break
-    }
-  }
-
-  private async resolveAddedByThemConflict(
-    file: ConflictedFile,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    switch (strategy) {
-      case ResolutionStrategy.Ours:
-        await this.gitRemoveFile(file.path)
-        core.info(
-          `Resolved ${file.path} by removing file (added-by-them, ours)`
-        )
-        break
-      case ResolutionStrategy.Theirs:
-        await this.gitAddFile(file.path)
-        core.info(
-          `Resolved ${file.path} by keeping file (added-by-them, theirs)`
-        )
-        break
-    }
-  }
-
-  private async gitAddFile(filePath: string): Promise<void> {
-    await this.execGitCommand(['add', '--', filePath])
-  }
-
-  private async gitRemoveFile(filePath: string): Promise<void> {
-    await this.execGitCommand(['rm', '--', filePath])
-  }
-
-  private async gitCheckoutFile(
-    filePath: string,
-    strategy: ResolutionStrategy
-  ): Promise<void> {
-    await this.execGitCommand(['checkout', `--${strategy}`, '--', filePath])
   }
 
   private async execGitCommand(args: string[]): Promise<string> {

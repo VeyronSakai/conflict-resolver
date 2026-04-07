@@ -1,7 +1,9 @@
 import * as core from '@actions/core'
+import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConfigRepository } from '@domains/repositories/configRepository.js'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
 import { ConflictAnalyzer } from '@domains/services/conflictAnalyzer.js'
+import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export interface ResolutionResult {
   resolvedFiles: string[]
@@ -32,6 +34,11 @@ export class ConflictResolver {
     const resolvedFiles: string[] = []
     const unresolvedFiles: string[] = []
 
+    const toResolve: Array<{
+      file: ConflictedFile
+      strategy: ResolutionStrategy
+    }> = []
+
     for (const file of conflictedFiles) {
       const strategy = this.conflictAnalyzer.determineStrategy(file, rules)
 
@@ -41,15 +48,15 @@ export class ConflictResolver {
         )
         unresolvedFiles.push(file.path)
       } else {
-        try {
-          await this.gitRepository.resolveConflict(file, strategy)
-          await this.gitRepository.stageFile(file.path)
-          resolvedFiles.push(file.path)
-          core.info(`✓ Resolved ${file.path} using ${strategy} strategy`)
-        } catch (error) {
-          core.error(`Failed to resolve ${file.path}: ${error}`)
-          unresolvedFiles.push(file.path)
-        }
+        toResolve.push({ file, strategy })
+      }
+    }
+
+    if (toResolve.length > 0) {
+      await this.gitRepository.resolveConflicts(toResolve)
+      for (const { file, strategy } of toResolve) {
+        resolvedFiles.push(file.path)
+        core.info(`✓ Resolved ${file.path} using ${strategy} strategy`)
       }
     }
 
