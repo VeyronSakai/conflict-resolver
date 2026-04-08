@@ -10,10 +10,14 @@ export class ConflictAnalyzer {
     rules: ConflictResolveRule[]
   ): ResolutionStrategy | undefined {
     const matchingRule = this.findMatchingRule(file, rules)
-    return matchingRule?.strategy
+    if (!matchingRule || matchingRule.resolution.type !== 'strategy') {
+      return undefined
+    }
+
+    return matchingRule.resolution.strategy
   }
 
-  private findMatchingRule(
+  findMatchingRule(
     file: ConflictedFile,
     rules: ConflictResolveRule[]
   ): ConflictResolveRule | undefined {
