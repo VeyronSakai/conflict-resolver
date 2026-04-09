@@ -1,8 +1,9 @@
 import require$$0 from 'os';
 import require$$0$1 from 'crypto';
-import * as require$$1 from 'fs';
-import require$$1__default from 'fs';
-import require$$1$7 from 'path';
+import * as fs from 'fs';
+import fs__default from 'fs';
+import * as require$$1 from 'path';
+import require$$1__default from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
 import 'net';
@@ -268,7 +269,7 @@ function requireFileCommand () {
 	// We use any as a valid input type
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	const crypto = __importStar(require$$0$1);
-	const fs = __importStar(require$$1__default);
+	const fs = __importStar(fs__default);
 	const os = __importStar(require$$0);
 	const utils_1 = requireUtils$1();
 	function issueFileCommand(command, message) {
@@ -29021,7 +29022,7 @@ function requireSummary () {
 		Object.defineProperty(exports$1, "__esModule", { value: true });
 		exports$1.summary = exports$1.markdownSummary = exports$1.SUMMARY_DOCS_URL = exports$1.SUMMARY_ENV_VAR = void 0;
 		const os_1 = require$$0;
-		const fs_1 = require$$1__default;
+		const fs_1 = fs__default;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports$1.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
 		exports$1.SUMMARY_DOCS_URL = 'https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary';
@@ -29339,7 +29340,7 @@ function requirePathUtils () {
 	pathUtils.toPosixPath = toPosixPath;
 	pathUtils.toWin32Path = toWin32Path;
 	pathUtils.toPlatformPath = toPlatformPath;
-	const path = __importStar(require$$1$7);
+	const path = __importStar(require$$1__default);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -29442,8 +29443,8 @@ function requireIoUtil () {
 		exports$1.isRooted = isRooted;
 		exports$1.tryGetExecutablePath = tryGetExecutablePath;
 		exports$1.getCmdPath = getCmdPath;
-		const fs = __importStar(require$$1__default);
-		const path = __importStar(require$$1$7);
+		const fs = __importStar(fs__default);
+		const path = __importStar(require$$1__default);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports$1.chmod = _a.chmod, exports$1.copyFile = _a.copyFile, exports$1.lstat = _a.lstat, exports$1.mkdir = _a.mkdir, exports$1.open = _a.open, exports$1.readdir = _a.readdir, exports$1.rename = _a.rename, exports$1.rm = _a.rm, exports$1.rmdir = _a.rmdir, exports$1.stat = _a.stat, exports$1.symlink = _a.symlink, exports$1.unlink = _a.unlink;
@@ -29673,7 +29674,7 @@ function requireIo () {
 	io.which = which;
 	io.findInPath = findInPath;
 	const assert_1 = require$$5$4;
-	const path = __importStar(require$$1$7);
+	const path = __importStar(require$$1__default);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -29990,7 +29991,7 @@ function requireToolrunner () {
 	const os = __importStar(require$$0);
 	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$2);
-	const path = __importStar(require$$1$7);
+	const path = __importStar(require$$1__default);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
 	const timers_1 = require$$6$1;
@@ -30880,7 +30881,7 @@ function requireCore () {
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$1();
 		const os = __importStar(require$$0);
-		const path = __importStar(require$$1$7);
+		const path = __importStar(require$$1__default);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -33635,7 +33636,10 @@ minimatch.unescape = unescape;
 class ConflictAnalyzer {
     determineStrategy(file, rules) {
         const matchingRule = this.findMatchingRule(file, rules);
-        return matchingRule?.strategy;
+        if (!matchingRule || matchingRule.resolution.type !== 'strategy') {
+            return undefined;
+        }
+        return matchingRule.resolution.strategy;
     }
     findMatchingRule(file, rules) {
         for (const rule of rules) {
@@ -33656,10 +33660,12 @@ class ConflictAnalyzer {
 class ConflictResolver {
     configRepository;
     gitRepository;
+    resolverScriptExecutor;
     conflictAnalyzer;
-    constructor(configRepository, gitRepository) {
+    constructor(configRepository, gitRepository, resolverScriptExecutor) {
         this.configRepository = configRepository;
         this.gitRepository = gitRepository;
+        this.resolverScriptExecutor = resolverScriptExecutor;
         this.conflictAnalyzer = new ConflictAnalyzer();
     }
     async resolve() {
@@ -33674,9 +33680,14 @@ class ConflictResolver {
         const unresolvedFiles = [];
         const toResolve = [];
         for (const file of conflictedFiles) {
-            const strategy = this.conflictAnalyzer.determineStrategy(file, rules);
+            const matchingRule = this.conflictAnalyzer.findMatchingRule(file, rules);
+            if (!matchingRule) {
+                this.logUnresolved(file, `no matching rule (conflict type: ${file.conflictType})`);
+                unresolvedFiles.push(file.path);
+                continue;
+            }
+            const strategy = await this.determineStrategy(file, matchingRule);
             if (!strategy) {
-                coreExports.warning(`${file.path} requires manual resolution (conflict type: ${file.conflictType})`);
                 unresolvedFiles.push(file.path);
             }
             else {
@@ -33699,6 +33710,27 @@ class ConflictResolver {
         }
         this.logSummary(resolvedFiles, unresolvedFiles);
         return { resolvedFiles, unresolvedFiles };
+    }
+    async determineStrategy(file, rule) {
+        if (rule.resolution.type === 'strategy') {
+            return rule.resolution.strategy;
+        }
+        try {
+            const result = await this.resolverScriptExecutor.determineStrategy(file, rule.resolution.resolverScript);
+            if (result.type === 'manual') {
+                this.logUnresolved(file, `resolver script '${rule.resolution.resolverScript.path}' returned manual`);
+                return undefined;
+            }
+            return result.strategy;
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logUnresolved(file, `resolver script '${rule.resolution.resolverScript.path}' failed: ${message}`);
+            return undefined;
+        }
+    }
+    logUnresolved(file, reason) {
+        coreExports.warning(`${file.path} requires manual resolution (${reason})`);
     }
     logSummary(resolvedFiles, unresolvedFiles) {
         coreExports.info('=== Conflict Resolution Summary ===');
@@ -36524,6 +36556,18 @@ var loader = {
 };
 var load                = loader.load;
 
+var ConflictType;
+(function (ConflictType) {
+    ConflictType["BothModified"] = "both-modified";
+    ConflictType["DeletedByUs"] = "deleted-by-us";
+    ConflictType["DeletedByThem"] = "deleted-by-them";
+    ConflictType["BothAdded"] = "both-added";
+    ConflictType["DeletedByBoth"] = "deleted-by-both";
+    ConflictType["AddedByUs"] = "added-by-us";
+    ConflictType["AddedByThem"] = "added-by-them";
+    ConflictType["Unknown"] = "unknown"; // Unknown conflict type - not supported for auto-resolution
+})(ConflictType || (ConflictType = {}));
+
 var ResolutionStrategy;
 (function (ResolutionStrategy) {
     ResolutionStrategy["Ours"] = "ours";
@@ -36536,19 +36580,15 @@ class ConfigRepositoryImpl {
         this.configPath = configPath;
     }
     async loadRules() {
-        if (!require$$1.existsSync(this.configPath)) {
+        if (!fs.existsSync(this.configPath)) {
             throw new Error(`Config file not found at ${this.configPath}`);
         }
         try {
-            const configContent = require$$1.readFileSync(this.configPath, 'utf8');
+            const configContent = fs.readFileSync(this.configPath, 'utf8');
             const config = load(configContent);
             this.validateConfig(config);
             coreExports.info(`Loaded ${config.rules.length} conflict resolution rules from ${this.configPath}`);
-            return config.rules.map((rule) => ({
-                targetPathPattern: rule.paths,
-                conflictType: rule.conflict_type,
-                strategy: this.parseStrategy(rule.strategy)
-            }));
+            return config.rules.map((rule) => this.parseRule(rule));
         }
         catch (error) {
             coreExports.error(`Failed to load config: ${error}`);
@@ -36556,17 +36596,63 @@ class ConfigRepositoryImpl {
         }
     }
     validateConfig(config) {
-        if (!config.rules || !Array.isArray(config.rules)) {
+        if (!config ||
+            typeof config !== 'object' ||
+            !('rules' in config) ||
+            !Array.isArray(config.rules)) {
             throw new Error('Config must contain a "rules" array');
         }
         for (const rule of config.rules) {
-            if (!rule.paths) {
-                throw new Error('Each rule must have a "paths" field');
-            }
-            if (!rule.strategy) {
-                throw new Error('Each rule must have a "strategy" field');
-            }
+            this.validateRule(rule);
         }
+    }
+    validateRule(rule) {
+        if (!rule || typeof rule !== 'object') {
+            throw new Error('Each rule must be an object');
+        }
+        const yamlRule = rule;
+        if (!yamlRule.paths || typeof yamlRule.paths !== 'string') {
+            throw new Error('Each rule must have a "paths" field');
+        }
+        const hasStrategy = typeof yamlRule.strategy === 'string';
+        const hasResolverScript = yamlRule.resolver_script !== undefined;
+        if (hasStrategy === hasResolverScript) {
+            throw new Error('Each rule must specify exactly one of "strategy" or "resolver_script"');
+        }
+        if (hasStrategy) {
+            this.parseStrategy(yamlRule.strategy);
+            if (yamlRule.conflict_type) {
+                this.parseConflictType(yamlRule.conflict_type);
+            }
+            return;
+        }
+        if (yamlRule.conflict_type) {
+            this.parseConflictType(yamlRule.conflict_type);
+        }
+        this.parseResolverScript(yamlRule.resolver_script);
+    }
+    parseRule(rule) {
+        const conflictType = rule.conflict_type
+            ? this.parseConflictType(rule.conflict_type)
+            : undefined;
+        if (rule.strategy) {
+            return {
+                targetPathPattern: rule.paths,
+                conflictType,
+                resolution: {
+                    type: 'strategy',
+                    strategy: this.parseStrategy(rule.strategy)
+                }
+            };
+        }
+        return {
+            targetPathPattern: rule.paths,
+            conflictType,
+            resolution: {
+                type: 'resolver-script',
+                resolverScript: this.parseResolverScript(rule.resolver_script)
+            }
+        };
     }
     parseStrategy(strategy) {
         const validStrategies = Object.values(ResolutionStrategy);
@@ -36575,21 +36661,34 @@ class ConfigRepositoryImpl {
         }
         throw new Error(`Invalid strategy: ${strategy}`);
     }
+    parseConflictType(conflictType) {
+        const validConflictTypes = Object.values(ConflictType);
+        if (validConflictTypes.includes(conflictType)) {
+            return conflictType;
+        }
+        throw new Error(`Invalid conflict_type: ${conflictType}`);
+    }
+    parseResolverScript(resolverScript) {
+        if (!resolverScript ||
+            typeof resolverScript !== 'object' ||
+            !resolverScript.path ||
+            typeof resolverScript.path !== 'string' ||
+            !resolverScript.shell ||
+            typeof resolverScript.shell !== 'string') {
+            throw new Error('"resolver_script" must contain both "path" and "shell" fields');
+        }
+        const resolvedPath = require$$1.resolve(process.cwd(), resolverScript.path);
+        if (!fs.existsSync(resolvedPath)) {
+            throw new Error(`Resolver script not found at ${resolverScript.path}`);
+        }
+        return {
+            path: resolverScript.path,
+            shell: resolverScript.shell
+        };
+    }
 }
 
 var execExports = requireExec();
-
-var ConflictType;
-(function (ConflictType) {
-    ConflictType["BothModified"] = "both-modified";
-    ConflictType["DeletedByUs"] = "deleted-by-us";
-    ConflictType["DeletedByThem"] = "deleted-by-them";
-    ConflictType["BothAdded"] = "both-added";
-    ConflictType["DeletedByBoth"] = "deleted-by-both";
-    ConflictType["AddedByUs"] = "added-by-us";
-    ConflictType["AddedByThem"] = "added-by-them";
-    ConflictType["Unknown"] = "unknown"; // Unknown conflict type - not supported for auto-resolution
-})(ConflictType || (ConflictType = {}));
 
 class GitRepositoryImpl {
     noRenames;
@@ -36736,6 +36835,75 @@ class GitRepositoryImpl {
     }
 }
 
+class ResolverScriptExecutorImpl {
+    workspacePath;
+    constructor(workspacePath = process.cwd()) {
+        this.workspacePath = workspacePath;
+    }
+    async determineStrategy(file, resolverScript) {
+        const absoluteScriptPath = require$$1.resolve(this.workspacePath, resolverScript.path);
+        if (!fs.existsSync(absoluteScriptPath)) {
+            throw new Error(`Resolver script not found at ${resolverScript.path}`);
+        }
+        let stdout = '';
+        let stderr = '';
+        const command = this.buildCommand(resolverScript.shell, absoluteScriptPath);
+        const exitCode = await execExports.exec(command.command, command.args, {
+            cwd: this.workspacePath,
+            env: {
+                ...process.env,
+                CONFLICT_RESOLVER_FILE_PATH: file.path,
+                CONFLICT_RESOLVER_CONFLICT_TYPE: file.conflictType,
+                CONFLICT_RESOLVER_REPO_ROOT: this.workspacePath,
+                CONFLICT_RESOLVER_SCRIPT_PATH: resolverScript.path,
+                CONFLICT_RESOLVER_SCRIPT_SHELL: resolverScript.shell
+            },
+            ignoreReturnCode: true,
+            listeners: {
+                stdout: (data) => {
+                    stdout += data.toString();
+                },
+                stderr: (data) => {
+                    stderr += data.toString();
+                }
+            },
+            silent: true
+        });
+        if (exitCode !== 0) {
+            const stderrOutput = stderr.trim();
+            throw new Error(stderrOutput
+                ? `Resolver script '${resolverScript.path}' failed with exit code ${exitCode}: ${stderrOutput}`
+                : `Resolver script '${resolverScript.path}' failed with exit code ${exitCode}`);
+        }
+        const decision = this.getLastNonEmptyLine(stdout);
+        switch (decision) {
+            case ResolutionStrategy.Ours:
+                return { type: 'strategy', strategy: ResolutionStrategy.Ours };
+            case ResolutionStrategy.Theirs:
+                return { type: 'strategy', strategy: ResolutionStrategy.Theirs };
+            case 'manual':
+                return { type: 'manual' };
+            case undefined:
+                throw new Error(`Resolver script '${resolverScript.path}' did not output a resolution`);
+            default:
+                throw new Error(`Resolver script '${resolverScript.path}' returned invalid resolution '${decision}'`);
+        }
+    }
+    buildCommand(shell, absoluteScriptPath) {
+        if (shell === 'pwsh') {
+            return { command: shell, args: ['-File', absoluteScriptPath] };
+        }
+        return { command: shell, args: [absoluteScriptPath] };
+    }
+    getLastNonEmptyLine(output) {
+        return output
+            .split(/\r?\n/u)
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0)
+            .at(-1);
+    }
+}
+
 /**
  * The main function for the action.
  *
@@ -36748,8 +36916,9 @@ async function run() {
     // Create infrastructure implementations
     const configRepository = new ConfigRepositoryImpl(configPath);
     const gitRepository = new GitRepositoryImpl({ noRenames });
+    const resolverScriptExecutor = new ResolverScriptExecutorImpl();
     // Create use-case with injected dependencies
-    const conflictResolver = new ConflictResolver(configRepository, gitRepository);
+    const conflictResolver = new ConflictResolver(configRepository, gitRepository, resolverScriptExecutor);
     // Create and run presentation layer
     const actionHandler = new ActionHandler(conflictResolver);
     await actionHandler.run();

@@ -3,6 +3,7 @@ import { ActionHandler } from '@presentations/actionHandler.js'
 import { ConflictResolver } from '@use-cases/conflictResolver.js'
 import { ConfigRepositoryImpl } from '@infrastructures/configRepositoryImpl.js'
 import { GitRepositoryImpl } from '@infrastructures/gitRepositoryImpl.js'
+import { ResolverScriptExecutorImpl } from '@infrastructures/resolverScriptExecutorImpl.js'
 
 /**
  * The main function for the action.
@@ -18,9 +19,14 @@ export async function run(): Promise<void> {
   // Create infrastructure implementations
   const configRepository = new ConfigRepositoryImpl(configPath)
   const gitRepository = new GitRepositoryImpl({ noRenames })
+  const resolverScriptExecutor = new ResolverScriptExecutorImpl()
 
   // Create use-case with injected dependencies
-  const conflictResolver = new ConflictResolver(configRepository, gitRepository)
+  const conflictResolver = new ConflictResolver(
+    configRepository,
+    gitRepository,
+    resolverScriptExecutor
+  )
 
   // Create and run presentation layer
   const actionHandler = new ActionHandler(conflictResolver)
