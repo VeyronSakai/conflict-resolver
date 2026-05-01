@@ -12,6 +12,8 @@ rules in a YAML configuration file.
   YAML file
 - ⚡ **Automatic resolution**: Resolves conflicts using `ours` or `theirs`
   strategies
+- 🧩 **Delegated shell resolvers**: Let bash / pwsh scripts decide `ours`,
+  `theirs`, or `manual` per conflict
 - 🎨 **Flexible pattern matching**: Use glob patterns to match files
 - 🏷️ **Conflict type filtering**: Apply rules only to specific conflict types
 
@@ -117,6 +119,29 @@ rules:
   - paths: 'docs/**/*.md'
     conflict_type: 'both-added'
     strategy: 'theirs'
+
+  # Delegate the decision to a shell script for selected files
+  - paths: 'config/**/*.json'
+    resolver_script:
+      path: '.github/conflict-resolver/branch-aware.sh'
+      shell: 'bash'
+```
+
+### Delegated Resolver Script Example
+
+```bash
+#!/usr/bin/env bash
+set -eu
+
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "${CONFLICT_RESOLVER_FILE_PATH}" = "package-lock.json" ]; then
+  echo "theirs"
+elif [ "${current_branch}" = "develop/v2.0" ]; then
+  echo "ours"
+else
+  echo "manual"
+fi
 ```
 
 ### Configuration Notes
@@ -124,9 +149,31 @@ rules:
 **Rule Properties:**
 
 - `paths` supports glob patterns (e.g., `*.js`, `src/**/*.ts`)
+- Each rule must specify **exactly one** of `strategy` or `resolver_script`
 - `strategy` must be either `ours` or `theirs`
+- `resolver_script.path` is resolved relative to the repository root
+- `resolver_script.shell` explicitly selects the interpreter (for example `bash`
+  or `pwsh`)
 - `conflict_type` is optional. If not specified, the rule applies to all
   conflict types
+
+**Delegated Resolver Contract:**
+
+- Resolver scripts run from the repository root
+- Resolver scripts inherit the current workflow environment and can run `git`
+  commands directly
+- Additional context is exposed via environment variables:
+  - `CONFLICT_RESOLVER_FILE_PATH`
+  - `CONFLICT_RESOLVER_CONFLICT_TYPE`
+  - `CONFLICT_RESOLVER_REPO_ROOT`
+  - `CONFLICT_RESOLVER_SCRIPT_PATH`
+  - `CONFLICT_RESOLVER_SCRIPT_SHELL`
+- The last non-empty line written to stdout must be one of:
+  - `ours`
+  - `theirs`
+  - `manual`
+- `manual`, a non-zero exit code, or an invalid output leaves the file
+  unresolved
 
 **Rule Evaluation:**
 
@@ -192,9 +239,13 @@ strategy to AU/UA, and staging the deletion for DD.
 
 - **`paths`** (required): File path pattern (supports glob patterns)
   - Examples: `*.json`, `src/**/*.ts`, `docs/*.md`
-- **`strategy`** (required): Resolution strategy
+- **`strategy`** or **`resolver_script`** (exactly one required): How the rule
+  decides the resolution
   - `ours`: Keep our version
   - `theirs`: Keep their version
+  - `resolver_script.path`: Repository-root-relative path to the script
+  - `resolver_script.shell`: Shell used to execute the script (for example
+    `bash` or `pwsh`)
 - **`conflict_type`** (optional): Apply rule only to specific conflict types
   - If not specified, the rule applies to all conflict types
 

@@ -3,6 +3,33 @@ import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import type { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 import { ConflictType } from '@domains/value-objects/conflictType.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
+import { ResolverScript } from '@domains/value-objects/resolverScript.js'
+
+const createStrategyRule = (
+  targetPathPattern: string,
+  strategy: ResolutionStrategy,
+  conflictType?: ConflictType
+): ConflictResolveRule => ({
+  targetPathPattern,
+  conflictType,
+  resolution: {
+    type: 'strategy',
+    strategy
+  }
+})
+
+const createScriptRule = (
+  targetPathPattern: string,
+  resolverScript: ResolverScript,
+  conflictType?: ConflictType
+): ConflictResolveRule => ({
+  targetPathPattern,
+  conflictType,
+  resolution: {
+    type: 'resolver-script',
+    resolverScript
+  }
+})
 
 describe('ConflictAnalyzer', () => {
   let analyzer: ConflictAnalyzer
@@ -20,7 +47,7 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
+          createStrategyRule('*.json', ResolutionStrategy.Theirs)
         ]
 
         // Act
@@ -37,11 +64,8 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: 'package-lock.json',
-            strategy: ResolutionStrategy.Theirs
-          },
-          { targetPathPattern: '*.json', strategy: ResolutionStrategy.Ours }
+          createStrategyRule('package-lock.json', ResolutionStrategy.Theirs),
+          createStrategyRule('*.json', ResolutionStrategy.Ours)
         ]
 
         // Act
@@ -58,10 +82,7 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: 'src/**/*.tsx',
-            strategy: ResolutionStrategy.Ours
-          }
+          createStrategyRule('src/**/*.tsx', ResolutionStrategy.Ours)
         ]
 
         // Act
@@ -78,11 +99,8 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: 'src/**/*.ts',
-            strategy: ResolutionStrategy.Ours
-          },
-          { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Theirs }
+          createStrategyRule('src/**/*.ts', ResolutionStrategy.Ours),
+          createStrategyRule('*.ts', ResolutionStrategy.Theirs)
         ]
 
         // Act
@@ -101,16 +119,16 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.DeletedByUs
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: '*.ts',
-            conflictType: ConflictType.BothModified,
-            strategy: ResolutionStrategy.Theirs
-          },
-          {
-            targetPathPattern: '*.ts',
-            conflictType: ConflictType.DeletedByUs,
-            strategy: ResolutionStrategy.Ours
-          }
+          createStrategyRule(
+            '*.ts',
+            ResolutionStrategy.Theirs,
+            ConflictType.BothModified
+          ),
+          createStrategyRule(
+            '*.ts',
+            ResolutionStrategy.Ours,
+            ConflictType.DeletedByUs
+          )
         ]
 
         // Act
@@ -127,11 +145,11 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: '*.ts',
-            conflictType: ConflictType.DeletedByUs,
-            strategy: ResolutionStrategy.Ours
-          }
+          createStrategyRule(
+            '*.ts',
+            ResolutionStrategy.Ours,
+            ConflictType.DeletedByUs
+          )
         ]
 
         // Act
@@ -148,10 +166,7 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.DeletedByThem
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: '*.ts',
-            strategy: ResolutionStrategy.Theirs
-          }
+          createStrategyRule('*.ts', ResolutionStrategy.Theirs)
         ]
 
         // Act
@@ -177,11 +192,7 @@ describe('ConflictAnalyzer', () => {
             conflictType
           }
           const rules: ConflictResolveRule[] = [
-            {
-              targetPathPattern: '*.ts',
-              conflictType,
-              strategy: ResolutionStrategy.Ours
-            }
+            createStrategyRule('*.ts', ResolutionStrategy.Ours, conflictType)
           ]
 
           // Act
@@ -206,11 +217,7 @@ describe('ConflictAnalyzer', () => {
             conflictType
           }
           const rules: ConflictResolveRule[] = [
-            {
-              targetPathPattern: '*.ts',
-              conflictType,
-              strategy: ResolutionStrategy.Ours
-            }
+            createStrategyRule('*.ts', ResolutionStrategy.Ours, conflictType)
           ]
 
           // Act
@@ -230,8 +237,8 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          { targetPathPattern: '*.ts', strategy: ResolutionStrategy.Ours },
-          { targetPathPattern: '*.json', strategy: ResolutionStrategy.Theirs }
+          createStrategyRule('*.ts', ResolutionStrategy.Ours),
+          createStrategyRule('*.json', ResolutionStrategy.Theirs)
         ]
 
         // Act
@@ -263,10 +270,7 @@ describe('ConflictAnalyzer', () => {
           conflictType: ConflictType.BothModified
         }
         const rules: ConflictResolveRule[] = [
-          {
-            targetPathPattern: 'dist/**/*.min.js',
-            strategy: ResolutionStrategy.Theirs
-          }
+          createStrategyRule('dist/**/*.min.js', ResolutionStrategy.Theirs)
         ]
 
         // Act
@@ -275,6 +279,59 @@ describe('ConflictAnalyzer', () => {
         // Assert
         expect(strategy).toBe(ResolutionStrategy.Theirs)
       })
+
+      it('should not return a static strategy for delegated rules', () => {
+        // Arrange
+        const file: ConflictedFile = {
+          path: 'src/index.ts',
+          conflictType: ConflictType.BothModified
+        }
+        const rules: ConflictResolveRule[] = [
+          createScriptRule('src/**/*.ts', {
+            path: '.github/conflict-resolver/rules/branch-aware.sh',
+            shell: 'bash'
+          })
+        ]
+
+        // Act
+        const strategy = analyzer.determineStrategy(file, rules)
+
+        // Assert
+        expect(strategy).toBeUndefined()
+      })
+    })
+  })
+
+  describe('findMatchingRule', () => {
+    it('should return a delegated rule when path and conflict type match', () => {
+      // Arrange
+      const file: ConflictedFile = {
+        path: 'src/index.ts',
+        conflictType: ConflictType.BothModified
+      }
+      const resolverScript: ResolverScript = {
+        path: '.github/conflict-resolver/rules/branch-aware.sh',
+        shell: 'bash'
+      }
+      const rules: ConflictResolveRule[] = [
+        createScriptRule(
+          'src/**/*.ts',
+          resolverScript,
+          ConflictType.BothModified
+        )
+      ]
+
+      // Act
+      const matchingRule = analyzer.findMatchingRule(file, rules)
+
+      // Assert
+      expect(matchingRule).toEqual(
+        createScriptRule(
+          'src/**/*.ts',
+          resolverScript,
+          ConflictType.BothModified
+        )
+      )
     })
   })
 })

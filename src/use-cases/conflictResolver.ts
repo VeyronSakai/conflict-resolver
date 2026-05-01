@@ -2,7 +2,9 @@ import * as core from '@actions/core'
 import { ConflictedFile } from '@domains/entities/conflictedFile.js'
 import { ConfigRepository } from '@domains/repositories/configRepository.js'
 import { GitRepository } from '@domains/repositories/gitRepository.js'
+import { ResolverScriptExecutor } from '@domains/repositories/resolverScriptExecutor.js'
 import { ConflictAnalyzer } from '@domains/services/conflictAnalyzer.js'
+import { ConflictResolveRule } from '@domains/value-objects/conflictResolveRule.js'
 import { ResolutionStrategy } from '@domains/value-objects/resolutionStrategy.js'
 
 export interface ResolutionResult {
@@ -15,7 +17,8 @@ export class ConflictResolver {
 
   constructor(
     private configRepository: ConfigRepository,
-    private gitRepository: GitRepository
+    private gitRepository: GitRepository,
+    private resolverScriptExecutor: ResolverScriptExecutor
   ) {
     this.conflictAnalyzer = new ConflictAnalyzer()
   }
@@ -40,12 +43,20 @@ export class ConflictResolver {
     }> = []
 
     for (const file of conflictedFiles) {
-      const strategy = this.conflictAnalyzer.determineStrategy(file, rules)
+      const matchingRule = this.conflictAnalyzer.findMatchingRule(file, rules)
+
+      if (!matchingRule) {
+        this.logUnresolved(
+          file,
+          `no matching rule (conflict type: ${file.conflictType})`
+        )
+        unresolvedFiles.push(file.path)
+        continue
+      }
+
+      const strategy = await this.determineStrategy(file, matchingRule)
 
       if (!strategy) {
-        core.warning(
-          `${file.path} requires manual resolution (conflict type: ${file.conflictType})`
-        )
         unresolvedFiles.push(file.path)
       } else {
         toResolve.push({ file, strategy })
@@ -69,6 +80,43 @@ export class ConflictResolver {
     this.logSummary(resolvedFiles, unresolvedFiles)
 
     return { resolvedFiles, unresolvedFiles }
+  }
+
+  private async determineStrategy(
+    file: ConflictedFile,
+    rule: ConflictResolveRule
+  ): Promise<ResolutionStrategy | undefined> {
+    if (rule.resolution.type === 'strategy') {
+      return rule.resolution.strategy
+    }
+
+    try {
+      const result = await this.resolverScriptExecutor.determineStrategy(
+        file,
+        rule.resolution.resolverScript
+      )
+
+      if (result.type === 'manual') {
+        this.logUnresolved(
+          file,
+          `resolver script '${rule.resolution.resolverScript.path}' returned manual`
+        )
+        return undefined
+      }
+
+      return result.strategy
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.logUnresolved(
+        file,
+        `resolver script '${rule.resolution.resolverScript.path}' failed: ${message}`
+      )
+      return undefined
+    }
+  }
+
+  private logUnresolved(file: ConflictedFile, reason: string): void {
+    core.warning(`${file.path} requires manual resolution (${reason})`)
   }
 
   private logSummary(resolvedFiles: string[], unresolvedFiles: string[]): void {
