@@ -4,6 +4,8 @@
   "compilerOptions": {
     "allowJs": true,
     "noEmit": true,
+    "rootDir": ".",
+    "ignoreDeprecations": "6.0",
     "baseUrl": "./src",
     "paths": {
       "@*": ["./*"]
