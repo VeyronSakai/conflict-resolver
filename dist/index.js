@@ -36552,7 +36552,9 @@ class ConfigRepositoryImpl {
         }
         catch (error) {
             coreExports.error(`Failed to load config: ${error}`);
-            throw new Error(`Configuration loading failed: ${error}`);
+            throw new Error(`Configuration loading failed: ${error}`, {
+                cause: error
+            });
         }
     }
     validateConfig(config) {

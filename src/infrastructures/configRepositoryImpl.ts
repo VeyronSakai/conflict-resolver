@@ -43,7 +43,9 @@ export class ConfigRepositoryImpl implements ConfigRepository {
       )
     } catch (error) {
       core.error(`Failed to load config: ${error}`)
-      throw new Error(`Configuration loading failed: ${error}`)
+      throw new Error(`Configuration loading failed: ${error}`, {
+        cause: error
+      })
     }
   }
 
