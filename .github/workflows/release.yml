@@ -102,6 +102,7 @@ jobs:
     name: Update Files
     needs: update-draft
     if: ${{ github.event_name == 'workflow_dispatch' }}
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
