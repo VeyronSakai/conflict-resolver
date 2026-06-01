@@ -93,7 +93,7 @@ jobs:
     outputs:
       tag_name: ${{ steps.release-drafter.outputs.tag_name }}
     steps:
-      - uses: release-drafter/release-drafter@5de93583980a40bd78603b6dfdcda5b4df377b32
+      - uses: release-drafter/release-drafter@693d20e7c1ce1a81d3a41962f85914253b518449
         id: release-drafter
         with:
           commitish: main
@@ -148,7 +148,7 @@ jobs:
           message: 'Update README.md'
           add: 'README.md'
           new_branch: ${{ env.SOURCE_BRANCH }}
-      - uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: create-github-app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -199,7 +199,7 @@ jobs:
             Write-Error "version in package.json ($packageVersion) does not match the release draft tag ($expectedVersion from $env:VERSION)"
             exit 1
           }
-      - uses: release-drafter/release-drafter@5de93583980a40bd78603b6dfdcda5b4df377b32
+      - uses: release-drafter/release-drafter@693d20e7c1ce1a81d3a41962f85914253b518449
         id: release-drafter
         with:
           publish: true
