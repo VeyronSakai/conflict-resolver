@@ -153,6 +153,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - name: Create pull request and merge
         if:
           ${{ steps.commit-package-json.outputs.committed == 'true' ||
