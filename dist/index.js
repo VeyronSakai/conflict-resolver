@@ -33066,7 +33066,9 @@ class ConfigRepositoryImpl {
         }
         catch (error$1) {
             error(`Failed to load config: ${error$1}`);
-            throw new Error(`Configuration loading failed: ${error$1}`);
+            throw new Error(`Configuration loading failed: ${error$1}`, {
+                cause: error$1
+            });
         }
     }
     validateConfig(config) {
