@@ -2559,7 +2559,13 @@ function requireRequest$1 () {
 	      } else if (typeof val[i] === 'object') {
 	        throw new InvalidArgumentError(`invalid ${key} header`)
 	      } else {
-	        arr.push(`${val[i]}`);
+	        // Coerce primitives (and reject unsafe coercions such as functions
+	        // with a crafted toString/Symbol.toPrimitive).
+	        const str = `${val[i]}`;
+	        if (!isValidHeaderValue(str)) {
+	          throw new InvalidArgumentError(`invalid ${key} header`)
+	        }
+	        arr.push(str);
 	      }
 	    }
 	    val = arr;
@@ -2570,7 +2576,12 @@ function requireRequest$1 () {
 	  } else if (val === null) {
 	    val = '';
 	  } else {
+	    // Coerce primitives (and reject unsafe coercions such as functions
+	    // with a crafted toString/Symbol.toPrimitive).
 	    val = `${val}`;
+	    if (!isValidHeaderValue(val)) {
+	      throw new InvalidArgumentError(`invalid ${key} header`)
+	    }
 	  }
 
 	  if (headerName === 'host') {
@@ -8626,6 +8637,7 @@ function requireClientH1 () {
 	  RequestContentLengthMismatchError,
 	  ResponseContentLengthMismatchError,
 	  RequestAbortedError,
+	  InvalidArgumentError,
 	  HeadersTimeoutError,
 	  HeadersOverflowError,
 	  SocketError,
@@ -9609,8 +9621,16 @@ function requireClientH1 () {
 	    }
 	    body = bodyStream.stream;
 	    contentLength = bodyStream.length;
-	  } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
-	    headers.push('content-type', body.type);
+	  } else if (util.isBlobLike(body) && request.contentType == null) {
+	    const contentType = body.type;
+	    if (contentType) {
+	      const contentTypeValue = `${contentType}`;
+	      if (!util.isValidHeaderValue(contentTypeValue)) {
+	        util.errorRequest(client, request, new InvalidArgumentError('invalid content-type header'));
+	        return false
+	      }
+	      headers.push('content-type', contentTypeValue);
+	    }
 	  }
 
 	  if (body && typeof body.read === 'function') {
@@ -13045,6 +13065,28 @@ function requireRetryHandler () {
 	  return new Date(retryAfter).getTime() - current
 	}
 
+	function validatePartialResponseContentLength (headers, range, statusCode, retryCount) {
+	  const contentLength = headers['content-length'];
+	  if (contentLength == null) {
+	    return null
+	  }
+
+	  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+	    return null
+	  }
+
+	  const length = Number(contentLength);
+	  const expectedLength = range.end - range.start + 1;
+	  if (!Number.isFinite(length) || length !== expectedLength) {
+	    return new RequestRetryError('Content-Length mismatch', statusCode, {
+	      headers,
+	      data: { count: retryCount }
+	    })
+	  }
+
+	  return null
+	}
+
 	class RetryHandler {
 	  constructor (opts, handlers) {
 	    const { retryOptions, ...dispatchOpts } = opts;
@@ -13259,6 +13301,12 @@ function requireRetryHandler () {
 	        return false
 	      }
 
+	      const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
+	      if (contentLengthError != null) {
+	        this.abort(contentLengthError);
+	        return false
+	      }
+
 	      const { start, size, end = size - 1 } = contentRange;
 
 	      assert(this.start === start, 'content-range mismatch');
@@ -13280,6 +13328,12 @@ function requireRetryHandler () {
 	            resume,
 	            statusMessage
 	          )
+	        }
+
+	        const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount);
+	        if (contentLengthError != null) {
+	          this.abort(contentLengthError);
+	          return false
 	        }
 
 	        const { start, size, end = size - 1 } = range;
@@ -23670,7 +23724,7 @@ function requireUtil$2 () {
 
 	    if (
 	      code < 0x20 || // exclude CTLs (0-31)
-	      code === 0x7F || // DEL
+	      code > 0x7E || // exclude DEL and non-ascii
 	      code === 0x3B // ;
 	    ) {
 	      throw new Error('Invalid cookie path')
@@ -23679,16 +23733,80 @@ function requireUtil$2 () {
 	}
 
 	/**
-	 * I have no idea why these values aren't allowed to be honest,
-	 * but Deno tests these. - Khafra
+	 * <let-dig> ::= <letter> | <digit>
+	 *
+	 * <letter> ::= any one of the 52 alphabetic characters A through Z in
+	 * upper case and a through z in lower case
+	 *
+	 * <digit> ::= any one of the ten digits 0 through 9r
+	 *
+	 * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	 * @param {number} code
+	 */
+	function isLetterOrDigit (code) {
+	  return (
+	    (code >= 0x30 && code <= 0x39) || // 0-9
+	    (code >= 0x41 && code <= 0x5A) || // A-Z
+	    (code >= 0x61 && code <= 0x7A) // a-z
+	  )
+	}
+
+	/**
+	 * Validates a cookie domain against the "preferred name syntax".
+	 *
+	 * <domain>      ::= <subdomain> | " "
+	 * <subdomain>   ::= <label> | <subdomain> "." <label>
+	 * <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
+	 * <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+	 * <let-dig-hyp> ::= <let-dig> | "-"
+	 *
+	 * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+	 * @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+	 * @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
 	 * @param {string} domain
 	 */
 	function validateCookieDomain (domain) {
-	  if (
-	    domain.startsWith('-') ||
-	    domain.endsWith('.') ||
-	    domain.endsWith('-')
-	  ) {
+	  // <domain> ::= <subdomain> | " "
+	  if (domain === ' ') {
+	    return
+	  }
+
+	  if (domain.length > 255) {
+	    throw new Error('Invalid cookie domain')
+	  }
+
+	  let labelLength = 0;
+
+	  for (let i = 0; i < domain.length; ++i) {
+	    const code = domain.charCodeAt(i);
+
+	    if (code === 0x2E) {
+	      if (labelLength === 0) {
+	        throw new Error('Invalid cookie domain')
+	      }
+
+	      if (domain.charCodeAt(i - 1) === 0x2D) { // "-"
+	        throw new Error('Invalid cookie domain')
+	      }
+
+	      labelLength = 0;
+	      continue
+	    }
+
+	    if (labelLength === 0 && !isLetterOrDigit(code)) {
+	      throw new Error('Invalid cookie domain')
+	    }
+
+	    if (!isLetterOrDigit(code) && code !== 0x2D) { // "-"
+	      throw new Error('Invalid cookie domain')
+	    }
+
+	    if (++labelLength > 63) {
+	      throw new Error('Invalid cookie domain')
+	    }
+	  }
+
+	  if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 0x2D) { // "-"
 	    throw new Error('Invalid cookie domain')
 	  }
 	}
@@ -23831,7 +23949,13 @@ function requireUtil$2 () {
 
 	    const [key, ...value] = part.split('=');
 
-	    out.push(`${key.trim()}=${value.join('=')}`);
+	    const trimmedKey = key.trim();
+	    const joinedValue = value.join('=');
+
+	    validateCookieName(trimmedKey);
+	    validateCookieValue(joinedValue);
+
+	    out.push(`${trimmedKey}=${joinedValue}`);
 	  }
 
 	  return out.join('; ')
@@ -30827,7 +30951,7 @@ class ConflictResolver {
     }
 }
 
-/*! js-yaml 5.2.2 https://github.com/nodeca/js-yaml @license MIT */
+/*! js-yaml 5.2.3 https://github.com/nodeca/js-yaml @license MIT */
 //#region src/tag.ts
 var NOT_RESOLVED = Symbol("NOT_RESOLVED");
 var MERGE_KEY = Symbol("MERGE_KEY");
@@ -31282,6 +31406,11 @@ var binaryTag = defineScalarTag("tag:yaml.org,2002:binary", {
 //#region src/tag/scalar/timestamp.ts
 var YAML_DATE_REGEXP = /* @__PURE__ */ new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])$");
 var YAML_TIMESTAMP_REGEXP = /* @__PURE__ */ new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:[Tt]|[ \\t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\\.([0-9]*))?(?:[ \\t]*(Z|([-+])([0-9][0-9]?)(?::([0-9][0-9]))?))?$");
+function makeUtcDate(year, month, day, hour = 0, minute = 0, second = 0, fraction = 0) {
+	const date = new Date(Date.UTC(year, month, day, hour, minute, second, fraction));
+	date.setUTCFullYear(year, month, day);
+	return date;
+}
 function resolveYamlTimestamp(source) {
 	let match = YAML_DATE_REGEXP.exec(source);
 	if (match === null) match = YAML_TIMESTAMP_REGEXP.exec(source);
@@ -31290,7 +31419,7 @@ function resolveYamlTimestamp(source) {
 	const month = +match[2] - 1;
 	const day = +match[3];
 	if (!match[4]) {
-		const date = new Date(Date.UTC(year, month, day));
+		const date = makeUtcDate(year, month, day);
 		if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) return NOT_RESOLVED;
 		return date;
 	}
@@ -31304,7 +31433,7 @@ function resolveYamlTimestamp(source) {
 		while (value.length < 3) value += "0";
 		fraction = +value;
 	}
-	const date = new Date(Date.UTC(year, month, day, hour, minute, second, fraction));
+	const date = makeUtcDate(year, month, day, hour, minute, second, fraction);
 	if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) return NOT_RESOLVED;
 	if (match[9]) {
 		const offsetHour = +match[10];
@@ -31412,7 +31541,11 @@ var mapTag = defineMappingTag("tag:yaml.org,2002:map", {
 		return Object.prototype.hasOwnProperty.call(container, String(key));
 	},
 	keys: (container) => Object.keys(container),
-	get: (container, key) => container[String(key)]
+	get: (container, key) => {
+		const normalizedKey = String(key);
+		if (!Object.prototype.hasOwnProperty.call(container, normalizedKey)) return null;
+		return container[normalizedKey];
+	}
 });
 //#endregion
 //#region src/tag/mapping/set.ts
@@ -31437,9 +31570,9 @@ var setTag = defineMappingTag("tag:yaml.org,2002:set", {
 //#region src/schema.ts
 function createTagDefinitionMap() {
 	return {
-		scalar: {},
-		sequence: {},
-		mapping: {}
+		scalar: Object.create(null),
+		sequence: Object.create(null),
+		mapping: Object.create(null)
 	};
 }
 function createTagDefinitionListMap() {
@@ -31613,7 +31746,11 @@ defineMappingTag("tag:yaml.org,2002:map", {
 		return normalizedKey !== null && Object.prototype.hasOwnProperty.call(container, normalizedKey);
 	},
 	keys: (container) => Object.keys(container),
-	get: (container, key) => container[String(key)]
+	get: (container, key) => {
+		const normalizedKey = String(key);
+		if (!Object.prototype.hasOwnProperty.call(container, normalizedKey)) return null;
+		return container[normalizedKey];
+	}
 });
 //#endregion
 //#region src/common/snippet.ts
@@ -31927,10 +32064,10 @@ function getScalarValue(input, scalar) {
 }
 //#endregion
 //#region src/common/tagname.ts
-var DEFAULT_TAG_HANDLERS = {
+var DEFAULT_TAG_HANDLERS = Object.assign(Object.create(null), {
 	"!": "!",
 	"!!": "tag:yaml.org,2002:"
-};
+});
 function tagNameFull(rawTag, tagHandlers) {
 	if (rawTag.startsWith("!<") && rawTag.endsWith(">")) return decodeURIComponent(rawTag.slice(2, -1));
 	const handleEnd = rawTag.indexOf("!", 1);
@@ -32173,6 +32310,10 @@ function constructFromEvents(events, options) {
 			}
 			case 6: {
 				const frame = state.frames.pop();
+				if (frame.kind === "mapping" && frame.hasKey) {
+					state.position = frame.keyPosition;
+					throwError$1(state, "incomplete mapping pair in event stream");
+				}
 				if (frame.kind === "document") state.documents.push(frame.value);
 				else {
 					const value = frame.tag.carrierIsResult ? frame.value : finalizeCollection(state, frame.position, frame.tag, frame.value);
@@ -32844,10 +32985,6 @@ function parseNode(state, parentIndent, nodeContext, allowToSeek, allowCompact, 
 		if (state.lineIndent > parentIndent) indentStatus = 1;
 		else if (state.lineIndent === parentIndent) indentStatus = 0;
 		else indentStatus = -1;
-	}
-	if (state.position === state.lineStart && testDocumentSeparator(state)) {
-		state.depth--;
-		return false;
 	}
 	if (indentStatus === 1) while (true) {
 		const ch = state.input.charCodeAt(state.position);
