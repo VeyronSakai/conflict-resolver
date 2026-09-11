@@ -29,5 +29,5 @@ outputs:
       Comma-separated list of files that could not be resolved automatically
 
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
