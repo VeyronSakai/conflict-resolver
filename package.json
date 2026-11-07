@@ -61,7 +61,7 @@
     "jest": "^30.5.0",
     "js-yaml": "^5.4.1",
     "make-coverage-badge": "^1.2.0",
-    "minimatch": "^10.2.6",
+    "minimatch": "^11.0.1",
     "prettier": "^3.9.6",
     "prettier-eslint": "^17.1.2",
     "rollup": "^4.63.1",
